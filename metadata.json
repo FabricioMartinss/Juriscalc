@@ -1,0 +1,6 @@
+{
+  "name": "JurisCalc SP",
+  "description": "Calculadora e Extensão integrada de custas processuais do TJSP (e-SAJ e eproc) sob propriedade da Camelsec Plataforma (CNPJ 51.811.543/0001-20), compatível com a UFESP 2026 e a Lei Estadual nº 11.608/2003.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
