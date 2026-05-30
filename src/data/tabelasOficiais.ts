@@ -102,14 +102,14 @@ export const BASE_TABELA_COMUM: Record<number, number[]> = {
 // Tabelas separadas do final de 2024 a 2026
 
 // 1. Nova Tabela Prática (Prov CG 54/2024 - com lei 14.905/2024)
-export const NOVA_TABELA_PÓS_2024: Record<number, number[]> = {
+export const NOVA_TABELA_POS_2024: Record<number, number[]> = {
   2024: [96.094702, 96.219625, 96.739210, 97.338993], // SET, OUT, NOV, DEZ (4 valores)
   2025: [97.669945, 97.777381, 98.980042, 99.613514, 100.041852, 100.402002, 100.663047, 100.995235, 100.853841, 101.337939, 101.520347, 101.723387],
   2026: [101.977695, 102.181650, 103.039975, 103.493350, 103.784200] // JAN, FEV, MAR, ABR, MAI
 };
 
 // 2. Antiga Tabela Prática (Jurisprudência Predominante)
-export const ANTIGA_TABELA_PÓS_2024: Record<number, number[]> = {
+export const ANTIGA_TABELA_POS_2024: Record<number, number[]> = {
   2024: [95.778191, 96.237926, 96.824977, 97.144499], // SET, OUT, NOV, DEZ (4 valores)
   2025: [97.610792, 97.610792, 99.055431, 99.560613, 100.038503, 100.388637, 100.619530, 100.830831, 100.619086, 101.142305, 101.172647, 101.202998],
   2026: [101.415524, 101.811044, 102.381185, 103.312853, 103.550000] // JAN, FEV, MAR, ABR, MAI
@@ -207,7 +207,7 @@ export function buscarIndiceOficial(
   } else {
     // Período de Setembro de 2024 onwards: bifurcação
     if (tabela === 'nova_tabela') {
-      const valoresAno = NOVA_TABELA_PÓS_2024[ano];
+      const valoresAno = NOVA_TABELA_POS_2024[ano];
       if (valoresAno) {
         const offset = ano === 2024 ? 9 : 1; // 2024 começa no mês 9 (index 0)
         const val = valoresAno[mes - offset];
@@ -218,7 +218,7 @@ export function buscarIndiceOficial(
       return { value: 103.784200, found: false }; // Final 2026/05
     } else {
       // antiga_tabela
-      const valoresAno = ANTIGA_TABELA_PÓS_2024[ano];
+      const valoresAno = ANTIGA_TABELA_POS_2024[ano];
       if (valoresAno) {
         const offset = ano === 2024 ? 9 : 1;
         const val = valoresAno[mes - offset];

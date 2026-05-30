@@ -4,7 +4,7 @@
  */
 
 import { CalculationInputs, CalculationResult, CalculatedItem, TipoTabelaCorrecao } from '../types';
-import { UFESP_2026, CUTOFF_DATE, CODES, LINKS } from '../data/tabelaPratica';
+import { UFESP_2026, CUTOFF_DATE, CODES } from '../data/tabelaPratica';
 import { buscarIndiceOficial } from '../data/tabelasOficiais';
 
 /**
@@ -75,10 +75,9 @@ export function calcularTaxaComTrava(
   ufespValor: number = UF_2026()
 ): { valorCalculado: number; isPiso: boolean; isTeto: boolean; valorBruto: number } {
   const baseCents = paraCentavos(valorBase);
-  const aliquotaCents = paraCentavos(aliquotaDecimal);
-  
-  // Cálculo bruto: base * aliquota. No cents: (base_cents * aliquota_cents) / 10000
-  const brutoCents = Math.round((baseCents * aliquotaDecimal));
+
+  // Cálculo bruto em centavos: base_em_centavos * alíquota (ex.: 0,015).
+  const brutoCents = Math.round(baseCents * aliquotaDecimal);
   
   const pisoCents = paraCentavos(minUFESP * ufespValor);
   const tetoCents = paraCentavos(maxUFESP * ufespValor);
