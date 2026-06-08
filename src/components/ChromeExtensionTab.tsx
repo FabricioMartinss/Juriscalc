@@ -18,10 +18,10 @@ export default function ChromeExtensionTab() {
       {/* Extension Headline Card */}
       <div className="bg-slate-900 text-white rounded-lg p-4 relative overflow-hidden text-xs space-y-3 shadow-md">
         <div className="absolute top-0 right-0 p-3 opacity-20">
-          <Chrome className="w-12 h-12 text-amber-400 animate-spin-slow" />
+          <Chrome className="w-12 h-12 text-cyan-400 animate-spin-slow" />
         </div>
         <div className="flex items-center space-x-2">
-          <span className="bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded text-[9px] tracking-wide uppercase">Oficial</span>
+          <span className="bg-cyan-500 text-slate-950 font-black px-2 py-0.5 rounded text-[9px] tracking-wide uppercase">Oficial</span>
           <span className="text-slate-350 font-mono font-semibold">Extensão v1.1.2</span>
         </div>
         <div>
@@ -37,7 +37,7 @@ export default function ChromeExtensionTab() {
           className={`w-full py-2.5 px-4 rounded-lg font-bold text-xs uppercase flex items-center justify-center space-x-2 transition-all shadow-md cursor-pointer ${
             installedSimulator 
               ? 'bg-green-600 text-white hover:bg-green-700' 
-              : 'bg-amber-500 text-slate-950 hover:bg-amber-600'
+              : 'bg-cyan-500 text-slate-950 hover:bg-cyan-600'
           }`}
           id="btn-download-crx"
         >
@@ -103,22 +103,22 @@ export default function ChromeExtensionTab() {
       </div>
 
       {/* Auto Integration Features Highlights */}
-      <div className="p-3.5 bg-amber-50/65 border border-amber-200 rounded-lg space-y-2">
-        <h4 className="text-[11px] font-bold text-amber-850 uppercase tracking-wider flex items-center">
-          <Chrome className="w-4 h-4 mr-1.5 text-amber-500" />
+      <div className="p-3.5 bg-cyan-50/65 border border-cyan-200 rounded-lg space-y-2">
+        <h4 className="text-[11px] font-bold text-cyan-800 uppercase tracking-wider flex items-center">
+          <Chrome className="w-4 h-4 mr-1.5 text-cyan-700" />
           Sincronização Ativa Integrada
         </h4>
         <ul className="space-y-1.5 text-[11.5px] text-slate-600 font-medium">
           <li className="flex items-center">
-            <ArrowRight className="h-3 w-3 mr-1.5 text-amber-600" />
+            <ArrowRight className="h-3 w-3 mr-1.5 text-cyan-700" />
             <span>Identifica o tipo de processo nas instâncias cíveis do TJSP.</span>
           </li>
           <li className="flex items-center">
-            <ArrowRight className="h-3 w-3 mr-1.5 text-amber-600" />
+            <ArrowRight className="h-3 w-3 mr-1.5 text-cyan-700" />
             <span>Verifica o preenchimento de guias DARE em tempo real.</span>
           </li>
           <li className="flex items-center">
-            <ArrowRight className="h-3 w-3 mr-1.5 text-amber-600" />
+            <ArrowRight className="h-3 w-3 mr-1.5 text-cyan-700" />
             <span>Puxa o Valor Atualizado da Causa direto do e-SAJ e do E-PROC.</span>
           </li>
         </ul>

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Calculator,
   FileText,
@@ -636,7 +636,13 @@ const eSajOptions: Option[] = [
   }
 ];
 
-export default function WizardCalculator() {
+export default function WizardCalculator({
+  compact = false,
+  onResult,
+}: {
+  compact?: boolean;
+  onResult?: (total: number, memo: string) => void;
+}) {
   const [activePalette, setActivePalette] = useState<keyof typeof PALETTES>('slate');
   const [subsystem, setSubsystem] = useState<'esaj' | 'eproc'>('esaj');
   
@@ -998,6 +1004,12 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
   const finalUnifiedSum = subsystem === 'esaj' ? eSajTotalSum : (eprocTab === 'preparo' ? epAPreparo : eprocTab === 'complementares' ? epBFinal : epCFinal);
   const finalMemoStr = subsystem === 'esaj' ? eSajMemoText : eprocMemoText;
 
+  // Em modo compacto (painel lateral), emite o total/memória para o shell renderizar
+  // a barra de total fixa fora da área rolável.
+  useEffect(() => {
+    if (onResult) onResult(finalUnifiedSum, finalMemoStr);
+  }, [onResult, finalUnifiedSum, finalMemoStr]);
+
   // Copy Memo function
   const handleCopyMemo = () => {
     navigator.clipboard.writeText(finalMemoStr);
@@ -1009,6 +1021,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
     <div className={`w-full bg-white rounded-xl border ${col.cardBorder} shadow-xs transition-all duration-350 font-sans`} id="juriscalc-main-appcard">
       
       {/* Elegantly styled legal header headnote */}
+      {!compact && (
       <div className="flex flex-col border-b border-slate-100 bg-slate-50/60 p-6 rounded-t-xl text-left" id="wizard-header">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="space-y-1">
@@ -1029,6 +1042,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
 
         </div>
       </div>
+      )}
 
       {/* Main Tabs (e-SAJ vs E-PROC) styled as high-end minimalist office folders */}
       <div className="bg-slate-50/50 p-2.5 border-b border-slate-150" id="subsystem-control-tab">
@@ -1057,10 +1071,10 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
       </div>
 
       {/* Grid Layout Container */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6" id="dashboard-content-layout">
-        
-        {/* LEFT COLUMN: Input Panel (takes 7 cols) */}
-        <div className="lg:col-span-7 space-y-6">
+      <div className={compact ? 'p-4' : 'grid grid-cols-1 lg:grid-cols-12 gap-6 p-6'} id="dashboard-content-layout">
+
+        {/* LEFT COLUMN: Input Panel */}
+        <div className={compact ? 'space-y-6' : 'lg:col-span-7 space-y-6'}>
           
           {/* A. e-SAJ Left Form flow */}
           {subsystem === 'esaj' ? (
@@ -1864,6 +1878,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
         </div>
 
         {/* RIGHT COLUMN: Results Display Panel (takes 5 cols) */}
+        {!compact && (
         <div className="lg:col-span-5 flex flex-col space-y-6" id="wizard-right-column">
           
           {/* Main Sucumbência Sum card */}
@@ -1891,7 +1906,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                 <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">
                   VALOR DE GUIA RECOMENDADO
                 </span>
-                <div className="text-3xl sm:text-4xl font-mono font-bold text-amber-350 tracking-tight">
+                <div className="text-3xl sm:text-4xl font-mono font-bold text-cyan-300 tracking-tight">
                   R$ {finalUnifiedSum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </div>
                 <p className="text-[10px] text-slate-500 font-medium pl-0.5 pr-0.5 pt-0.5">
@@ -1911,7 +1926,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       <div key={idx} className="p-3 bg-white/5 border border-white/5 rounded text-xs flex flex-col space-y-1">
                         <div className="flex justify-between items-start">
                           <span className="font-bold text-slate-200">{it.name}</span>
-                          <span className="font-mono text-amber-300 font-bold whitespace-nowrap">
+                          <span className="font-mono text-cyan-300 font-bold whitespace-nowrap">
                             R$ {it.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </span>
                         </div>
@@ -1928,7 +1943,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       <span className="font-bold text-slate-200">
                         {eprocTab === 'preparo' ? 'Preparo Recursal Eproc' : eprocTab === 'complementares' ? 'Complementação de Custas' : 'Rateio Fração'}
                       </span>
-                      <span className="font-mono text-amber-300 font-bold">
+                      <span className="font-mono text-cyan-300 font-bold">
                         R$ {finalUnifiedSum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
@@ -1955,7 +1970,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       rel="noreferrer"
                       className="flex items-center justify-between p-2.5 rounded bg-white/10 hover:bg-white/15 border border-white/10 text-white transition-colors"
                     >
-                      <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5 text-amber-300" />Emitir Guia DARE (Código 230-6)</span>
+                      <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5 text-cyan-300" />Emitir Guia DARE (Código 230-6)</span>
                       <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                     </a>
                     {postageAddresses > 0 && (
@@ -1985,7 +2000,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
               ) : (
                 <div className="p-3.5 bg-white/5 border border-white/10 rounded space-y-2 text-left">
                   <span className="block text-xs font-bold text-slate-200 flex items-center">
-                    <Info className="w-4 h-4 mr-1.5 text-amber-300" />
+                    <Info className="w-4 h-4 mr-1.5 text-cyan-300" />
                     Guia Unificada E-PROC (Portal TJSP)
                   </span>
                   <p className="text-[10.5px] text-slate-400 leading-relaxed font-sans">
@@ -2033,7 +2048,33 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
           </div>
 
         </div>
+        )}
       </div>
+
+      {/* Compact total bar (fallback quando não há shell via onResult) */}
+      {compact && !onResult && (
+        <div className="sticky bottom-0 z-30 bg-[#0b2545] border-t border-white/10 px-4 py-3 rounded-b-xl shadow-[0_-10px_24px_rgba(2,12,27,0.25)]">
+          {subsystem === 'esaj' && calcResults.warning && (
+            <div className="mb-2 flex items-start gap-1.5 text-[11px] font-semibold text-red-200">
+              <ShieldAlert className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-300" />
+              <span>{calcResults.warning}</span>
+            </div>
+          )}
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <span className="block text-[10px] font-bold uppercase tracking-widest text-blue-200/70 leading-none">
+                Valor de Guia Recomendado
+              </span>
+              <span className="block text-[10px] text-blue-200/50 truncate mt-0.5">
+                {subsystem === 'esaj' ? selectedESajOpt.name : 'E-PROC SP'}
+              </span>
+            </div>
+            <div className="text-xl font-mono font-bold text-white tracking-tight shrink-0 whitespace-nowrap">
+              R$ {finalUnifiedSum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Calculadora de Correção Monetária - Floating Backdrop Modal */}
       {isCorrectionModalOpen && (
@@ -2195,7 +2236,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       (Valor Original / Fator Inicial) × Fator Final
                     </div>
                   </div>
-                  <div className="text-xl sm:text-2xl font-mono font-extrabold text-[#f59e0b] tracking-tight leading-none">
+                  <div className="text-xl sm:text-2xl font-mono font-extrabold text-[#06b6d4] tracking-tight leading-none">
                     R$ {currentMcResult.valorCorrigido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
                 </div>
@@ -2226,9 +2267,11 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
       )}
 
       {/* Required Editorial Footer Copyright Trademark */}
+      {!compact && (
       <div className="bg-slate-50 border-t border-slate-200 py-4 px-6 text-center rounded-b-lg text-[10.5px] text-slate-500 font-medium font-sans">
         Camelsec Workspace © 2024. Desenvolvido por Camelsec Plataform (CNPJ: 51.811.543/0001-20).
       </div>
+      )}
 
     </div>
   );
