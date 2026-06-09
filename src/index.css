@@ -77,6 +77,27 @@ button, a, select, [role="tab"] {
   transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* Foco visível e acessível só para navegação por teclado (mouse não dispara :focus-visible).
+   !important para vencer os utilitários focus:outline-none espalhados pelos formulários. */
+:where(button, a, input, select, textarea, summary, [role="tab"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--color-frio-acento) !important;
+  outline-offset: 2px;
+}
+
+/* Scrollbars finas e discretas (estética SaaS) */
+@supports (scrollbar-width: thin) {
+  * { scrollbar-width: thin; scrollbar-color: rgb(203 213 225) transparent; }
+}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgb(203 213 225);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background: rgb(148 163 184); background-clip: content-box; }
+
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
   html { scroll-behavior: auto; }

@@ -178,10 +178,10 @@ Observação: Isento do recolhimento de custas prévias. Custas serão cobradas 
       : tabelaSelecionada === 'antiga_tabela'
       ? 'Antiga Tabela Prática - Jurisprudência Predominante'
       : 'Tabela IPCA-E';
-    memoCorrecao = `\n- Correção Financeira da Causa:\n  * Valor Inicial: R$ ${inputs.valorCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n  * Data da Distribuição: ${inputs.dataDistribuicaoCausa}\n  * Índice Origem: ${indiceOrigem}\n  * Índice Atual (05/2026): ${indiceAtual}\n  * Valor Atualizado: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${nomeTabela})`;
+    memoCorrecao = `\n- Correção Financeira da Causa:\n  * Valor Inicial: R$ ${inputs.valorCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n  * Data da Distribuição: ${inputs.dataDistribuicaoCausa}\n  * Índice Origem: ${indiceOrigem}\n  * Índice Atual (05/2026): ${indiceAtual}\n  * Valor Atualizado: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${nomeTabela})`;
   }
 
-  let baseCaculoExplanacao = `Valor da Causa Base: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (UFESP 2026: R$ ${ufesp})`;
+  let baseCaculoExplanacao = `Valor da Causa Base: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (UFESP 2026: R$ ${ufesp})`;
 
   // --- CÁLCULO GERAL SECUNDÁRIO E POSTAIS (SEMPRE FEDTJ E GRD) ---
   const tarifaPostalFlat = 38.30; // Tarifa TJSP Envelopamento AR em 2026
@@ -231,11 +231,11 @@ Observação: Isento do recolhimento de custas prévias. Custas serão cobradas 
 Enquadramento Legal: Art. 4º, I da Lei Paulista nº 11.608/2003
 Época de Peticionamento: ${isPos2024 ? 'PÓS-03/01/2024 (Lei nº 17.785/2023)' : 'PRÉ-03/01/2024'}
 Alíquota Aplicável: ${(aliquota * 100).toFixed(1)}%${memoCorrecao}
-Base de Cálculo Tributária: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+Base de Cálculo Tributária: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 UFESP do Exercício Corrente (2026): R$ ${ufesp}
-Trava de Segurança: Piso de 5 UFESPs (R$ ${(u_calc(5)).toFixed(2)}) e Teto de 3.000 UFESPs (R$ ${(u_calc(3000)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
-Cálculo Bruto: R$ ${(valorCausaEfetivo * aliquota).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-Resultado Concluído: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${isPiso ? '[MÍNIMO EXIGIDO]' : isTeto ? '[TETO LIMITADOR]' : ''}`;
+Trava de Segurança: Piso de 5 UFESPs (R$ ${(u_calc(5)).toFixed(2)}) e Teto de 3.000 UFESPs (R$ ${(u_calc(3000)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+Cálculo Bruto: R$ ${(valorCausaEfetivo * aliquota).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+Resultado Concluído: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${isPiso ? '[MÍNIMO EXIGIDO]' : isTeto ? '[TETO LIMITADOR]' : ''}`;
       break;
     }
 
@@ -254,9 +254,9 @@ Resultado Concluído: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFract
         detalheMemoria = `MEMÓRIA DE CÁLCULO - EXECUÇÃO EXTRAJUDICIAL (CONTRATO PRÉ-2024)
 -----------------------------------------------------------------
 Diretrizes: Alíquota de 1% devida na distribuição, mais 1% ao final (satisfação - item 6).
-Base de Cálculo: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+Base de Cálculo: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 UFESP: R$ ${ufesp}
-Distribuição Inicial a Pagar: R$ ${d1.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+Distribuição Inicial a Pagar: R$ ${d1.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       } else {
         // Pós-2024: Unificado 2% sobre valor atualizado da causa (que deve somar honorários se sugerido, vamos focar no valorCausa)
         // O valor da causa em execuções de título extrajudicial já integra a dívida e acessórios
@@ -273,9 +273,9 @@ Distribuição Inicial a Pagar: R$ ${d1.toLocaleString('pt-BR', { minimumFractio
 -----------------------------------------------------------------
 Norma Legal: Art. 4º, § 3º da Lei nº 11.608/2003 (Unificado)
 Alíquota Aplicável: 2% sobre o valor da causa executada
-Base de Cálculo: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}${memoCorrecao}
-Piso/Teto: Min de 5 UFESPs (R$ ${(u_calc(5)).toFixed(2)}) / Max de 3.000 UFESPs (R$ ${(u_calc(3000)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
-Resultado Concluído: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${isPiso ? '[MÍNIMO]' : isTeto ? '[MÁXIMO]' : ''}`;
+Base de Cálculo: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${memoCorrecao}
+Piso/Teto: Min de 5 UFESPs (R$ ${(u_calc(5)).toFixed(2)}) / Max de 3.000 UFESPs (R$ ${(u_calc(3000)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+Resultado Concluído: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${isPiso ? '[MÍNIMO]' : isTeto ? '[MÁXIMO]' : ''}`;
       }
       break;
     }
@@ -298,12 +298,12 @@ Resultado Concluído: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFract
       detalheMemoria = `MEMÓRIA DE CÁLCULO - PREPARO DE APELAÇÃO / RECURSO ADESIVO (TJSP)
 -----------------------------------------------------------------
 Fundamentação Legal: Artigo 4º, II, da Lei Estadual nº 11.608/2003
-Base Escolhida: ${temCondenacao ? `Valor da Condenação (Líquido: R$ ${inputs.valorCondenacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})` : `Ausência de Condenação. Aplicado valor da causa atualizado: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}${memoCorrecao}
+Base Escolhida: ${temCondenacao ? `Valor da Condenação (Líquido: R$ ${inputs.valorCondenacao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : `Ausência de Condenação. Aplicado valor da causa atualizado: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}${memoCorrecao}
 Alíquota de Preparo: 4.0%
 UFESP (2026): R$ ${ufesp}
-Limites Exigidos: Mínimo de 5 UFESPs (R$ ${(u_calc(5)).toFixed(2)}) e Máximo de 3.000 UFESPs (R$ ${(u_calc(3000)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
-Cálculo Bruto Encontrado: R$ ${(baseRecurso * 0.04).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-Total de Preparo: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${isPiso ? '[MÍNIMO INCIDENTE]' : isTeto ? '[TETO INCIDENTE]' : ''}`;
+Limites Exigidos: Mínimo de 5 UFESPs (R$ ${(u_calc(5)).toFixed(2)}) e Máximo de 3.000 UFESPs (R$ ${(u_calc(3000)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+Cálculo Bruto Encontrado: R$ ${(baseRecurso * 0.04).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+Total de Preparo: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${isPiso ? '[MÍNIMO INCIDENTE]' : isTeto ? '[TETO INCIDENTE]' : ''}`;
       break;
     }
 
@@ -327,10 +327,10 @@ Diretrizes: Conforme Lei anterior, a instauração nos próprios autos é ISENTA
         detalheMemoria = `MEMÓRIA DE CÁLCULO - CUMPRIMENTO DE SENTENÇA (INCIDENTE PÓS 2024)
 -----------------------------------------------------------------
 Classificação Legal: Art. 4º, Nova redação pela Lei Paulista nº 17.785/2023
-Base do Crédito Informada: R$ ${credito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+Base do Crédito Informada: R$ ${credito.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 Alíquota Judiciária: 2.0% cobrados na instauração
-Piso / Teto: de 5 UFESPs (R$ ${(u_calc(5)).toFixed(2)}) a 3.000 UFESPs (R$ ${(u_calc(3000)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
-Total do Cumprimento: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${isPiso ? '[MÍNIMO]' : isTeto ? '[MÁXIMO]' : ''}`;
+Piso / Teto: de 5 UFESPs (R$ ${(u_calc(5)).toFixed(2)}) a 3.000 UFESPs (R$ ${(u_calc(3000)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+Total do Cumprimento: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${isPiso ? '[MÍNIMO]' : isTeto ? '[MÁXIMO]' : ''}`;
       }
       break;
     }
@@ -349,7 +349,7 @@ Total do Cumprimento: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFract
         detalheMemoria = `MEMÓRIA - CUMPRIMENTO DE JULGADO DE JUIZO DISTINTO O ARBITRAL (PRÉ 2024)
 -----------------------------------------------------------------
 Alíquota: 1.0% do valor do crédito no início (piso 5 UFESP)
-Pagar inicial: R$ ${d1.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+Pagar inicial: R$ ${d1.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       } else {
         const credito = inputs.valorCreditoExigido || valorCausaEfetivo;
         const { valorCalculado, isPiso, isTeto } = calcularTaxaComTrava(credito, 0.02, 5, 3000, ufesp);
@@ -364,8 +364,8 @@ Pagar inicial: R$ ${d1.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
         detalheMemoria = `MEMÓRIA DE CÁLCULO - CUMPRIMENTO DE JULGADO EXTERNO (PÓS 2024)
 -----------------------------------------------------------------
 Alíquota cobrada: 2.0% da quantia demandada.
-Base Calculada: R$ ${credito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-Total de Guia de Distribuição: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+Base Calculada: R$ ${credito.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+Total de Guia de Distribuição: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       }
       break;
     }
@@ -390,8 +390,8 @@ Observação de Isenção: De acordo com a reforma legal paulista, se o processo
         detalheMemoria = `MEMÓRIA DE CÁLCULO - SATISFAÇÃO DO CRÉDITO (REGRAS PRÉ-2024)
 -----------------------------------------------------------------
 Fundamento: Artigo 4º, III (versão antiga) - 1.0% do valor pago/satisfeito.
-Base da Satisfação: R$ ${baseSat.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-Total Devido: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${isPiso ? '[LIMITADO AO PISO 5 UFESPs]' : ''}`;
+Base da Satisfação: R$ ${baseSat.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+Total Devido: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${isPiso ? '[LIMITADO AO PISO 5 UFESPs]' : ''}`;
       }
       break;
     }
@@ -411,8 +411,8 @@ Total Devido: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigit
         detalheMemoria = `MEMÓRIA DE CÁLCULO - EXECUÇÃO FISCAL (PRÉ-2024)
 -----------------------------------------------------------------
 Regra: 1% na distribuição inicial, cobrada ao final do executado vencido.
-Base Tributável: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-Total DARE: R$ ${v1.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (Piso 5 UFESP: R$ ${(u_calc(5)).toFixed(2)})`;
+Base Tributável: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+Total DARE: R$ ${v1.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Piso 5 UFESP: R$ ${(u_calc(5)).toFixed(2)})`;
       } else {
         // 2% sobre valor do crédito
         const { valorCalculado, isPiso } = calcularTaxaComTrava(valorCausaEfetivo, 0.02, 5, 3000, ufesp);
@@ -427,8 +427,8 @@ Total DARE: R$ ${v1.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (Piso
         detalheMemoria = `MEMÓRIA DE CÁLCULO - EXECUÇÃO FISCAL (PÓS-2024)
 -----------------------------------------------------------------
 Regra Atual: Unificado em 2% da execução, devido ao final ou no arquivamento.
-Dívida totalizada: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-Valor Geral a Recolher: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+Dívida totalizada: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+Valor Geral a Recolher: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       }
       break;
     }
@@ -450,8 +450,8 @@ Valor Geral a Recolher: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFra
 -----------------------------------------------------------------
 Equiparado por Força de Lei à Apelação Cível: Decisão que versa sobre o mérito integral.
 Alíquota Judiciária: 4.0%
-Base de Incidência: R$ ${baseRecurso.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-Valor Geral a Pagar: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${isPiso ? '[MÍNIMO]' : isTeto ? '[MÁXIMO]' : ''}`;
+Base de Incidência: R$ ${baseRecurso.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+Valor Geral a Pagar: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${isPiso ? '[MÍNIMO]' : isTeto ? '[MÁXIMO]' : ''}`;
       } else {
         // Taxa fixa em UFESPs
         const qtdUfesps = isPos2024 ? 15 : 10;
@@ -469,7 +469,7 @@ Valor Geral a Pagar: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFracti
 Enquadramento: Preparo fixado em UFESPs para agravo interlocutório comum.
 Época: ${isPos2024 ? 'Pós-2024 (15 UFESPs)' : 'Pré-2024 (10 UFESPs)'}
 Variação Monetária: R$ ${ufesp} por UFESP
-Totalizador Fixo da Guia DARE: R$ ${totalFixo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (Sem travas variáveis adicionais)`;
+Totalizador Fixo da Guia DARE: R$ ${totalFixo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Sem travas variáveis adicionais)`;
       }
       break;
     }
@@ -489,7 +489,7 @@ Totalizador Fixo da Guia DARE: R$ ${totalFixo.toLocaleString('pt-BR', { minimumF
 -----------------------------------------------------------------
 Taxa fixa estipulada em Lei: 10 UFESPs
 UFESP Vigente em São Paulo: R$ ${ufesp}
-Total da Guia DARE: R$ ${totalFixo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (Sem aplicação de teto tributário)`;
+Total da Guia DARE: R$ ${totalFixo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Sem aplicação de teto tributário)`;
       break;
     }
 
@@ -520,7 +520,7 @@ Total da Guia DARE: R$ ${totalFixo.toLocaleString('pt-BR', { minimumFractionDigi
       itens.push({
         name: `Taxa Judiciária Partilha/Inventário (${faixaMsg})`,
         source: 'DARE',
-        description: `Homologação de Partilha ou Inventário sobre Monte-mor de R$ ${monteMor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${ufespQtd} UFESPs).`,
+        description: `Homologação de Partilha ou Inventário sobre Monte-mor de R$ ${monteMor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${ufespQtd} UFESPs).`,
         value: totalPartilha,
         code: CODES.DARE_TAXA_JUDICIARIA,
         baseLegal: 'Art. 4º, § 7º, Lei Estadual nº 11.608/2003'
@@ -529,11 +529,11 @@ Total da Guia DARE: R$ ${totalFixo.toLocaleString('pt-BR', { minimumFractionDigi
       detalheMemoria = `MEMÓRIA DE CÁLCULO - ADJUDICAÇÃO OU INVENTÁRIO (TAXA TIERED)
 -----------------------------------------------------------------
 Normativo Legal: Artigo 4º, § 7º da Lei Paulista de Custas
-Valor do Monte-mor Informado (Ativo Inventariado): R$ ${monteMor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+Valor do Monte-mor Informado (Ativo Inventariado): R$ ${monteMor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 Faixa de Enquadramento: ${faixaMsg}
 Quantidade de UFESPs Exigidas: ${ufespQtd} UFESPs
 Valor da UFESP Corrente (2026): R$ ${ufesp}
-Total Consolidado da Guia DARE: R$ ${totalPartilha.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+Total Consolidado da Guia DARE: R$ ${totalPartilha.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       break;
     }
 
@@ -555,8 +555,8 @@ Total Consolidado da Guia DARE: R$ ${totalPartilha.toLocaleString('pt-BR', { min
 -----------------------------------------------------------------
 Equiparação Legal: Segue a regência de petição inicial comum (Art. 4, I)
 Alíquota Aplicável: ${(aliquota * 100).toFixed(1)}% do valor do crédito demandado
-Crédito Reclamado (Base): R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-Valor Geral a Recolher: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${isPiso ? '[MÍNIMO EXIGIDO DE 5 UFESPs]' : ''}`;
+Crédito Reclamado (Base): R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+Valor Geral a Recolher: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${isPiso ? '[MÍNIMO EXIGIDO DE 5 UFESPs]' : ''}`;
       break;
     }
 
@@ -574,7 +574,7 @@ Valor Geral a Recolher: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFra
 -----------------------------------------------------------------
 Natureza: Custas de sucumbência penal devidas exclusivamente pelo réu condenado.
 Exigibilidade: Ao final da lide (trânsito em julgado).
-Valoração: R$ ${totalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (Fixado em 100 UFESPs)`;
+Valoração: R$ ${totalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Fixado em 100 UFESPs)`;
       break;
     }
 
@@ -591,7 +591,7 @@ Valoração: R$ ${totalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 
       detalheMemoria = `MEMÓRIA - AÇÕES PENAIS DE INICIATIVA PRIVADA
 -----------------------------------------------------------------
 Custas Estipuladas: 50 UFESPs no ato de distribuição e adicionais 50 UFESPs na interposição de recursos.
-Valor Devido Inicialmente: R$ ${valorD1.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (50 UFESPs)`;
+Valor Devido Inicialmente: R$ ${valorD1.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (50 UFESPs)`;
       break;
     }
 
@@ -627,7 +627,7 @@ Quantidade Total de Autores Qualificados: ${inputs.quantidadeAutores}
 Autores Isentos de Sobretaxa: Primeiros 10 autores
 Autores Excedentes: ${Math.max(0, inputs.quantidadeAutores - 10)}
 Grupos ou frações calculadas (Math.ceil(excedente / 10)): ${gruposExcedentes} grupo(s)
-Taxa Adicional Devida: R$ ${taxaExtra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (Equivalente a ${gruposExcedentes * 10} UFESPs)`;
+Taxa Adicional Devida: R$ ${taxaExtra.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Equivalente a ${gruposExcedentes * 10} UFESPs)`;
       break;
     }
 
@@ -646,8 +646,8 @@ Taxa Adicional Devida: R$ ${taxaExtra.toLocaleString('pt-BR', { minimumFractionD
       detalheMemoria = `CÁLCULO - LITISCONSORTE ULTERIOR O ENTRADA DE ASSISTENTE
 -----------------------------------------------------------------
 Regulamento: O interveniente retardatário paga o mesmo que o autor inicial.
-Base Recenseada: R$ ${inputs.valorCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-Total de Guia de Entrada: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+Base Recenseada: R$ ${inputs.valorCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+Total de Guia de Entrada: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       break;
     }
 
@@ -684,7 +684,7 @@ Total de Guia de Entrada: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumF
       itens.push({
         name: 'Guia Única DARE-SP (Ingresso JEC + Preparo)',
         source: 'DARE',
-        description: `Preparo de Recurso Inominado somando: Parcela Ingresso (R$ ${valorIngresso.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}) + Parcela Recursal (R$ ${valorPreparo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}). Ambos os pisos de 5 UFESPs aplicados isoladamente.`,
+        description: `Preparo de Recurso Inominado somando: Parcela Ingresso (R$ ${valorIngresso.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) + Parcela Recursal (R$ ${valorPreparo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}). Ambos os pisos de 5 UFESPs aplicados isoladamente.`,
         value: totalDareJec,
         code: CODES.DARE_TAXA_JUDICIARIA,
         baseLegal: 'Art. 54, parágrafo único, Lei n. 9.099/95 c/c Art. 4, I e II, Lei Estadual n. 11.608/03'
@@ -698,26 +698,26 @@ Regra de Cálculo: Soma de duas parcelas com aplicação INDIVIDUAL de piso de 5
 
 PARCELA A: TAXA DE INGRESSO DISPENSADA NO 1º GRAU
 -------------------------------------------------
-Base de cálculo (Causa): R$ ${inputs.valorCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+Base de cálculo (Causa): R$ ${inputs.valorCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 Regra do Período: ${isPos2024 ? 'Pós-03/01/2024' : 'Pré-03/01/2024'}
 Alíquota Aplicável: ${aliqLabel}
-Valor Bruto Calculado: R$ ${ingressoBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+Valor Bruto Calculado: R$ ${ingressoBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 UFESP Corrente (2026): R$ ${ufesp}
 Piso Exigido isoladamente (5 UFESPs): R$ ${(u_calc(5)).toFixed(2)}
-Valor Homologado para a Parcela A: R$ ${valorIngresso.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${ingressoIsPiso ? '[TRAVA DO PISO APLICADA]' : ''}
+Valor Homologado para a Parcela A: R$ ${valorIngresso.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${ingressoIsPiso ? '[TRAVA DO PISO APLICADA]' : ''}
 
 PARCELA B: PREPARO RECURSAL
 ---------------------------
-Base de cálculo: ${inputs.valorCondenacao > 0 ? `Valor da Sentença Condenatória (R$ ${inputs.valorCondenacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})` : `Ausência de Condenação. Aplicado valor da causa atualizado (R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`}${memoCorrecao}
+Base de cálculo: ${inputs.valorCondenacao > 0 ? `Valor da Sentença Condenatória (R$ ${inputs.valorCondenacao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : `Ausência de Condenação. Aplicado valor da causa atualizado (R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`}${memoCorrecao}
 Alíquota de Preparo: 4.0%
-Valor Bruto Calculado: R$ ${preparoBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+Valor Bruto Calculado: R$ ${preparoBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 Piso Exigido isoladamente (5 UFESPs): R$ ${(u_calc(5)).toFixed(2)}
-Valor Homologado para a Parcela B: R$ ${valorPreparo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${preparoIsPiso ? '[TRAVA DO PISO APLICADA]' : ''}
+Valor Homologado para a Parcela B: R$ ${valorPreparo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${preparoIsPiso ? '[TRAVA DO PISO APLICADA]' : ''}
 
 RESULTADO CONSOLIDADO DO PREPARO JEC
 ------------------------------------
-Soma Legal (Parcela A + Parcela B): R$ ${valorIngresso.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} + R$ ${valorPreparo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-Total de Preparo em Guia DARE: R$ ${totalDareJec.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (Código 230-6)`;
+Soma Legal (Parcela A + Parcela B): R$ ${valorIngresso.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} + R$ ${valorPreparo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+Total de Preparo em Guia DARE: R$ ${totalDareJec.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Código 230-6)`;
       break;
     }
 
@@ -744,7 +744,7 @@ Regra Geral de Gratuidade: Conforme as diretrizes constitucionais e o art. 54 da
 -----------------------------------------------------------------
 Ponto Forçado: Detecção de Litigância de Má-Fé ou Recurso Improvido
 Alíquota de Multa-Taxa: ${(aliq * 100).toFixed(1)}%
-Total Guia DARE: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${isPiso ? '[PISO MÍNIMO 5 UFESP EMITIDO]' : ''}`;
+Total Guia DARE: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${isPiso ? '[PISO MÍNIMO 5 UFESP EMITIDO]' : ''}`;
       }
       break;
     }
@@ -767,8 +767,8 @@ Total Guia DARE: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDi
 -----------------------------------------------------------------
 Fator Extintivo: Falta injustificada da parte reclamante.
 Alíquota Geral Punitiva: ${(aliq * 100).toFixed(1)}% do valor atualizado da causa
-Base de Incidência: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-Total de Custas a Recolher: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${isPiso ? '[PISO DE 5 UFESP APLICADO]' : ''}`;
+Base de Incidência: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+Total de Custas a Recolher: R$ ${valorCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${isPiso ? '[PISO DE 5 UFESP APLICADO]' : ''}`;
       break;
     }
 
@@ -792,7 +792,7 @@ Total de Custas a Recolher: R$ ${valorCalculado.toLocaleString('pt-BR', { minimu
 -----------------------------------------------------------------
 Serviço Postal: R$ ${(inputs.quantidadeEnderecos * tarifaPostalFlat).toFixed(2)} (${inputs.quantidadeEnderecos} lotes)
 Oficial de Justiça: R$ ${(inputs.quantidadeAtosOficial * tarifaDiligenciaOficial).toFixed(2)} (${inputs.quantidadeAtosOficial} diligências)
-Total das Custas Administrativas Pendentes: R$ ${totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+Total das Custas Administrativas Pendentes: R$ ${totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       break;
     }
   }
@@ -827,7 +827,7 @@ APLICAÇÃO DE CONCESSÃO DE GRATUIDADE PARCIAL (Art. 98, § 5º, CPC)
 -------------------------------------------------
 Porcentagem de Desconto Concedida pelo Juiz: ${inputs.porcentagemDescontoGratuita}%
 Fator de Redução Matemática: ${inputs.porcentagemDescontoGratuita}% (paga-se ${100 - inputs.porcentagemDescontoGratuita}%)
-Total Final Consolidado Geral com Redução: R$ ${valorFinalApurado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+Total Final Consolidado Geral com Redução: R$ ${valorFinalApurado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
   // Se houver Preparo em Dobro (Deserção Relevada) CPC 1007, § 4
@@ -853,7 +853,7 @@ Total Final Consolidado Geral com Redução: R$ ${valorFinalApurado.toLocaleStri
 PREPARO INTEMPESTIVO DETECTADO (Art. 1.007, § 4º, CPC)
 -------------------------------------------------
 Fator de Penalidade: Recolhimento de Taxa Judiciária EM DOBRO.
-Total Geral a Recolher Duplicado (DARE): R$ ${valorFinalApurado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+Total Geral a Recolher Duplicado (DARE): R$ ${valorFinalApurado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
   // Auxiliares rápidos

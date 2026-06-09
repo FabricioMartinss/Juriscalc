@@ -22,7 +22,7 @@ export default function ChromeExtensionTab() {
         </div>
         <div className="flex items-center space-x-2">
           <span className="bg-cyan-500 text-slate-950 font-black px-2 py-0.5 rounded text-[9px] tracking-wide uppercase">Oficial</span>
-          <span className="text-slate-350 font-mono font-semibold">Extensão v1.1.2</span>
+          <span className="text-slate-300 font-mono font-semibold">Extensão v1.1.2</span>
         </div>
         <div>
           <h3 className="text-sm font-bold text-white tracking-tight uppercase">Extensão JurisCalc SP</h3>
@@ -43,17 +43,17 @@ export default function ChromeExtensionTab() {
         >
           {downloading ? (
             <>
-              <RefreshCcw className="h-4.5 w-4.5 animate-spin" />
+              <RefreshCcw className="h-4 w-4 animate-spin" />
               <span>Baixando Extensão (.CRX)...</span>
             </>
           ) : installedSimulator ? (
             <>
-              <CheckCircle className="h-4.5 w-4.5" />
+              <CheckCircle className="h-4 w-4" />
               <span>Extensão Ativa no Navegador</span>
             </>
           ) : (
             <>
-              <Download className="h-4.5 w-4.5" />
+              <Download className="h-4 w-4" />
               <span>Instalar no Google Chrome</span>
             </>
           )}
@@ -63,13 +63,13 @@ export default function ChromeExtensionTab() {
       {/* Corporate Owner & CNPJ Stamp (Highlighting ownership requested by user) */}
       <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 space-y-2 text-[11px] shadow-2xs">
         <div className="flex items-center space-x-1.5 font-bold text-slate-900">
-          <ShieldCheck className="h-4.5 w-4.5 text-blue-600" />
+          <ShieldCheck className="h-4 w-4 text-blue-600" />
           <span>Propriedade Comercial</span>
         </div>
         <p className="leading-relaxed text-slate-600 font-medium">
           O JurisCalc SP é de propriedade integral e exclusiva da{' '}
           <strong className="text-slate-900 font-extrabold">Camelsec Plataforma</strong>, regulamentada sob o{' '}
-          <span className="font-mono bg-slate-200/75 px-1 rounded text-slate-850 font-bold">CNPJ: 51.811.543/0001-20</span>.
+          <span className="font-mono bg-slate-200/75 px-1 rounded text-slate-800 font-bold">CNPJ: 51.811.543/0001-20</span>.
         </p>
         <div className="pt-1.5 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-400">
           <span>Licença Segura</span>
@@ -90,7 +90,7 @@ export default function ChromeExtensionTab() {
           <div className="flex gap-2.5 items-start">
             <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 border border-slate-200 text-[10px] shrink-0">2</span>
             <p className="text-slate-600 pt-0.5 font-medium">
-              Acesse <code className="bg-slate-100 px-1 py-0.5 rounded text-red-650 font-mono text-[10px]">chrome://extensions</code> em uma nova aba do seu navegador Chrome.
+              Acesse <code className="bg-slate-100 px-1 py-0.5 rounded text-red-600 font-mono text-[10px]">chrome://extensions</code> em uma nova aba do seu navegador Chrome.
             </p>
           </div>
           <div className="flex gap-2.5 items-start">

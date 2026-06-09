@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { Scale, HelpCircle, CheckCircle2, Chrome, Calculator, BookMarked, RefreshCw } from 'lucide-react';
+import { Scale, HelpCircle, Chrome, Calculator, BookMarked, RefreshCw } from 'lucide-react';
 import WizardCalculator from './components/WizardCalculator';
 import IndexTableConsultant from './components/IndexTableConsultant';
 import CourtCostsReference from './components/CourtCostsReference';
@@ -64,7 +64,7 @@ export default function App() {
         </div>
 
         {/* ===== Top Navigation Bar (replaces the old sidebar) ===== */}
-        <nav className="bg-[#0b2545] border-t border-white/10" id="app-topnav" role="tablist">
+        <nav className="bg-[#0b2545] border-t border-white/10" id="app-topnav" role="tablist" aria-label="Seções do aplicativo">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-wrap gap-1">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
@@ -72,14 +72,16 @@ export default function App() {
               return (
                 <button
                   key={item.id}
+                  type="button"
                   role="tab"
                   aria-selected={active}
+                  aria-controls="section-panel"
                   onClick={() => setSection(item.id)}
                   className={`group relative flex items-center gap-2 px-4 sm:px-5 py-3 text-sm font-bold font-sans whitespace-nowrap cursor-pointer rounded-t-2xl ${
                     active ? 'text-white' : 'text-blue-200/60 hover:text-cyan-200'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-cyan-400' : 'text-blue-300/50 group-hover:text-cyan-300'}`} />
+                  <Icon aria-hidden="true" className={`w-4 h-4 shrink-0 ${active ? 'text-cyan-400' : 'text-blue-300/50 group-hover:text-cyan-300'}`} />
                   <span>{item.label}</span>
                   {/* Animated active indicator (smooth slide, not a hard hyperlink) */}
                   <span
@@ -97,30 +99,8 @@ export default function App() {
 
       {/* ===== Main Workspace ===== */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 md:p-8" id="app-main">
-        {/* Editorial intro */}
-        <div
-          className="mb-7 p-5 bg-white/80 backdrop-blur border border-cyan-100 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm shadow-cyan-900/5"
-          id="app-intro"
-        >
-          <div className="space-y-1">
-            <h2 className="font-sans font-bold text-slate-900 text-sm flex items-center">
-              <CheckCircle2 className="h-5 w-5 mr-2 text-cyan-700 shrink-0" />
-              Auditoria de Custas Cíveis e Preparos do JEC / Varas Paulistas
-            </h2>
-            <p className="font-sans text-xs text-slate-600 leading-relaxed max-w-3xl">
-              Emissor e revisor tributário de custas processuais que calcula automaticamente limites legais,
-              litisconsórcios voluntários, as duas parcelas do JEC recursal com pisos individuais, e realiza a
-              correção monetária da causa com base na jurisprudência paulista.
-            </p>
-          </div>
-          <div className="text-xs font-semibold text-blue-900 bg-cyan-50 py-2 px-4 rounded-2xl border border-cyan-100 whitespace-nowrap self-stretch sm:self-auto flex items-center justify-center">
-            Suporta <span className="text-blue-950 font-extrabold mx-1">e-SAJ</span> e{' '}
-            <span className="text-blue-950 font-extrabold ml-1">E-PROC</span>
-          </div>
-        </div>
-
         {/* Animated section content (smooth transition between sections) */}
-        <div key={section} className="animate-fadeSlideUp">
+        <div key={section} id="section-panel" className="animate-fadeSlideUp" role="tabpanel" aria-label={NAV_ITEMS.find((i) => i.id === section)?.label}>
           {section === 'calculadora' && <WizardCalculator />}
           {section === 'extensao' && (
             <div className="max-w-2xl mx-auto">

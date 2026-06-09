@@ -122,28 +122,28 @@ Demonstrativo emitido automaticamente via JURISCALC SP conforme jurisprudência 
   };
 
   return (
-    <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-xs flex flex-col h-full justify-between" id="index-table-consultant">
+    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs flex flex-col h-full justify-between" id="index-table-consultant">
       <div>
         <div className="flex items-center space-x-3 mb-4">
-          <div className="p-2 bg-[#F9F9F9] rounded-lg border border-[#E5E5E5]">
-            <RefreshCw className="h-5 w-5 text-neutral-700" id="lucide-refresh-cw" />
+          <div className="p-2 bg-slate-50 rounded-lg border border-slate-200">
+            <RefreshCw className="h-5 w-5 text-slate-700" id="lucide-refresh-cw" />
           </div>
           <div>
-            <h3 className="font-sans font-semibold text-neutral-900 tracking-tight text-base">Atualizador Monetário TJSP</h3>
-            <p className="font-sans text-xs text-neutral-500">Correção direta baseada nas tabelas práticas oficiais do TJSP</p>
+            <h3 className="font-sans font-semibold text-slate-900 tracking-tight text-base">Atualizador Monetário TJSP</h3>
+            <p className="font-sans text-xs text-slate-500">Correção direta baseada nas tabelas práticas oficiais do TJSP</p>
           </div>
         </div>
 
         <div className="space-y-4">
           {/* Escolha da Tabela de Correção */}
           <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
               Tabela de Atualização Oficial
             </label>
             <select
               value={tipoTabela}
               onChange={(e) => setTipoTabela(e.target.value as TipoTabelaCorrecao)}
-              className="block w-full px-3 py-2 border border-[#CCCCCC] bg-white rounded-md text-xs font-sans font-bold text-neutral-800 focus:outline-hidden focus:ring-1 focus:ring-neutral-950 focus:border-neutral-950"
+              className="block w-full px-3 py-2 border border-slate-300 bg-white rounded-md text-xs font-sans font-bold text-slate-800 focus:outline-hidden focus:ring-1 focus:ring-slate-950 focus:border-slate-950"
               id="select-tipo-tabela-consultant"
             >
               <option value="nova_tabela">Nova Tabela Prática (Lei nº 14.905/2024)</option>
@@ -154,11 +154,11 @@ Demonstrativo emitido automaticamente via JURISCALC SP conforme jurisprudência 
 
           {/* Valor a Atualizar */}
           <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
               Valor de Origem (R$)
             </label>
             <div className="relative rounded-md shadow-xs">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-neutral-400 text-sm font-mono font-semibold">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-sm font-mono font-semibold">
                 R$
               </span>
               <input
@@ -168,7 +168,7 @@ Demonstrativo emitido automaticamente via JURISCALC SP conforme jurisprudência 
                 onBlur={(e) => handleMoneyBlur(e.target.value, setValorOriginal)}
                 onFocus={handleFocus}
                 onKeyDown={handleKeyDown}
-                className="block w-full pl-9 pr-3 py-2 border border-[#CCCCCC] rounded-md focus:outline-hidden focus:border-neutral-950 focus:ring-1 focus:ring-neutral-950 font-mono text-sm font-bold text-neutral-800"
+                className="block w-full pl-9 pr-3 py-2 border border-slate-300 rounded-md focus:outline-hidden focus:border-slate-950 focus:ring-1 focus:ring-slate-950 font-mono text-sm font-bold text-slate-800"
                 placeholder="0.00"
                 id="input-valor-original"
               />
@@ -177,14 +177,14 @@ Demonstrativo emitido automaticamente via JURISCALC SP conforme jurisprudência 
 
           {/* Seleção do Período de Origem */}
           <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
               Data de Origem (Distribuição)
             </label>
             <div className="grid grid-cols-2 gap-2">
               <select
                 value={mesOrigem}
                 onChange={(e) => setMesOrigem(Number(e.target.value))}
-                className="block w-full px-2 py-1.5 border border-[#CCCCCC] bg-white rounded-md text-xs font-sans text-neutral-700 focus:outline-hidden focus:border-neutral-900"
+                className="block w-full px-2 py-1.5 border border-slate-300 bg-white rounded-md text-xs font-sans text-slate-700 focus:outline-hidden focus:border-slate-900"
                 id="select-mes-origem"
               >
                 {mesesDisponiveis.map(m => (
@@ -194,7 +194,7 @@ Demonstrativo emitido automaticamente via JURISCALC SP conforme jurisprudência 
               <select
                 value={anoOrigem}
                 onChange={(e) => setAnoOrigem(Number(e.target.value))}
-                className="block w-full px-2 py-1.5 border border-[#CCCCCC] bg-white rounded-md text-xs font-sans text-neutral-700 focus:outline-hidden focus:border-neutral-900"
+                className="block w-full px-2 py-1.5 border border-slate-300 bg-white rounded-md text-xs font-sans text-slate-700 focus:outline-hidden focus:border-slate-900"
                 id="select-ano-origem"
               >
                 {anosDisponiveis.map(ano => (
@@ -206,14 +206,14 @@ Demonstrativo emitido automaticamente via JURISCALC SP conforme jurisprudência 
 
           {/* Seleção do Período de Destino */}
           <div>
-            <label className="block text-xs font-semibold text-neutral-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
               Data de Atualização (Pagamento)
             </label>
             <div className="grid grid-cols-2 gap-2">
               <select
                 value={mesDestino}
                 onChange={(e) => setMesDestino(Number(e.target.value))}
-                className="block w-full px-2 py-1.5 border border-[#CCCCCC] bg-white rounded-md text-xs font-sans text-neutral-700 focus:outline-hidden focus:border-neutral-900"
+                className="block w-full px-2 py-1.5 border border-slate-300 bg-white rounded-md text-xs font-sans text-slate-700 focus:outline-hidden focus:border-slate-900"
                 id="select-mes-destino"
               >
                 {mesesDisponiveis.map(m => (
@@ -223,7 +223,7 @@ Demonstrativo emitido automaticamente via JURISCALC SP conforme jurisprudência 
               <select
                 value={anoDestino}
                 onChange={(e) => setAnoDestino(Number(e.target.value))}
-                className="block w-full px-2 py-1.5 border border-[#CCCCCC] bg-white rounded-md text-xs font-sans text-neutral-700 focus:outline-hidden focus:border-neutral-900"
+                className="block w-full px-2 py-1.5 border border-slate-300 bg-white rounded-md text-xs font-sans text-slate-700 focus:outline-hidden focus:border-slate-900"
                 id="select-ano-destino"
               >
                 {anosDisponiveis.map(ano => (
@@ -235,7 +235,7 @@ Demonstrativo emitido automaticamente via JURISCALC SP conforme jurisprudência 
         </div>
 
         {/* Informação e Multiplicador */}
-        <div className="mt-4 p-4 bg-neutral-50 rounded-lg border border-[#E5E5E5] font-mono text-xs text-neutral-600 space-y-2">
+        <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200 font-mono text-xs text-slate-600 space-y-2">
           <div className="flex justify-between">
             <span>Índice Origem ({String(mesOrigem).padStart(2,'0')}/{anoOrigem}):</span>
             <span className="font-semibold">{res.indiceOrigem.toFixed(6)}</span>
@@ -244,17 +244,17 @@ Demonstrativo emitido automaticamente via JURISCALC SP conforme jurisprudência 
             <span>Índice Atual ({String(mesDestino).padStart(2,'0')}/{anoDestino}):</span>
             <span className="font-semibold">{res.indiceAtual.toFixed(6)}</span>
           </div>
-          <div className="flex justify-between border-t border-neutral-200 pt-1.5 mt-1.5 text-neutral-900 font-sans text-sm font-medium">
+          <div className="flex justify-between border-t border-slate-200 pt-1.5 mt-1.5 text-slate-900 font-sans text-sm font-medium">
             <span>Causa Corrigida:</span>
             <span>{formatBRL(res.valorAtualizado)}</span>
           </div>
         </div>
       </div>
 
-      <div className="mt-4 pt-4 border-t border-[#E5E5E5] space-y-2">
+      <div className="mt-4 pt-4 border-t border-slate-200 space-y-2">
         <button
           onClick={handleCopy}
-          className="w-full flex items-center justify-center space-x-2 py-2 px-3 border border-neutral-900 bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg text-xs font-sans font-medium transition-colors cursor-pointer"
+          className="w-full flex items-center justify-center space-x-2 py-2 px-3 border border-slate-900 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-sans font-medium transition-colors cursor-pointer"
           id="btn-copy-demonstrative"
         >
           {copiado ? (

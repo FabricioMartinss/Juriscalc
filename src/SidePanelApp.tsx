@@ -48,7 +48,7 @@ export default function SidePanelApp() {
             Valor de Guia Recomendado
           </span>
           <span className="shrink-0 text-2xl font-mono font-bold text-white tracking-tight whitespace-nowrap">
-            R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </div>
       </div>

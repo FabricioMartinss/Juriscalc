@@ -104,7 +104,7 @@ const PALETTES = {
     badge: 'bg-slate-100 text-slate-800 border-slate-200',
     highlight: 'bg-slate-50',
     buttonColor: 'bg-slate-900 hover:bg-slate-800 text-white',
-    badgeHeader: 'bg-slate-850 text-slate-300 border-slate-750',
+    badgeHeader: 'bg-slate-800 text-slate-300 border-slate-700',
     cardBorder: 'border-slate-200',
     colorDot: 'bg-slate-400',
   },
@@ -122,7 +122,7 @@ const PALETTES = {
     highlight: 'bg-slate-50',
     buttonColor: 'bg-[#1e2e3e] hover:bg-[#203a54] text-white',
     badgeHeader: 'bg-[#1a2e40] text-slate-200 border-[#1e3a5f]',
-    cardBorder: 'border-slate-205',
+    cardBorder: 'border-slate-200',
     colorDot: 'bg-[#1e2e3e]',
   },
   indigo: {
@@ -132,7 +132,7 @@ const PALETTES = {
     primaryText: 'text-[#27303a]',
     border: 'border-[#3d4a59]/20',
     ring: 'focus:ring-[#27303a] focus:border-[#27303a]',
-    accentText: 'text-slate-650',
+    accentText: 'text-slate-600',
     accentBg: 'bg-[#27303a]',
     accentBorder: 'border-slate-300',
     badge: 'bg-slate-100 text-[#27303a] border-slate-200',
@@ -152,10 +152,10 @@ const PALETTES = {
     accentText: 'text-slate-600',
     accentBg: 'bg-[#4a5568]',
     accentBorder: 'border-slate-300',
-    badge: 'bg-slate-100 text-slate-905 border-slate-200',
+    badge: 'bg-slate-100 text-slate-900 border-slate-200',
     highlight: 'bg-slate-50',
     buttonColor: 'bg-[#2d3748] hover:bg-[#4a5568] text-white',
-    badgeHeader: 'bg-[#1a202c] text-slate-250 border-slate-700',
+    badgeHeader: 'bg-[#1a202c] text-slate-200 border-slate-700',
     cardBorder: 'border-slate-200',
     colorDot: 'bg-[#2d3748]',
   }
@@ -219,7 +219,7 @@ const eSajOptions: Option[] = [
       return {
         valorTotal: val,
         itens: [{ name: `Taxa Judiciária Inicial (${(pct * 100).toFixed(1)}%)`, value: val, baseLegal: 'Art. 4º, I, Lei nº 11.608/2003' }],
-        detalheMemoria: `* Alíquota Aplicada: ${(pct * 100).toFixed(1)}% do valor da causa.\n* Valor Calculado: R$ ${(valorCausa * pct).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n* Recolhimento Efetivo (Respeitados piso legal e teto estadual): R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+        detalheMemoria: `* Alíquota Aplicada: ${(pct * 100).toFixed(1)}% do valor da causa.\n* Valor Calculado: R$ ${(valorCausa * pct).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n* Recolhimento Efetivo (Respeitados piso legal e teto estadual): R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       };
     }
   },
@@ -240,7 +240,7 @@ const eSajOptions: Option[] = [
             { name: 'Distribuição Executivo Extrajudicial (1% com limites legais)', value: vCausa, baseLegal: 'Art. 4º, I, Lei nº 11.608/03' },
             { name: 'Satisfação ao Final (1% com limites legais)', value: vSat, baseLegal: 'Art. 4, III, Lei nº 11.608/03' }
           ],
-          detalheMemoria: `* Distribuição Inicial (Alíquota de 1.0% com aplicação de limites legais): R$ ${vCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n* Satisfação da Execução (Alíquota de 1.0% com aplicação de limites legais): R$ ${vSat.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+          detalheMemoria: `* Distribuição Inicial (Alíquota de 1.0% com aplicação de limites legais): R$ ${vCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n* Satisfação da Execução (Alíquota de 1.0% com aplicação de limites legais): R$ ${vSat.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         };
       } else {
         const vCausa = clamp(valorCausa * 0.02);
@@ -250,7 +250,7 @@ const eSajOptions: Option[] = [
         return {
           valorTotal: vCausa,
           itens: [{ name: 'Execução Eletrônica Unificada (2% com limites legais)', value: vCausa, baseLegal: 'Art. 4º, § 3, Lei 11.608' }],
-          detalheMemoria: `* Regime de Alíquota unificado em 2.0% cobrado na distribuição.\n* Valor Efetivo (Observados limites legais): R$ ${vCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}${notaEncargos}`,
+          detalheMemoria: `* Regime de Alíquota unificado em 2.0% cobrado na distribuição.\n* Valor Efetivo (Observados limites legais): R$ ${vCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${notaEncargos}`,
           warning: !execIncluiEncargos ? 'Por regra legal (Art. 827, CPC), a base de cálculo da taxa de execução extrajudicial pós-03/01/2024 deve contemplar a dívida principal, encargos e 10% de honorários.' : undefined
         };
       }
@@ -269,7 +269,7 @@ const eSajOptions: Option[] = [
       return {
         valorTotal: val,
         itens: [{ name: `Preparo Recursal de Apelação (4.0% sobre ${temCondenacao ? 'condenação' : 'causa'})`, value: val, baseLegal: 'Art. 4º, II, Lei nº 11.608/2003' }],
-        detalheMemoria: `* Alíquota de Preparo: 4.0% incidente sobre o valor da ${temCondenacao ? 'sentença condenatória' : 'causa'}.\n* Base Selecionada: R$ ${base.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n* Taxa Devida (Observados limites legais): R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+        detalheMemoria: `* Alíquota de Preparo: 4.0% incidente sobre o valor da ${temCondenacao ? 'sentença condenatória' : 'causa'}.\n* Base Selecionada: R$ ${base.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n* Taxa Devida (Observados limites legais): R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       };
     }
   },
@@ -292,7 +292,7 @@ const eSajOptions: Option[] = [
         return {
           valorTotal: val,
           itens: [{ name: 'Fase de Instauração Cumprimento Sentença (2.0%)', value: val, baseLegal: 'Art. 4 da Lei nº 11.608/03' }],
-          detalheMemoria: `* Alíquota: 2.0% do valor do crédito demandado.\n* Base do Crédito: R$ ${valorCredito.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n* Taxa Devida (Observados limites legais): R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+          detalheMemoria: `* Alíquota: 2.0% do valor do crédito demandado.\n* Base do Crédito: R$ ${valorCredito.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n* Taxa Devida (Observados limites legais): R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         };
       }
     }
@@ -314,14 +314,14 @@ const eSajOptions: Option[] = [
             { name: 'Distribuição Cumprimento Externo (1%)', value: vCausa, baseLegal: 'Art. 4º, I, Lei nº 11.608/03' },
             { name: 'Satisfação Julgado (1%)', value: vSat, baseLegal: 'Art. 4º, III, Lei nº 11.608/03' }
           ],
-          detalheMemoria: `* Distribuição (Alíquota de 1% respeitados os limites legais): R$ ${vCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n* Satisfação (Alíquota de 1% respeitados os limites legais): R$ ${vSat.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+          detalheMemoria: `* Distribuição (Alíquota de 1% respeitados os limites legais): R$ ${vCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n* Satisfação (Alíquota de 1% respeitados os limites legais): R$ ${vSat.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         };
       } else {
         const vCred = clamp(valorCredito * 0.02);
         return {
           valorTotal: vCred,
           itens: [{ name: 'Distribuição Cumprimento Título Externo (2.0%)', value: vCred, baseLegal: 'Art. 4 da Lei 11.608' }],
-          detalheMemoria: `* Alíquota unificada em 2.0% do valor do título externo.\n* Valor Regulamentar: R$ ${vCred.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+          detalheMemoria: `* Alíquota unificada em 2.0% do valor do título externo.\n* Valor Regulamentar: R$ ${vCred.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         };
       }
     }
@@ -339,7 +339,7 @@ const eSajOptions: Option[] = [
         return {
           valorTotal: val,
           itens: [{ name: 'Taxa Satisfeita ao Final (1.0%)', value: val, baseLegal: 'Art. 4º, III, Lei nº 11.608/2003' }],
-          detalheMemoria: `* Alíquota de 1.0% do montante satisfeito ao final.\n* Valor Regulamentar: R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+          detalheMemoria: `* Alíquota de 1.0% do montante satisfeito ao final.\n* Valor Regulamentar: R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         };
       } else {
         return {
@@ -367,14 +367,14 @@ const eSajOptions: Option[] = [
             { name: 'Execução Fiscal - Tabela Inicial (1.0%)', value: vCausa, baseLegal: 'Art. 4º, I, Lei nº 11.608/2003' },
             { name: 'Execução Fiscal - Taxa Satisfação (1.0%)', value: vSat, baseLegal: 'Art. 4º, III, Lei nº 11.608/2003' }
           ],
-          detalheMemoria: `* Distribuição (Alíquota de 1% respeitados os limites legais): R$ ${vCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n* Extinção pelo pagamento (Alíquota de 1% respeitados os limites legais): R$ ${vSat.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+          detalheMemoria: `* Distribuição (Alíquota de 1% respeitados os limites legais): R$ ${vCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n* Extinção pelo pagamento (Alíquota de 1% respeitados os limites legais): R$ ${vSat.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         };
       } else {
         const vCred = clamp(valorCredito * 0.02);
         return {
           valorTotal: vCred,
           itens: [{ name: 'Taxa Única de Execução Fiscal (2.0%)', value: vCred, baseLegal: 'Lei nº 11.608/03 (Reforma)' }],
-          detalheMemoria: `* Alíquota unificada de 2.0% sobre o débito a cargo do vencido.\n* Valor Efetivo: R$ ${vCred.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+          detalheMemoria: `* Alíquota unificada de 2.0% sobre o débito a cargo do vencido.\n* Valor Efetivo: R$ ${vCred.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         };
       }
     }
@@ -392,7 +392,7 @@ const eSajOptions: Option[] = [
       return {
         valorTotal: val,
         itens: [{ name: `Guia de Agravo Ordinário (${ufesps} UFESPs)`, value: val, baseLegal: 'Art. 4º, § 5º, Lei nº 11.608/2003' }],
-        detalheMemoria: `* Taxa judiciária fixa em UFESPs: ${ufesps} UFESPs.\n* Total: R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+        detalheMemoria: `* Taxa judiciária fixa em UFESPs: ${ufesps} UFESPs.\n* Total: R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       };
     }
   },
@@ -408,7 +408,7 @@ const eSajOptions: Option[] = [
       return {
         valorTotal: val,
         itens: [{ name: 'Expediente de Custas das Cartas (10 UFESPs)', value: val, baseLegal: 'Art. 4º, § 2º, Lei nº 11.608/2003' }],
-        detalheMemoria: `* Custas incidentes em atos deprecados: 10 UFESPs.\n* Total: R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+        detalheMemoria: `* Custas incidentes em atos deprecados: 10 UFESPs.\n* Total: R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       };
     }
   },
@@ -442,7 +442,7 @@ const eSajOptions: Option[] = [
       return {
         valorTotal: val,
         itens: [{ name: `Inventário / Partilha (Faixa: ${txt})`, value: val, baseLegal: 'Art. 4º, § 7º, Lei nº 11.608/2003' }],
-        detalheMemoria: `* Valor Total Declarado: R$ ${valorMonteMor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n* Faixa Aplicada: ${ufesps} UFESPs\n* Total: R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+        detalheMemoria: `* Valor Total Declarado: R$ ${valorMonteMor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n* Faixa Aplicada: ${ufesps} UFESPs\n* Total: R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       };
     }
   },
@@ -460,14 +460,14 @@ const eSajOptions: Option[] = [
         return {
           valorTotal: val,
           itens: [{ name: `Habilitação inicial de crédito (${(pct * 100).toFixed(1)}%)`, value: val, baseLegal: 'Lei n. 11.101/05' }],
-          detalheMemoria: `* Modalidade Distribuição Equivalente ao Item 1.\n* Valor Efetivo: R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+          detalheMemoria: `* Modalidade Distribuição Equivalente ao Item 1.\n* Valor Efetivo: R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         };
       } else {
         const val = clamp(valorCausa * 0.04);
         return {
           valorTotal: val,
           itens: [{ name: 'Habilitação preparando recursos (4.0%)', value: val, baseLegal: 'Art. 4, II' }],
-          detalheMemoria: `* Modalidade Preparo recursal nos incidentes: 4.0% do valor do crédito.\n* Valor Efetivo: R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+          detalheMemoria: `* Modalidade Preparo recursal nos incidentes: 4.0% do valor do crédito.\n* Valor Efetivo: R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         };
       }
     }
@@ -504,7 +504,7 @@ const eSajOptions: Option[] = [
           { name: 'Queixa-Crime Distribuição Inicial (50 UFESPs)', value: vDist, baseLegal: 'Art. 4º, § 11, Lei nº 11.608/2003' },
           { name: 'Preparo Recursal Queixa (50 UFESPs)', value: vRec, baseLegal: 'Art. 4º, § 11, Lei nº 11.608/2503' }
         ],
-        detalheMemoria: `* Distribuição Inicial: R$ ${vDist.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n* Interposição de recurso (50 UFESPs): R$ ${vRec.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+        detalheMemoria: `* Distribuição Inicial: R$ ${vDist.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n* Interposição de recurso (50 UFESPs): R$ ${vRec.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       };
     }
   },
@@ -524,7 +524,7 @@ const eSajOptions: Option[] = [
       return {
         valorTotal: val,
         itens: [{ name: `Excesso Litisconsorcial (${quantidadeAutores} autores, ${lotes} lote(s) excedente(s))`, value: val, baseLegal: 'Art. 4º, § 10, Lei nº 11.608/2003' }],
-        detalheMemoria: `* Total de Litisconsortes: ${quantidadeAutores} Autores\n* Isentos de Sobretaxa: 10 primeiros autores\n* Autores Excedentes: ${excedentes}\n* Lotes/frações de 10 excedentes: ${lotes}\n* Total Devido Adicional: R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}${lotes === 0 ? ' (até 10 autores não há sobretaxa)' : ''}`
+        detalheMemoria: `* Total de Litisconsortes: ${quantidadeAutores} Autores\n* Isentos de Sobretaxa: 10 primeiros autores\n* Autores Excedentes: ${excedentes}\n* Lotes/frações de 10 excedentes: ${lotes}\n* Total Devido Adicional: R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${lotes === 0 ? ' (até 10 autores não há sobretaxa)' : ''}`
       };
     }
   },
@@ -539,7 +539,7 @@ const eSajOptions: Option[] = [
       return {
         valorTotal: valorPagoAutor,
         itens: [{ name: 'Taxa Judiciária Assistente / Ingressante', value: valorPagoAutor, baseLegal: 'Art. 4º, § 1º, Lei nº 11.608/2003' }],
-        detalheMemoria: `* O assistente voluntário retardatário paga o exato montante já despendido pelo autor original na frentaria.\n* Valor Guia: R$ ${valorPagoAutor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+        detalheMemoria: `* O assistente voluntário retardatário paga o exato montante já despendido pelo autor original na frentaria.\n* Valor Guia: R$ ${valorPagoAutor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       };
     }
   },
@@ -572,7 +572,7 @@ const eSajOptions: Option[] = [
           { name: `Ingresso Dispensado JEC (${(aliqIng * 100).toFixed(1)}% - com Piso)`, value: parIngSelection, baseLegal: 'Art. 54, p.único, Lei 9099' },
           { name: 'Preparo Recursal JEC (4.0% - com Piso)', value: parPrepSelection, baseLegal: 'Art. 4º, II, Lei 11.608' }
         ],
-        detalheMemoria: `* Parcela de Ingresso: Base de R$ ${valorCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} com alíquota de ${(aliqIng * 100).toFixed(1)}% (Respeitado o piso de R$ ${floorJec.toFixed(2)}) => R$ ${parIngSelection.toLocaleString('pt-BR')}\n* Parcela de Preparo: Base de R$ ${basePrep.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} com alíquota de 4.0% (Respeitado o piso de R$ ${floorJec.toFixed(2)}) => R$ ${parPrepSelection.toLocaleString('pt-BR')}\n* Consolidado Preparo JEC: R$ ${(parIngSelection + parPrepSelection).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+        detalheMemoria: `* Parcela de Ingresso: Base de R$ ${valorCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} com alíquota de ${(aliqIng * 100).toFixed(1)}% (Respeitado o piso de R$ ${floorJec.toFixed(2)}) => R$ ${parIngSelection.toLocaleString('pt-BR')}\n* Parcela de Preparo: Base de R$ ${basePrep.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} com alíquota de 4.0% (Respeitado o piso de R$ ${floorJec.toFixed(2)}) => R$ ${parPrepSelection.toLocaleString('pt-BR')}\n* Consolidado Preparo JEC: R$ ${(parIngSelection + parPrepSelection).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       };
     }
   },
@@ -596,7 +596,7 @@ const eSajOptions: Option[] = [
         return {
           valorTotal: val,
           itens: [{ name: `Taxa Extraordinária JEC (Derrota/Má-fé - ${(pct * 100).toFixed(1)}%)`, value: val, baseLegal: 'Lei 9.099/95' }],
-          detalheMemoria: `* Encargo por litigância de má-fé / derrota recursal aplicado com alíquota excepcional de ${(pct * 100).toFixed(1)}% do crédito.\n* Total Guia: R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+          detalheMemoria: `* Encargo por litigância de má-fé / derrota recursal aplicado com alíquota excepcional de ${(pct * 100).toFixed(1)}% do crédito.\n* Total Guia: R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         };
       }
     }
@@ -615,7 +615,7 @@ const eSajOptions: Option[] = [
       return {
         valorTotal: val,
         itens: [{ name: `Ingresso Punitivo Ausência (${(pct * 100).toFixed(1)}% - com Piso)`, value: val, baseLegal: 'Art. 51, I, § 2º, Lei 9099' }],
-        detalheMemoria: `* Extinção imputada por ausência da parte autora.\n* Taxa de ingresso regulamentar calculada retroativamente: R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+        detalheMemoria: `* Extinção imputada por ausência da parte autora.\n* Taxa de ingresso regulamentar calculada retroativamente: R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       };
     }
   },
@@ -630,7 +630,7 @@ const eSajOptions: Option[] = [
       return {
         valorTotal: despesasProcessuaisSoma,
         itens: [{ name: 'Despesas Processuais Acumuladas no JEC ao Final', value: despesasProcessuaisSoma, baseLegal: 'Portarias JEC' }],
-        detalheMemoria: `* Liquidação de ARs e diligências pendentes de recolhimento.\n* Total apurado manual: R$ ${despesasProcessuaisSoma.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+        detalheMemoria: `* Liquidação de ARs e diligências pendentes de recolhimento.\n* Total apurado manual: R$ ${despesasProcessuaisSoma.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       };
     }
   }
@@ -912,12 +912,12 @@ Enquadramento: ${selectedESajOpt.name}
 -----------------------------------------------------
 PARÂMETROS DE AUDITORIA:
 - Época do Peticionamento: ${isPosCutoff ? 'A partir de 03/01/2024 (Regra Nova da Lei nº 17.785/23)' : 'Anterior a 03/01/2024'}
-- Base de Cálculo Causa: R$ ${currentInputs.valorCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}${
+- Base de Cálculo Causa: R$ ${currentInputs.valorCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${
     isUptCause 
       ? ` (Atualizado via ${causaTabela === 'padrao' ? 'Opção 1 (Lei 14.905)' : causaTabela === 'ipcae' ? 'Opção 2 (IPCA-E)' : 'Opção 3 (INPC Antigo)'} de ${causaDataInicial} a ${causaDataFinal})` 
       : ''
   }
-${temCondenacao ? `- Condenação Judicial Líquida: R$ ${currentInputs.valorCondenacao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}${
+${temCondenacao ? `- Condenação Judicial Líquida: R$ ${currentInputs.valorCondenacao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${
     isUptCondenacao 
       ? ` (Atualizada via ${condenacaoTabela === 'padrao' ? 'Opção 1 (Lei 14.905)' : condenacaoTabela === 'ipcae' ? 'Opção 2 (IPCA-E)' : 'Opção 3 (INPC Antigo)'} de ${condenacaoDataInicial} a ${condenacaoDataFinal})` 
       : ''
@@ -925,12 +925,12 @@ ${temCondenacao ? `- Condenação Judicial Líquida: R$ ${currentInputs.valorCon
 CÁLCULO SUBORDINADO DA TAXA JUDICIÁRIA:
 ${calcResults.detalheMemoria}
 
-${additionalItens.length > 0 ? `DESPESAS PROCESSUAIS ADICIONAIS:\n${additionalItens.map(it => `* ${it.name}: R$ ${it.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`).join('\n')}\n` : ''}
+${additionalItens.length > 0 ? `DESPESAS PROCESSUAIS ADICIONAIS:\n${additionalItens.map(it => `* ${it.name}: R$ ${it.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`).join('\n')}\n` : ''}
 -----------------------------------------------------
 RESUMO GERAL DO PROTOCOLO SUCUMBÊNCIAL:
-* Custas Judiciais da Classe: R$ ${(eSajTotalSum - additionsSum).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-* Despesas Postais/Atos Oficiais: R$ ${additionsSum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-* GUIA CONSOLIDADA FINAL: R$ ${eSajTotalSum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+* Custas Judiciais da Classe: R$ ${(eSajTotalSum - additionsSum).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+* Despesas Postais/Atos Oficiais: R$ ${additionsSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+* GUIA CONSOLIDADA FINAL: R$ ${eSajTotalSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 
 Douto Juízo, junta-se o cálculo fundamentado gerado pela Camelsec Workspace.`;
 
@@ -957,7 +957,7 @@ Douto Juízo, junta-se o cálculo fundamentado gerado pela Camelsec Workspace.`;
   const eprocMemoText = `=====================================================
 COMENTÁRIO FINANCEIRO E-PROC - AUDITORIA TÉCNICA
 =====================================================
-Camelsec Workspace © 2024. Desenvolvido por Camelsec Plataform
+Camelsec Workspace © 2026. Desenvolvido por Camelsec Plataform
 Plataforma Camelsec (CNPJ: 51.811.543/0001-20)
 -----------------------------------------------------
 Tipo de Auditoria EPROC: ${
@@ -970,7 +970,7 @@ UFESP Base referencial (2026): R$ 38,42
 ${
   eprocTab === 'preparo' 
     ? `DADOS DO PREPARO RECURSAL EPROC:
-- Valor Original da Causa: R$ ${epAOriginal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+- Valor Original da Causa: R$ ${epAOriginal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 - Época Distribuição/Mês Inicial: ${epAOrigMonth}
 - Reajuste Monetário Selecionado: ${
     eprocCorrectionMode === 'estimated' 
@@ -979,25 +979,25 @@ ${
       ? `Correção Oficial (${eprocTabela === 'padrao' ? 'Opção 1 - Lei 14.905' : eprocTabela === 'ipcae' ? 'Opção 2 - IPCA-E' : 'Opção 3 - Antiga INPC'}) de ${epAOrigMonth} a 05/2026` 
       : 'Sem reajuste (Valor Histórico)'
   }
-- Valor da Base Causa Atualizada: R$ ${epACorrectedVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-- Cálculo Recursal (4.0% com Piso e Teto): R$ ${epAPreparo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+- Valor da Base Causa Atualizada: R$ ${epACorrectedVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+- Cálculo Recursal (4.0% com Piso e Teto): R$ ${epAPreparo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 - NOTA: No E-PROC, o boleto é emitido de forma direta em Guia Única no sistema do processo.`
     : eprocTab === 'complementares' 
     ? `DADOS DAS CUSTAS COMPLEMENTARES EPROC:
-- Novo Valor de Atribuição: R$ ${epBNew.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+- Novo Valor de Atribuição: R$ ${epBNew.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 - Alíquota Estadual do Recolhimento: 1.5%
-- Custas Integrais devidas (com clamp): R$ ${clamp(epBNew * 0.015).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-- Custas já pagas em Guia Anterior: R$ ${epBPrev.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-- Saldo Restante devida a Complementar: R$ ${epBFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+- Custas Integrais devidas (com clamp): R$ ${clamp(epBNew * 0.015).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+- Custas já pagas em Guia Anterior: R$ ${epBPrev.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+- Saldo Restante devida a Complementar: R$ ${epBFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : `DADOS DO RATEIO DE FRAÇÃO EPROC:
-- Valor da Causa Base Recortada: R$ ${epCCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-- Custas Iniciais Plenas (1.5% com clamp): R$ ${epCInitial.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+- Valor da Causa Base Recortada: R$ ${epCCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+- Custas Iniciais Plenas (1.5% com clamp): R$ ${epCInitial.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 - Fração de Percentagem Devida (Cliente): ${epCPercent}%
-- Parcela devida pelo correspondente: R$ ${epCFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+- Parcela devida pelo correspondente: R$ ${epCFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 -----------------------------------------------------
 VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
-  (eprocTab === 'preparo' ? epAPreparo : eprocTab === 'complementares' ? epBFinal : epCFinal).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+  (eprocTab === 'preparo' ? epAPreparo : eprocTab === 'complementares' ? epBFinal : epCFinal).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }`;
 
   // Master total based on active subsystem
@@ -1010,6 +1010,16 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
     if (onResult) onResult(finalUnifiedSum, finalMemoStr);
   }, [onResult, finalUnifiedSum, finalMemoStr]);
 
+  // Fecha o modal de correção com a tecla Escape
+  useEffect(() => {
+    if (!isCorrectionModalOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsCorrectionModalOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isCorrectionModalOpen]);
+
   // Copy Memo function
   const handleCopyMemo = () => {
     navigator.clipboard.writeText(finalMemoStr);
@@ -1018,7 +1028,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
   };
 
   return (
-    <div className={`w-full bg-white rounded-xl border ${col.cardBorder} shadow-xs transition-all duration-350 font-sans`} id="juriscalc-main-appcard">
+    <div className={`w-full bg-white rounded-xl border ${col.cardBorder} shadow-xs transition-all duration-300 font-sans`} id="juriscalc-main-appcard">
       
       {/* Elegantly styled legal header headnote */}
       {!compact && (
@@ -1045,7 +1055,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
       )}
 
       {/* Main Tabs (e-SAJ vs E-PROC) styled as high-end minimalist office folders */}
-      <div className="bg-slate-50/50 p-2.5 border-b border-slate-150" id="subsystem-control-tab">
+      <div className="bg-slate-50/50 p-2.5 border-b border-slate-200" id="subsystem-control-tab">
         <div className="flex max-w-sm mx-auto overflow-hidden rounded-lg border border-slate-300 p-0.5 bg-white shadow-3xs">
           <button
             onClick={() => setSubsystem('esaj')}
@@ -1081,7 +1091,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
             <div className="space-y-6">
               
               {/* Option Selector containing exactly 19 choices */}
-              <div className="space-y-3 text-left bg-slate-50/50 p-5 rounded-lg border border-slate-205">
+              <div className="space-y-3 text-left bg-slate-50/50 p-5 rounded-lg border border-slate-200">
                 <div className="flex justify-between items-center">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest font-sans">
                     Guia de Recolhimento • Alíquota Aplicada
@@ -1100,7 +1110,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                     setIsMafe(false);
                     setIsPreparoEmDobro(false);
                   }}
-                  className="w-full py-2 px-3 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-850 focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 cursor-pointer shadow-3xs"
+                  className="w-full py-2 px-3 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 cursor-pointer shadow-3xs"
                 >
                   <optgroup label="Procedimento Comum e Execuções (15 Opções)">
                     {eSajOptions.filter(o => o.category === 'comum').map(o => (
@@ -1125,7 +1135,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
               </div>
 
               {/* Dynamic Inputs Rendering (Strategy Pattern dependent) */}
-              <div className="p-6 border border-slate-205 bg-white rounded-lg space-y-5 shadow-3xs text-left">
+              <div className="p-6 border border-slate-200 bg-white rounded-lg space-y-5 shadow-3xs text-left">
                 <span className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest pl-0.5 border-b border-slate-100 pb-2">
                   Parâmetros da Ação / Valor de Causa
                 </span>
@@ -1197,7 +1207,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                                 type="text"
                                 value={causaDataInicial}
                                 onChange={(e) => setCausaDataInicial(e.target.value)}
-                                className="w-full bg-white py-1 px-2 border border-slate-250 rounded text-xs font-semibold text-slate-800 focus:outline-none focus:border-indigo-400"
+                                className="w-full bg-white py-1 px-2 border border-slate-200 rounded text-xs font-semibold text-slate-800 focus:outline-none focus:border-indigo-400"
                                 placeholder="MM/AAAA"
                               />
                             </div>
@@ -1207,7 +1217,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                                 type="text"
                                 value={causaDataFinal}
                                 onChange={(e) => setCausaDataFinal(e.target.value)}
-                                className="w-full bg-white py-1 px-2 border border-slate-250 rounded text-xs font-semibold text-slate-800 focus:outline-none focus:border-indigo-400"
+                                className="w-full bg-white py-1 px-2 border border-slate-200 rounded text-xs font-semibold text-slate-800 focus:outline-none focus:border-indigo-400"
                                 placeholder="MM/AAAA"
                               />
                             </div>
@@ -1228,8 +1238,8 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                                   onClick={() => setCausaTabela(t.id)}
                                   className={`py-1 px-1 rounded text-[9px] font-extrabold border transition-colors cursor-pointer text-center leading-normal ${
                                     causaTabela === t.id
-                                      ? 'bg-indigo-650 border-indigo-700 text-white shadow-3xs'
-                                      : 'bg-white border-slate-250 hover:bg-slate-100 text-slate-705'
+                                      ? 'bg-indigo-600 border-indigo-700 text-white shadow-3xs'
+                                      : 'bg-white border-slate-200 hover:bg-slate-100 text-slate-700'
                                   }`}
                                 >
                                   {t.label}
@@ -1241,12 +1251,12 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                           <div className="bg-white border border-indigo-100 p-2 rounded flex justify-between items-center text-[10.5px]">
                             <div className="space-y-0.5">
                               <span className="block text-[9px] text-emerald-700 font-extrabold uppercase">Causa Corrigida</span>
-                              <span className="text-[9px] text-slate-450 font-mono block">
+                              <span className="text-[9px] text-slate-400 font-mono block">
                                 Fator: {causaCorrResult.fatorInicial.toFixed(6)} → {causaCorrResult.fatorFinal.toFixed(6)}
                               </span>
                             </div>
                             <span className="font-mono font-extrabold text-indigo-700 bg-indigo-50/50 border border-indigo-100 px-2 py-1 rounded">
-                              R$ {causaCorrResult.valorCorrigido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              R$ {causaCorrResult.valorCorrigido.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           </div>
                         </div>
@@ -1259,7 +1269,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                             type="checkbox"
                             checked={execIncluiEncargos}
                             onChange={(e) => setExecIncluiEncargos(e.target.checked)}
-                            className="w-4 h-4.5 text-slate-900 accent-indigo-650 border-slate-300 rounded cursor-pointer mt-0.5 animate-fadeIn"
+                            className="w-4 h-4 text-slate-900 accent-indigo-600 border-slate-300 rounded cursor-pointer mt-0.5 animate-fadeIn"
                             id="chk-exec-encargos-cpc-direct"
                           />
                           <label htmlFor="chk-exec-encargos-cpc-direct" className="text-[10px] font-semibold text-slate-700 leading-normal cursor-pointer select-none">
@@ -1375,23 +1385,23 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                     <div className="space-y-1.5 col-span-1 md:col-span-2 text-left">
                       <span className="block text-xs font-bold text-slate-700">Modalidade da Habilitação de Crédito:</span>
                       <div className="grid grid-cols-2 gap-2 text-xs font-bold">
-                        <label className={`flex items-center space-x-2 p-2.5 rounded border cursor-pointer ${habilitacaoModalidade === 'inicial' ? 'border-slate-400 bg-slate-50 text-slate-900 shadow-3xs' : 'border-slate-205 bg-white text-slate-500'}`}>
+                        <label className={`flex items-center space-x-2 p-2.5 rounded border cursor-pointer ${habilitacaoModalidade === 'inicial' ? 'border-slate-400 bg-slate-50 text-slate-900 shadow-3xs' : 'border-slate-200 bg-white text-slate-500'}`}>
                           <input
                             type="radio"
                             name="hab_mod"
                             checked={habilitacaoModalidade === 'inicial'}
                             onChange={() => setHabilitacaoModalidade('inicial')}
-                            className="text-slate-850 accent-slate-850 h-4 w-4"
+                            className="text-slate-800 accent-slate-800 h-4 w-4"
                           />
                           <span>Distribuição Inicial (1.5%)</span>
                         </label>
-                        <label className={`flex items-center space-x-2 p-2.5 rounded border cursor-pointer ${habilitacaoModalidade === 'recurso' ? 'border-slate-400 bg-slate-50 text-slate-900 shadow-3xs' : 'border-slate-205 bg-white text-slate-500'}`}>
+                        <label className={`flex items-center space-x-2 p-2.5 rounded border cursor-pointer ${habilitacaoModalidade === 'recurso' ? 'border-slate-400 bg-slate-50 text-slate-900 shadow-3xs' : 'border-slate-200 bg-white text-slate-500'}`}>
                           <input
                             type="radio"
                             name="hab_mod"
                             checked={habilitacaoModalidade === 'recurso'}
                             onChange={() => setHabilitacaoModalidade('recurso')}
-                            className="text-slate-855 accent-slate-855 h-4 w-4"
+                            className="text-slate-800 accent-slate-800 h-4 w-4"
                           />
                           <span>Segundos Recursos (4% Preparo)</span>
                         </label>
@@ -1401,17 +1411,17 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
 
                   {/* Valor Condenacao Incidental section with toggle */}
                   {selectedESajOpt.inputs.valorCondenacao && (
-                    <div className="col-span-1 md:col-span-2 space-y-3 p-4 bg-slate-50 rounded border border-slate-205 text-left">
+                    <div className="col-span-1 md:col-span-2 space-y-3 p-4 bg-slate-50 rounded border border-slate-200 text-left">
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
                           <span className="text-sm font-bold text-slate-800 font-serif">Houve Condenação Líquida pelo Juízo?</span>
-                          <p className="text-[10px] text-slate-450 leading-relaxed font-sans">A alíquota de 4.0% recairia sobre o montante condenado em liquidação.</p>
+                          <p className="text-[10px] text-slate-400 leading-relaxed font-sans">A alíquota de 4.0% recairia sobre o montante condenado em liquidação.</p>
                         </div>
                         <input
                           type="checkbox"
                           checked={temCondenacao}
                           onChange={(e) => setTemCondenacao(e.target.checked)}
-                          className={`w-4.5 h-4.5 text-slate-950 rounded bg-white hover:bg-slate-50 cursor-pointer accent-slate-800`}
+                          className={`w-4 h-4 text-slate-950 rounded bg-white hover:bg-slate-50 cursor-pointer accent-slate-800`}
                         />
                       </div>
                       
@@ -1431,13 +1441,13 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                             )}
                           </div>
                           <div className="relative max-w-sm">
-                            <span className="absolute left-3 top-1.5 text-xs font-mono font-bold text-slate-350">R$</span>
+                            <span className="absolute left-3 top-1.5 text-xs font-mono font-bold text-slate-300">R$</span>
                             <input
                               type="text"
                               value={vCondenacaoStr}
                               onChange={(e) => handleAmountChange(e.target.value, setVCondenacaoStr)}
                               onBlur={(e) => handleAmountBlur(e.target.value, setVCondenacaoStr)}
-                              className={`w-full py-1.5 bg-white pl-10 pr-3 border border-slate-300 rounded text-xs font-mono font-bold text-slate-850 focus:outline-none`}
+                              className={`w-full py-1.5 bg-white pl-10 pr-3 border border-slate-300 rounded text-xs font-mono font-bold text-slate-800 focus:outline-none`}
                             />
                           </div>
 
@@ -1455,7 +1465,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                                     type="text"
                                     value={condenacaoDataInicial}
                                     onChange={(e) => setCondenacaoDataInicial(e.target.value)}
-                                    className="w-full bg-white py-1 px-2 border border-slate-250 rounded text-xs font-semibold text-slate-800 focus:outline-none focus:border-indigo-400"
+                                    className="w-full bg-white py-1 px-2 border border-slate-200 rounded text-xs font-semibold text-slate-800 focus:outline-none focus:border-indigo-400"
                                     placeholder="MM/AAAA"
                                   />
                                 </div>
@@ -1465,7 +1475,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                                     type="text"
                                     value={condenacaoDataFinal}
                                     onChange={(e) => setCondenacaoDataFinal(e.target.value)}
-                                    className="w-full bg-white py-1 px-2 border border-slate-250 rounded text-xs font-semibold text-slate-800 focus:outline-none focus:border-indigo-400"
+                                    className="w-full bg-white py-1 px-2 border border-slate-200 rounded text-xs font-semibold text-slate-800 focus:outline-none focus:border-indigo-400"
                                     placeholder="MM/AAAA"
                                   />
                                 </div>
@@ -1486,8 +1496,8 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                                       onClick={() => setCondenacaoTabela(t.id)}
                                       className={`py-1 px-1 rounded text-[9px] font-extrabold border transition-colors cursor-pointer text-center leading-normal ${
                                         condenacaoTabela === t.id
-                                          ? 'bg-indigo-650 border-indigo-700 text-white shadow-3xs'
-                                          : 'bg-white border-slate-250 hover:bg-slate-100 text-slate-705'
+                                          ? 'bg-indigo-600 border-indigo-700 text-white shadow-3xs'
+                                          : 'bg-white border-slate-200 hover:bg-slate-100 text-slate-700'
                                       }`}
                                     >
                                       {t.label}
@@ -1499,12 +1509,12 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                               <div className="bg-white border border-indigo-100 p-2 rounded flex justify-between items-center text-[10.5px]">
                                 <div className="space-y-0.5">
                                   <span className="block text-[9px] text-emerald-700 font-extrabold uppercase">Condenação Atualizada</span>
-                                  <span className="text-[9px] text-slate-450 font-mono block">
+                                  <span className="text-[9px] text-slate-400 font-mono block">
                                     Fator: {condenacaoCorrResult.fatorInicial.toFixed(6)} → {condenacaoCorrResult.fatorFinal.toFixed(6)}
                                   </span>
                                 </div>
                                 <span className="font-mono font-extrabold text-indigo-700 bg-indigo-50/50 border border-indigo-100 px-2 py-1 rounded">
-                                  R$ {condenacaoCorrResult.valorCorrigido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  R$ {condenacaoCorrResult.valorCorrigido.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                               </div>
                             </div>
@@ -1516,12 +1526,12 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
 
                   {/* JEC extrajudicial checkbox option */}
                   {selectedESajOpt.inputs.extrajudicial && (
-                    <div className="col-span-1 md:col-span-2 flex items-center space-x-2.5 p-3.5 bg-slate-50 rounded border border-slate-205 text-left">
+                    <div className="col-span-1 md:col-span-2 flex items-center space-x-2.5 p-3.5 bg-slate-50 rounded border border-slate-200 text-left">
                       <input
                         type="checkbox"
                         checked={isExtraj}
                         onChange={(e) => setIsExtraj(e.target.checked)}
-                        className="w-4.5 h-4.5 accent-slate-800 text-slate-800 bg-white rounded cursor-pointer"
+                        className="w-4 h-4 accent-slate-800 text-slate-800 bg-white rounded cursor-pointer"
                         id="chk-extrajudicial-saj"
                       />
                       <label htmlFor="chk-extrajudicial-saj" className="text-xs font-bold text-slate-700 cursor-pointer">
@@ -1532,12 +1542,12 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
 
                   {/* JEC mafe check */}
                   {selectedESajOpt.inputs.mafe && (
-                    <div className="col-span-1 md:col-span-2 flex items-center space-x-2.5 p-3.5 bg-slate-50 rounded border border-slate-205 text-left">
+                    <div className="col-span-1 md:col-span-2 flex items-center space-x-2.5 p-3.5 bg-slate-50 rounded border border-slate-200 text-left">
                       <input
                         type="checkbox"
                         checked={isMafe}
                         onChange={(e) => setIsMafe(e.target.checked)}
-                        className="w-4.5 h-4.5 accent-slate-800 text-slate-800 bg-white rounded cursor-pointer"
+                        className="w-4 h-4 accent-slate-800 text-slate-800 bg-white rounded cursor-pointer"
                         id="chk-mafe-saj"
                       />
                       <label htmlFor="chk-mafe-saj" className="text-xs font-semibold text-slate-700 cursor-pointer text-slate-800">
@@ -1549,7 +1559,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
               </div>
 
               {/* General inputs: Postage & Diligences */}
-              <div className="p-6 border border-slate-205 bg-white rounded-lg space-y-4 shadow-3xs">
+              <div className="p-6 border border-slate-200 bg-white rounded-lg space-y-4 shadow-3xs">
                 <span className="block text-[11px] font-bold text-slate-500 tracking-widest pl-0.5 text-left uppercase border-b border-slate-100 pb-2">
                   Despesas Procedimentais Complementares (BRL)
                 </span>
@@ -1562,7 +1572,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                         min="0"
                         value={postageAddresses}
                         onChange={(e) => setPostageAddresses(Math.max(0, parseInt(e.target.value) || 0))}
-                        className="w-20 py-1.5 bg-slate-50 border border-slate-350 rounded text-center text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none"
+                        className="w-20 py-1.5 bg-slate-50 border border-slate-300 rounded text-center text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none"
                       />
                       <span className="text-xs text-slate-500 font-medium">Cartas (AR) (R$ 38,30 cada)</span>
                     </div>
@@ -1576,7 +1586,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                         min="0"
                         value={diligenceActs}
                         onChange={(e) => setDiligenceActs(Math.max(0, parseInt(e.target.value) || 0))}
-                        className="w-20 py-1.5 bg-slate-50 border border-slate-350 rounded text-center text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none"
+                        className="w-20 py-1.5 bg-slate-50 border border-slate-300 rounded text-center text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none"
                       />
                       <span className="text-xs text-slate-500 font-medium">Diligências (3 UFESPs R$ 115,26)</span>
                     </div>
@@ -1593,7 +1603,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       id="chk-recurso-dobro"
                       checked={isPreparoEmDobro}
                       onChange={(e) => setIsPreparoEmDobro(e.target.checked)}
-                      className="h-4.5 w-4.5 text-slate-700 border-slate-300 rounded cursor-pointer accent-slate-800"
+                      className="h-4 w-4 text-slate-700 border-slate-300 rounded cursor-pointer accent-slate-800"
                     />
                   </div>
                   <label htmlFor="chk-recurso-dobro" className="text-xs text-slate-800 font-sans cursor-pointer flex flex-col space-y-1 select-none">
@@ -1601,7 +1611,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       <ShieldAlert className="h-4 w-4 text-slate-600 shrink-0" />
                       Pagamento em Dobro da Taxa Recursal (Preparo em Dobro - Art. 1.007, CPC)
                     </span>
-                    <span className="text-[11px] text-slate-605 leading-relaxed font-normal">
+                    <span className="text-[11px] text-slate-600 leading-relaxed font-normal">
                       Ao assinalar esta declaração de duplicidade, as custas inerentes ao ato de preparo recursal serão integralmente duplicadas (2x), em conformidade com o regramento aplicável do Código de Processo Civil.
                     </span>
                   </label>
@@ -1612,7 +1622,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
             
             // B. E-PROC Left Assistant Form flow (Advanced Financial Mode)
             <div className="space-y-6">
-              <div className="border border-slate-205 rounded-lg bg-white p-6 space-y-4 shadow-3xs">
+              <div className="border border-slate-200 rounded-lg bg-white p-6 space-y-4 shadow-3xs">
                 
                 {/* Advanced Tool Navigator bar */}
                 <div className="space-y-2 text-left">
@@ -1651,7 +1661,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                 {eprocTab === 'preparo' && (
                   <div className="space-y-4 text-left border-t border-slate-100 pt-4">
                     <div className="flex gap-2 items-center text-slate-800">
-                      <Compass className="w-4 h-4 text-slate-650" />
+                      <Compass className="w-4 h-4 text-slate-600" />
                       <span className="text-xs font-bold font-serif">Simulação de Preparo Recursal com Fator Monetário</span>
                     </div>
 
@@ -1662,7 +1672,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                           type="text"
                           value={epAOrigMonth}
                           onChange={(e) => setEpAOrigMonth(e.target.value)}
-                          className="w-full bg-slate-50 py-1.5 px-3 border border-slate-350 rounded text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none"
+                          className="w-full bg-slate-50 py-1.5 px-3 border border-slate-300 rounded text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none"
                           placeholder="Ex: 01/2023"
                         />
                       </div>
@@ -1673,7 +1683,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                           <button
                             type="button"
                             onClick={() => handleOpenCalculatorModal('eproc_preparo', epAOrigValStr)}
-                            className="text-[9px] font-bold text-indigo-650 hover:text-indigo-800 flex items-center space-x-1 shrink-0 bg-indigo-55 hover:bg-indigo-100 px-2 py-0.5 rounded transition-all cursor-pointer"
+                            className="text-[9px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center space-x-1 shrink-0 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded transition-all cursor-pointer"
                           >
                             <TrendingUp className="w-2.5 h-2.5" />
                             <span>Calculadora</span>
@@ -1686,7 +1696,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                             value={epAOrigValStr}
                             onChange={(e) => handleAmountChange(e.target.value, setEpAOrigValStr)}
                             onBlur={(e) => handleAmountBlur(e.target.value, setEpAOrigValStr)}
-                            className="w-full bg-slate-50 py-1.5 pl-9 pr-3 border border-slate-350 rounded text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none"
+                            className="w-full bg-slate-50 py-1.5 pl-9 pr-3 border border-slate-300 rounded text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none"
                           />
                         </div>
                       </div>
@@ -1730,15 +1740,15 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
 
                     {/* If Mode is estimated (x1.15) */}
                     {eprocCorrectionMode === 'estimated' && (
-                      <div className="p-3 bg-slate-50 border border-slate-250 rounded-lg text-xs space-y-1.5 text-left animate-fadeIn">
+                      <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-1.5 text-left animate-fadeIn">
                         <div className="flex justify-between items-center font-semibold text-slate-700">
                           <span>Montante Estimado de Reajuste:</span>
                           <span className="font-mono font-bold text-slate-900 bg-white border border-slate-200 px-2 py-0.5 rounded">
-                            R$ {epACorrectedVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            R$ {epACorrectedVal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         </div>
-                        <p className="text-[10px] text-slate-450 leading-normal">
-                          Simulação simplificada com fator fixo de 1.15 aplicado sobre a causa histórica de R$ {epAOriginal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.
+                        <p className="text-[10px] text-slate-400 leading-normal">
+                          Simulação simplificada com fator fixo de 1.15 aplicado sobre a causa histórica de R$ {epAOriginal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
                         </p>
                       </div>
                     )}
@@ -1766,8 +1776,8 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                                 onClick={() => setEprocTabela(t.id)}
                                 className={`py-1 px-1 rounded text-[9px] font-extrabold border transition-colors cursor-pointer text-center leading-normal ${
                                   eprocTabela === t.id
-                                    ? 'bg-indigo-650 border-indigo-700 text-white shadow-3xs'
-                                    : 'bg-white border-slate-250 hover:bg-slate-100 text-slate-705'
+                                    ? 'bg-indigo-600 border-indigo-700 text-white shadow-3xs'
+                                    : 'bg-white border-slate-200 hover:bg-slate-100 text-slate-700'
                                 }`}
                               >
                                 {t.label}
@@ -1779,12 +1789,12 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                         <div className="bg-white border border-indigo-100 p-2 rounded flex justify-between items-center text-[10.5px]">
                           <div className="space-y-0.5">
                             <span className="block text-[9px] text-emerald-700 font-extrabold uppercase">Montante do Débito Atualizado</span>
-                            <span className="text-[9px] text-slate-450 font-mono block">
+                            <span className="text-[9px] text-slate-400 font-mono block">
                               Fator: {eprocCorrResult.fatorInicial.toFixed(6)} → {eprocCorrResult.fatorFinal.toFixed(6)}
                             </span>
                           </div>
                           <span className="font-mono font-extrabold text-indigo-700 bg-indigo-50/50 border border-indigo-100 px-2 py-1 rounded">
-                            R$ {eprocCorrResult.valorCorrigido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            R$ {eprocCorrResult.valorCorrigido.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         </div>
                       </div>
@@ -1796,13 +1806,13 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                 {eprocTab === 'complementares' && (
                   <div className="space-y-4 text-left border-t border-slate-100 pt-4">
                     <div className="flex gap-2 items-center text-slate-800 font-serif">
-                      <TrendingUp className="w-4 h-4 text-slate-650" />
+                      <TrendingUp className="w-4 h-4 text-slate-600" />
                       <span className="text-xs font-bold font-serif">Apreciação de Diferença de Custas Sucumbenciais</span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5 text-left">
-                        <label className="text-[11.5px] font-bold text-slate-705">Novo Valor Avaliado (R$)</label>
+                        <label className="text-[11.5px] font-bold text-slate-700">Novo Valor Avaliado (R$)</label>
                         <div className="relative">
                           <span className="absolute left-3 top-2 text-xs font-mono font-bold text-slate-400">R$</span>
                           <input
@@ -1810,13 +1820,13 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                             value={epBNewValStr}
                             onChange={(e) => handleAmountChange(e.target.value, setEpBNewValStr)}
                             onBlur={(e) => handleAmountBlur(e.target.value, setEpBNewValStr)}
-                            className="w-full bg-slate-50 py-1.5 pl-9 pr-3 border border-slate-350 rounded text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none"
+                            className="w-full bg-slate-50 py-1.5 pl-9 pr-3 border border-slate-300 rounded text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none"
                           />
                         </div>
                       </div>
 
                       <div className="space-y-1.5 text-left">
-                        <label className="text-[11.5px] font-bold text-slate-705">Guia Anterior Recolhida (R$)</label>
+                        <label className="text-[11.5px] font-bold text-slate-700">Guia Anterior Recolhida (R$)</label>
                         <div className="relative">
                           <span className="absolute left-3 top-2 text-xs font-mono font-bold text-slate-400">R$</span>
                           <input
@@ -1824,7 +1834,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                             value={epBPrevPaidStr}
                             onChange={(e) => handleAmountChange(e.target.value, setEpBPrevPaidStr)}
                             onBlur={(e) => handleAmountBlur(e.target.value, setEpBPrevPaidStr)}
-                            className="w-full bg-slate-50 py-1.5 pl-9 pr-3 border border-slate-350 rounded text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none"
+                            className="w-full bg-slate-50 py-1.5 pl-9 pr-3 border border-slate-300 rounded text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none"
                           />
                         </div>
                       </div>
@@ -1836,13 +1846,13 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                 {eprocTab === 'rateio' && (
                   <div className="space-y-4 text-left border-t border-slate-100 pt-4">
                     <div className="flex gap-2 items-center text-slate-800">
-                      <Percent className="w-4 h-4 text-slate-655" />
+                      <Percent className="w-4 h-4 text-slate-600" />
                       <span className="text-xs font-bold font-serif">Divisão Proporcional do Cliente Correspondente</span>
                     </div>
 
                     <div className="space-y-4 text-left">
                       <div className="space-y-1.5 text-left">
-                        <label className="text-[11.5px] font-bold text-slate-707">Valor Base da Transação (R$)</label>
+                        <label className="text-[11.5px] font-bold text-slate-700">Valor Base da Transação (R$)</label>
                         <div className="relative max-w-sm">
                           <span className="absolute left-3 top-2 text-xs font-mono font-bold text-slate-400">R$</span>
                           <input
@@ -1850,12 +1860,12 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                             value={epCCausaStr}
                             onChange={(e) => handleAmountChange(e.target.value, setEpCCausaStr)}
                             onBlur={(e) => handleAmountBlur(e.target.value, setEpCCausaStr)}
-                            className="w-full bg-slate-50 py-1.5 pl-9 pr-3 border border-slate-350 rounded text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none"
+                            className="w-full bg-slate-50 py-1.5 pl-9 pr-3 border border-slate-300 rounded text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none"
                           />
                         </div>
                       </div>
 
-                      <div className="space-y-2 bg-slate-55 p-4 border border-slate-205 rounded text-left">
+                      <div className="space-y-2 bg-slate-50 p-4 border border-slate-200 rounded text-left">
                         <div className="flex justify-between items-center text-xs font-bold text-slate-800">
                           <span>Percentual devido pelo cliente assistido:</span>
                           <span className="bg-slate-900 text-white px-2 py-0.5 rounded text-[11px] font-mono font-bold">{epCPercent}%</span>
@@ -1906,8 +1916,8 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                 <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">
                   VALOR DE GUIA RECOMENDADO
                 </span>
-                <div className="text-3xl sm:text-4xl font-mono font-bold text-cyan-300 tracking-tight">
-                  R$ {finalUnifiedSum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                <div className="text-3xl sm:text-4xl font-mono font-bold text-white tracking-tight">
+                  R$ {finalUnifiedSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
                 <p className="text-[10px] text-slate-500 font-medium pl-0.5 pr-0.5 pt-0.5">
                   Referência TJSP / UFESP 2026 (R$ 38,42)
@@ -1926,8 +1936,8 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       <div key={idx} className="p-3 bg-white/5 border border-white/5 rounded text-xs flex flex-col space-y-1">
                         <div className="flex justify-between items-start">
                           <span className="font-bold text-slate-200">{it.name}</span>
-                          <span className="font-mono text-cyan-300 font-bold whitespace-nowrap">
-                            R$ {it.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          <span className="font-mono text-white font-bold whitespace-nowrap">
+                            R$ {it.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         </div>
                         <div className="flex justify-between items-center text-[10px] text-slate-400 border-t border-white/5 pt-1 mt-1 leading-none">
@@ -1943,8 +1953,8 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       <span className="font-bold text-slate-200">
                         {eprocTab === 'preparo' ? 'Preparo Recursal Eproc' : eprocTab === 'complementares' ? 'Complementação de Custas' : 'Rateio Fração'}
                       </span>
-                      <span className="font-mono text-cyan-300 font-bold">
-                        R$ {finalUnifiedSum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      <span className="font-mono text-white font-bold">
+                        R$ {finalUnifiedSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
                     <p className="text-[10px] text-slate-400 pt-1 leading-normal font-sans">
@@ -2004,7 +2014,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                     Guia Unificada E-PROC (Portal TJSP)
                   </span>
                   <p className="text-[10.5px] text-slate-400 leading-relaxed font-sans">
-                    No regime E-PROC do TJSP, as guias de recolhimento preparatório são geradas **diretamente no prontuário do processo**, sem portais adicionais de preenchimento.
+                    No regime E-PROC do TJSP, as guias de recolhimento preparatório são geradas <strong className="font-semibold text-slate-200">diretamente no prontuário do processo</strong>, sem portais adicionais de preenchimento.
                   </p>
                 </div>
               )}
@@ -2012,16 +2022,16 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
           </div>
 
           {/* Editorial Memory text section for direct copy paste */}
-          <div className="bg-white border border-slate-205 rounded-lg p-6 shadow-3xs flex flex-col justify-between" id="area-editorial-memo">
+          <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-3xs flex flex-col justify-between" id="area-editorial-memo">
             <div className="space-y-4">
               <div className="flex justify-between items-center text-left">
                 <div className="text-left">
                   <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider font-serif">Memória de Cálculo Sucumbencial</h4>
-                  <p className="text-[10px] text-slate-450 font-sans">Pronto para incorporação direta em razões recursais</p>
+                  <p className="text-[10px] text-slate-400 font-sans">Pronto para incorporação direta em razões recursais</p>
                 </div>
                 <button
                   onClick={handleCopyMemo}
-                  className="flex items-center space-x-1.5 py-1 px-3 rounded border border-slate-305 hover:bg-slate-50 text-slate-700 text-xs transition-all cursor-pointer font-bold shadow-3xs active:scale-95"
+                  className="flex items-center space-x-1.5 py-1 px-3 rounded border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs transition-all cursor-pointer font-bold shadow-3xs active:scale-95"
                   id="btn-copy-eproc-saj"
                 >
                   {copiedMemo ? (
@@ -2041,7 +2051,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
               <textarea
                 readOnly
                 value={finalMemoStr}
-                className="w-full h-56 p-3 bg-slate-50 border border-slate-205 rounded text-[10.5px] font-mono text-slate-600 focus:outline-none resize-none leading-relaxed shadow-3xs text-left"
+                className="w-full h-56 p-3 bg-slate-50 border border-slate-200 rounded text-[10.5px] font-mono text-slate-600 focus:outline-none resize-none leading-relaxed shadow-3xs text-left"
                 id="text-text-area-id"
               />
             </div>
@@ -2070,7 +2080,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
               </span>
             </div>
             <div className="text-xl font-mono font-bold text-white tracking-tight shrink-0 whitespace-nowrap">
-              R$ {finalUnifiedSum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              R$ {finalUnifiedSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
         </div>
@@ -2078,11 +2088,21 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
 
       {/* Calculadora de Correção Monetária - Floating Backdrop Modal */}
       {isCorrectionModalOpen && (
-        <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs transition-all duration-300 animate-fadeIn" id="correction-modal">
-          <div className="w-full max-w-lg bg-white rounded-xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden text-left font-sans">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs transition-all duration-300 animate-fadeIn"
+          id="correction-modal"
+          onClick={() => setIsCorrectionModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-lg bg-white rounded-xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden text-left font-sans"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Calculadora de Correção Monetária do TJSP"
+            onClick={(e) => e.stopPropagation()}
+          >
             
             {/* Modal Header */}
-            <div className="flex justify-between items-center bg-slate-50 px-6 py-4 border-b border-slate-150">
+            <div className="flex justify-between items-center bg-slate-50 px-6 py-4 border-b border-slate-200">
               <div className="flex items-center space-x-2">
                 <TrendingUp className="w-5 h-5 text-indigo-600" />
                 <h3 className="text-base font-bold text-slate-800 font-serif">
@@ -2091,23 +2111,25 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
               </div>
               <button
                 type="button"
+                aria-label="Fechar calculadora de correção"
+                title="Fechar"
                 onClick={() => setIsCorrectionModalOpen(false)}
-                className="text-slate-400 hover:text-slate-650 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
 
             {/* Modal Body */}
             <div className="p-6 space-y-5">
-              <p className="text-xs text-slate-505 leading-normal">
+              <p className="text-xs text-slate-500 leading-normal">
                 Determine o valor atualizado monetariamente dividindo o valor original pelo fator do mês inicial e multiplicando pelo fator do mês de liquidação, em conformidade com o regramento do Tribunal de Justiça de São Paulo.
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Data Inicial (Mês/Ano) */}
                 <div className="space-y-1">
-                  <label className="block text-[10px] font-bold text-slate-705 uppercase tracking-wider">
+                  <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider">
                     Data Inicial (Mês/Ano)
                   </label>
                   <input
@@ -2121,7 +2143,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
 
                 {/* Data Final (Mês atual) */}
                 <div className="space-y-1">
-                  <label className="block text-[10px] font-bold text-slate-705 uppercase tracking-wider">
+                  <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider">
                     Data Final (Mês de Referência)
                   </label>
                   <input
@@ -2135,7 +2157,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
 
                 {/* Valor Original */}
                 <div className="space-y-1 md:col-span-2">
-                  <label className="block text-[10px] font-bold text-slate-705 uppercase tracking-wider">
+                  <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider">
                     Valor Original da Causa (R$)
                   </label>
                   <div className="relative">
@@ -2152,7 +2174,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
 
                 {/* Tabela do TJSP Select Selection */}
                 <div className="space-y-2 md:col-span-2">
-                  <label className="block text-[10px] font-bold text-slate-705 uppercase tracking-wider">
+                  <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider">
                     Selecione a Tabela de Correção Monetária oficial do TJSP
                   </label>
                   <div className="grid grid-cols-1 gap-2.5">
@@ -2184,8 +2206,8 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                           onClick={() => setMcTabela(opt.id)}
                           className={`w-full text-left p-3.5 rounded-lg border transition-all cursor-pointer flex flex-col ${
                             isSelected
-                              ? 'border-indigo-650 bg-indigo-50/40 ring-1 ring-indigo-655 text-indigo-950'
-                              : 'border-slate-200 bg-white hover:border-slate-350 hover:bg-slate-50 text-slate-800'
+                              ? 'border-indigo-600 bg-indigo-50/40 ring-1 ring-indigo-600 text-indigo-950'
+                              : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-800'
                           }`}
                         >
                           <div className="flex justify-between items-center w-full">
@@ -2193,7 +2215,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                               {opt.title}
                             </span>
                             <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
-                              isSelected ? 'border-indigo-650 bg-indigo-650' : 'border-slate-300 bg-white'
+                              isSelected ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300 bg-white'
                             }`}>
                               {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white animate-scaleIn" />}
                             </div>
@@ -2201,7 +2223,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                           <span className={`text-[10px] font-bold mt-1 shadow-3xs ${isSelected ? 'text-indigo-700' : 'text-slate-500'}`}>
                             {opt.subtitle}
                           </span>
-                          <p className="text-[10px] text-slate-505 leading-relaxed mt-1 font-sans pl-0.5">
+                          <p className="text-[10px] text-slate-500 leading-relaxed mt-1 font-sans pl-0.5">
                             {opt.desc}
                           </p>
                         </button>
@@ -2237,25 +2259,25 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                     </div>
                   </div>
                   <div className="text-xl sm:text-2xl font-mono font-extrabold text-[#06b6d4] tracking-tight leading-none">
-                    R$ {currentMcResult.valorCorrigido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ {currentMcResult.valorCorrigido.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Modal Footer actions */}
-            <div className="bg-slate-50 px-6 py-4 border-t border-slate-150 flex justify-end space-x-3">
+            <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end space-x-3">
               <button
                 type="button"
                 onClick={() => setIsCorrectionModalOpen(false)}
-                className="px-4 py-2 text-xs font-bold text-slate-605 border border-slate-300 rounded hover:bg-slate-100 transition-colors cursor-pointer"
+                className="px-4 py-2 text-xs font-bold text-slate-600 border border-slate-300 rounded hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={() => applyCorrectedValue(currentMcResult.valorCorrigido)}
-                className="px-4 py-2 text-xs font-bold text-white bg-indigo-650 hover:bg-indigo-700 rounded transition-colors cursor-pointer flex items-center space-x-1 shadow-3xs"
+                className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded transition-colors cursor-pointer flex items-center space-x-1 shadow-3xs"
               >
                 <Check className="w-3.5 h-3.5" />
                 <span>Aplicar Valor no Campo</span>
@@ -2269,7 +2291,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
       {/* Required Editorial Footer Copyright Trademark */}
       {!compact && (
       <div className="bg-slate-50 border-t border-slate-200 py-4 px-6 text-center rounded-b-lg text-[10.5px] text-slate-500 font-medium font-sans">
-        Camelsec Workspace © 2024. Desenvolvido por Camelsec Plataform (CNPJ: 51.811.543/0001-20).
+        Camelsec Workspace © 2026. Desenvolvido por Camelsec Plataform (CNPJ: 51.811.543/0001-20).
       </div>
       )}
 
