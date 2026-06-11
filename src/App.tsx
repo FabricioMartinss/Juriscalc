@@ -44,9 +44,6 @@ export default function App() {
                   v2.0
                 </span>
               </div>
-              <p className="font-sans text-xs text-blue-200/80">
-                Calculadora e Auditora de Custas do Tribunal de Justiça de São Paulo
-              </p>
             </div>
           </div>
 
