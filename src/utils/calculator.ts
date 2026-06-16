@@ -184,7 +184,7 @@ Observação: Isento do recolhimento de custas prévias. Custas serão cobradas 
   let baseCaculoExplanacao = `Valor da Causa Base: R$ ${valorCausaEfetivo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (UFESP 2026: R$ ${ufesp})`;
 
   // --- CÁLCULO GERAL SECUNDÁRIO E POSTAIS (SEMPRE FEDTJ E GRD) ---
-  const tarifaPostalFlat = 38.30; // Tarifa TJSP Envelopamento AR em 2026
+  const tarifaPostalFlat = 35.75; // Tarifa TJSP Envelopamento AR em 2026
   const tarifaDiligenciaOficial = 3 * ufesp; // 3 UFESPs por ato em 2026
 
   if (inputs.quantidadeEnderecos > 0) {

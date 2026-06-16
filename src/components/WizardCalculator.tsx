@@ -22,7 +22,14 @@ import { UFESP_2026 } from '../data/tabelaPratica';
 import { buscarIndiceOficial, TipoTabelaCorrecao } from '../data/tabelasOficiais';
 
 // Constants
-const TARIFA_POSTAL_AR = 38.30; // Tarifa de envelopamento/AR dos Correios (TJSP 2026)
+const TARIFA_POSTAL_AR = 35.75; // Tarifa de envelopamento/AR dos Correios (TJSP 2026)
+
+// Tipos de diligência do Oficial de Justiça (GRD) e respectivo custo em UFESPs
+const DILIGENCIA_TIPOS = {
+  deslocamento: { ufesps: 3, label: 'Com deslocamento (3 UFESPs)' },
+  remoto: { ufesps: 1, label: 'Remoto / sede do Juízo (1 UFESP)' },
+  convertido: { ufesps: 2, label: 'Remoto convertido em deslocamento (2 UFESPs)' },
+} as const;
 const PISO_REAIS = 5 * UFESP_2026; // Piso legal de 5 UFESPs
 const TETO_REAIS = 3000 * UFESP_2026; // Teto legal de 3.000 UFESPs
 
@@ -177,6 +184,8 @@ interface CalculationInputsRef {
   jecCumprimentoIsMafe: boolean;
   tipoHabilitacao: 'inicial' | 'recurso';
   execIncluiEncargos?: boolean;
+  queixaDistribuicao?: boolean;
+  queixaRecurso?: boolean;
 }
 
 interface Option {
@@ -493,18 +502,29 @@ const eSajOptions: Option[] = [
     category: 'comum', 
     name: 'Comum 13: Ações Penais Privadas (Queixa-crime)', 
     desc: 'Taxa aplicável nos processos criminais privados ou queixa-crime.', 
-    legalBase: 'Art. 4º, § 11, Lei nº 11.608/03', 
+    legalBase: 'Art. 4º, § 11, Lei nº 11.608/03',
     inputs: {},
-    calculate: () => {
-      const vDist = 50 * UFESP_2026;
-      const vRec = 50 * UFESP_2026;
+    calculate: ({ queixaDistribuicao, queixaRecurso }) => {
+      // 50 UFESPs na distribuição e/ou 50 UFESPs na interposição de recurso (selecionáveis isoladamente).
+      const incluiDist = queixaDistribuicao !== false; // distribuição marcada por padrão
+      const incluiRec = queixaRecurso === true;
+      const vDist = incluiDist ? 50 * UFESP_2026 : 0;
+      const vRec = incluiRec ? 50 * UFESP_2026 : 0;
+      const itens: { name: string; value: number; baseLegal: string }[] = [];
+      if (incluiDist) {
+        itens.push({ name: 'Queixa-Crime Distribuição Inicial (50 UFESPs)', value: vDist, baseLegal: 'Art. 4º, § 11, Lei nº 11.608/2003' });
+      }
+      if (incluiRec) {
+        itens.push({ name: 'Preparo Recursal Queixa (50 UFESPs)', value: vRec, baseLegal: 'Art. 4º, § 11, Lei nº 11.608/2003' });
+      }
+      const linhas: string[] = [];
+      if (incluiDist) linhas.push(`* Distribuição Inicial (50 UFESPs): R$ ${vDist.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+      if (incluiRec) linhas.push(`* Interposição de recurso (50 UFESPs): R$ ${vRec.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+      if (linhas.length === 0) linhas.push('* Nenhuma incidência selecionada (assinale distribuição e/ou recurso).');
       return {
         valorTotal: vDist + vRec,
-        itens: [
-          { name: 'Queixa-Crime Distribuição Inicial (50 UFESPs)', value: vDist, baseLegal: 'Art. 4º, § 11, Lei nº 11.608/2003' },
-          { name: 'Preparo Recursal Queixa (50 UFESPs)', value: vRec, baseLegal: 'Art. 4º, § 11, Lei nº 11.608/2503' }
-        ],
-        detalheMemoria: `* Distribuição Inicial: R$ ${vDist.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n* Interposição de recurso (50 UFESPs): R$ ${vRec.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        itens,
+        detalheMemoria: linhas.join('\n')
       };
     }
   },
@@ -668,10 +688,17 @@ export default function WizardCalculator({
   const [isMafe, setIsMafe] = useState<boolean>(false);
   const [isPreparoEmDobro, setIsPreparoEmDobro] = useState<boolean>(false);
   const [habilitacaoModalidade, setHabilitacaoModalidade] = useState<'inicial' | 'recurso'>('inicial');
+  // Ações Penais Privadas (comum_13): incidências selecionáveis isoladamente
+  const [queixaDistribuicao, setQueixaDistribuicao] = useState<boolean>(true);
+  const [queixaRecurso, setQueixaRecurso] = useState<boolean>(false);
 
   // Postage & Diligence general adds
   const [postageAddresses, setPostageAddresses] = useState<number>(0);
-  const [diligenceActs, setDiligenceActs] = useState<number>(0);
+  // Diligências do Oficial de Justiça (GRD) por tipo de mandado
+  const [diligDeslocamento, setDiligDeslocamento] = useState<number>(0);
+  const [diligRemoto, setDiligRemoto] = useState<number>(0);
+  const [diligConvertido, setDiligConvertido] = useState<number>(0);
+  const totalDiligencias = diligDeslocamento + diligRemoto + diligConvertido;
 
   // EPROC specific states
   const [eprocTab, setEprocTab] = useState<'preparo' | 'complementares' | 'rateio'>('preparo');
@@ -815,7 +842,9 @@ export default function WizardCalculator({
     isTituloExtrajudicial: isExtraj,
     jecCumprimentoIsMafe: isMafe,
     tipoHabilitacao: habilitacaoModalidade,
-    execIncluiEncargos: execIncluiEncargos
+    execIncluiEncargos: execIncluiEncargos,
+    queixaDistribuicao,
+    queixaRecurso
   };
 
   // Calculate base results for chosen option
@@ -854,15 +883,24 @@ export default function WizardCalculator({
     });
   }
 
-  if (diligenceActs > 0 && subsystem === 'esaj') {
-    const actCost = 3 * UFESP_2026; // 3 UFESPs
-    const actTotal = diligenceActs * actCost;
-    additionsSum += actTotal;
-    additionalItens.push({
-      name: `Diligências do Oficial (${diligenceActs} Atos de 3 UFESPs)`,
-      value: actTotal,
-      baseLegal: 'Provimento CGJ vigente',
-      source: 'GRD (Guia Oficial)'
+  if (subsystem === 'esaj') {
+    const diligencias: { qtd: number; tipo: keyof typeof DILIGENCIA_TIPOS }[] = [
+      { qtd: diligDeslocamento, tipo: 'deslocamento' },
+      { qtd: diligRemoto, tipo: 'remoto' },
+      { qtd: diligConvertido, tipo: 'convertido' },
+    ];
+    diligencias.forEach(({ qtd, tipo }) => {
+      if (qtd <= 0) return;
+      const { ufesps, label } = DILIGENCIA_TIPOS[tipo];
+      const actCost = ufesps * UFESP_2026;
+      const actTotal = qtd * actCost;
+      additionsSum += actTotal;
+      additionalItens.push({
+        name: `Diligências do Oficial — ${label} (${qtd} ato(s) × R$ ${actCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`,
+        value: actTotal,
+        baseLegal: 'Provimento CGJ vigente',
+        source: 'GRD (Guia Oficial)'
+      });
     });
   }
 
@@ -1574,25 +1612,77 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                         onChange={(e) => setPostageAddresses(Math.max(0, parseInt(e.target.value) || 0))}
                         className="w-20 py-1.5 bg-slate-50 border border-slate-300 rounded text-center text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none"
                       />
-                      <span className="text-xs text-slate-500 font-medium">Cartas (AR) (R$ 38,30 cada)</span>
+                      <span className="text-xs text-slate-500 font-medium">Cartas (AR) (R$ 35,75 cada)</span>
                     </div>
                   </div>
 
-                  <div className="space-y-1.5 text-left">
+                  <div className="space-y-2 text-left">
                     <label className="block text-xs font-bold text-slate-700">Custas do Oficial de Justiça (GRD)</label>
                     <div className="flex items-center space-x-2">
                       <input
                         type="number"
                         min="0"
-                        value={diligenceActs}
-                        onChange={(e) => setDiligenceActs(Math.max(0, parseInt(e.target.value) || 0))}
+                        value={diligDeslocamento}
+                        onChange={(e) => setDiligDeslocamento(Math.max(0, parseInt(e.target.value) || 0))}
                         className="w-20 py-1.5 bg-slate-50 border border-slate-300 rounded text-center text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none"
                       />
-                      <span className="text-xs text-slate-500 font-medium">Diligências (3 UFESPs R$ 115,26)</span>
+                      <span className="text-xs text-slate-500 font-medium">Com deslocamento (3 UFESPs · R$ 115,26)</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={diligRemoto}
+                        onChange={(e) => setDiligRemoto(Math.max(0, parseInt(e.target.value) || 0))}
+                        className="w-20 py-1.5 bg-slate-50 border border-slate-300 rounded text-center text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none"
+                      />
+                      <span className="text-xs text-slate-500 font-medium">Remoto / sede do Juízo (1 UFESP · R$ 38,42)</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={diligConvertido}
+                        onChange={(e) => setDiligConvertido(Math.max(0, parseInt(e.target.value) || 0))}
+                        className="w-20 py-1.5 bg-slate-50 border border-slate-300 rounded text-center text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none"
+                      />
+                      <span className="text-xs text-slate-500 font-medium">Remoto convertido em deslocamento (2 UFESPs · R$ 76,84)</span>
                     </div>
                   </div>
                 </div>
               </div>
+
+              {/* Ações Penais Privadas (Comum 13): incidências selecionáveis */}
+              {selectedSajId === 'comum_13' && (
+                <div className="p-6 border border-slate-200 bg-white rounded-lg space-y-3 shadow-3xs text-left">
+                  <span className="block text-[11px] font-bold text-slate-500 tracking-widest pl-0.5 uppercase border-b border-slate-100 pb-2">
+                    Incidências da Queixa-Crime (50 UFESPs cada)
+                  </span>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    Assinale a(s) incidência(s) devida(s). Podem ser cobradas ambas (distribuição + recurso) ou apenas uma.
+                  </p>
+                  <label htmlFor="chk-queixa-dist" className="flex items-center gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      id="chk-queixa-dist"
+                      checked={queixaDistribuicao}
+                      onChange={(e) => setQueixaDistribuicao(e.target.checked)}
+                      className="h-4 w-4 border-slate-300 rounded cursor-pointer accent-slate-800"
+                    />
+                    <span className="text-xs text-slate-800 font-medium">Distribuição inicial / antes do despacho (50 UFESPs)</span>
+                  </label>
+                  <label htmlFor="chk-queixa-rec" className="flex items-center gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      id="chk-queixa-rec"
+                      checked={queixaRecurso}
+                      onChange={(e) => setQueixaRecurso(e.target.checked)}
+                      className="h-4 w-4 border-slate-300 rounded cursor-pointer accent-slate-800"
+                    />
+                    <span className="text-xs text-slate-800 font-medium">Interposição de recurso (50 UFESPs)</span>
+                  </label>
+                </div>
+              )}
 
               {/* Recurso em Dobro Warning / Option - Slate blue tinted legal board */}
               {(selectedSajId === 'comum_3' || selectedSajId === 'comum_11' || selectedSajId === 'comum_13' || selectedSajId === 'jec_1') && (
@@ -1994,7 +2084,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                         <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                       </a>
                     )}
-                    {diligenceActs > 0 && (
+                    {totalDiligencias > 0 && (
                       <a
                         href="https://www63.bb.com.br/portalbb/boleto/boletos/oficialjustica/entrada,802,2270,3617,15,0.bbx"
                         target="_blank"

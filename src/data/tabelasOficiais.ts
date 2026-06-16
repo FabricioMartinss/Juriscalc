@@ -105,7 +105,7 @@ export const BASE_TABELA_COMUM: Record<number, number[]> = {
 export const NOVA_TABELA_POS_2024: Record<number, number[]> = {
   2024: [96.094702, 96.219625, 96.739210, 97.338993], // SET, OUT, NOV, DEZ (4 valores)
   2025: [97.669945, 97.777381, 98.980042, 99.613514, 100.041852, 100.402002, 100.663047, 100.995235, 100.853841, 101.337939, 101.520347, 101.723387],
-  2026: [101.977695, 102.181650, 103.039975, 103.493350, 103.784200] // JAN, FEV, MAR, ABR, MAI
+  2026: [101.977695, 102.181650, 103.039975, 103.493350, 104.414440] // JAN, FEV, MAR, ABR, MAI
 };
 
 // 2. Antiga Tabela Prática (Jurisprudência Predominante)
@@ -215,7 +215,7 @@ export function buscarIndiceOficial(
           return { value: val, found: true };
         }
       }
-      return { value: 103.784200, found: false }; // Final 2026/05
+      return { value: 104.414440, found: false }; // Final 2026/05
     } else {
       // antiga_tabela
       const valoresAno = ANTIGA_TABELA_POS_2024[ano];
@@ -231,5 +231,5 @@ export function buscarIndiceOficial(
   }
 
   // Fallback seguro
-  return { value: 103.784200, found: false };
+  return { value: 104.414440, found: false };
 }
