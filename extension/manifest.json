@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "JurisCalc SP — Custas TJSP (Protótipo)",
+  "name": "JudsCalc SP — Custas TJSP (Protótipo)",
   "version": "2.0.0",
   "description": "Calculadora e auditoria de custas processuais do TJSP (e-SAJ e E-PROC) em painel lateral de altura total. Protótipo interno Camelsec.",
   "permissions": ["sidePanel"],
   "action": {
-    "default_title": "Abrir JurisCalc SP (painel lateral)"
+    "default_title": "Abrir JudsCalc SP (painel lateral)"
   },
   "side_panel": {
     "default_path": "sidepanel.html"

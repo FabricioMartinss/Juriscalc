@@ -38,7 +38,7 @@ export default function App() {
             <div>
               <div className="flex items-center space-x-2">
                 <h1 className="font-sans font-black text-white tracking-tight uppercase text-xl">
-                  JurisCalc <span className="text-cyan-400">SP</span>
+                  JudsCalc <span className="text-cyan-400">SP</span>
                 </h1>
                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-400/15 text-cyan-200 border border-cyan-400/30">
                   v2.0
@@ -133,7 +133,7 @@ export default function App() {
       <footer className="mt-auto bg-[#0b2545] text-blue-200/70 py-6 px-6" id="app-footer">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left text-xs">
           <div className="space-y-1">
-            <p className="font-bold text-blue-50">© 2026 JurisCalc SP. Todos os direitos reservados.</p>
+            <p className="font-bold text-blue-50">© 2026 JudsCalc SP. Todos os direitos reservados.</p>
             <p className="text-[11px] text-blue-300/50">
               Este software e sua respectiva extensão Google Chrome são de propriedade intelectual e comercial
               exclusiva da <strong className="text-blue-200 font-bold">Camelsec Plataforma</strong> (Plataforma

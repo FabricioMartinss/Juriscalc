@@ -25,7 +25,7 @@ export default function ChromeExtensionTab() {
           <span className="text-slate-300 font-mono font-semibold">Extensão v1.1.2</span>
         </div>
         <div>
-          <h3 className="text-sm font-bold text-white tracking-tight uppercase">Extensão JurisCalc SP</h3>
+          <h3 className="text-sm font-bold text-white tracking-tight uppercase">Extensão JudsCalc SP</h3>
           <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
             Capture e calcule guias de DARE e boletos de E-PROC automaticamente direto do navegador.
           </p>
@@ -67,7 +67,7 @@ export default function ChromeExtensionTab() {
           <span>Propriedade Comercial</span>
         </div>
         <p className="leading-relaxed text-slate-600 font-medium">
-          O JurisCalc SP é de propriedade integral e exclusiva da{' '}
+          O JudsCalc SP é de propriedade integral e exclusiva da{' '}
           <strong className="text-slate-900 font-extrabold">Camelsec Plataforma</strong>, regulamentada sob o{' '}
           <span className="font-mono bg-slate-200/75 px-1 rounded text-slate-800 font-bold">CNPJ: 51.811.543/0001-20</span>.
         </p>
