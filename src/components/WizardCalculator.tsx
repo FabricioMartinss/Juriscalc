@@ -19,10 +19,76 @@ import {
   X
 } from 'lucide-react';
 import { UFESP_2026 } from '../data/tabelaPratica';
-import { buscarIndiceOficial, TipoTabelaCorrecao } from '../data/tabelasOficiais';
+import { buscarIndiceOficial, getUltimoPeriodoDisponivel, TipoTabelaCorrecao } from '../data/tabelasOficiais';
 
 // Constants
 const TARIFA_POSTAL_AR = 35.75; // Tarifa de envelopamento/AR dos Correios (TJSP 2026)
+
+// ===== Validação de campos de data (MM/AAAA) =====
+// Limite superior derivado das tabelas oficiais, para acompanhar atualizações.
+const ULTIMO_PERIODO = getUltimoPeriodoDisponivel();
+const ULTIMO_PERIODO_LABEL = `${String(ULTIMO_PERIODO.mes).padStart(2, '0')}/${ULTIMO_PERIODO.ano}`;
+// As tabelas práticas do TJSP começam em outubro de 1964.
+const PRIMEIRO_ANO = 1964;
+const PRIMEIRO_MES = 10;
+
+// Máscara progressiva: mantém apenas dígitos e insere a barra (MM/AAAA).
+function formatMonthYearInput(val: string): string {
+  const digits = val.replace(/\D/g, '').slice(0, 6);
+  if (digits.length <= 2) return digits;
+  return digits.slice(0, 2) + '/' + digits.slice(2);
+}
+
+// Valida formato (MM/AAAA), mês 01-12 e período dentro da cobertura das tabelas.
+function isValidMonthYear(val: string): boolean {
+  const m = /^(\d{2})\/(\d{4})$/.exec(val.trim());
+  if (!m) return false;
+  const mes = parseInt(m[1], 10);
+  const ano = parseInt(m[2], 10);
+  if (mes < 1 || mes > 12) return false;
+  if (ano < PRIMEIRO_ANO || ano > ULTIMO_PERIODO.ano) return false;
+  if (ano === PRIMEIRO_ANO && mes < PRIMEIRO_MES) return false;
+  if (ano === ULTIMO_PERIODO.ano && mes > ULTIMO_PERIODO.mes) return false;
+  return true;
+}
+
+// Input de mês/ano com máscara e validação visual. Recebe o className base de
+// cada contexto e aplica realce de erro (borda/fundo vermelhos) quando inválido.
+function MonthYearInput({
+  value,
+  onChange,
+  className,
+  placeholder = 'MM/AAAA',
+  ariaLabel,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  className: string;
+  placeholder?: string;
+  ariaLabel?: string;
+}) {
+  const valido = isValidMonthYear(value);
+  return (
+    <>
+      <input
+        type="text"
+        inputMode="numeric"
+        maxLength={7}
+        value={value}
+        aria-label={ariaLabel}
+        aria-invalid={!valido}
+        placeholder={placeholder}
+        onChange={(e) => onChange(formatMonthYearInput(e.target.value))}
+        className={`${className}${!valido ? ' !border-red-400 !bg-red-50 focus:!border-red-500' : ''}`}
+      />
+      {!valido && (
+        <span className="block text-[9px] font-bold text-red-600 leading-tight pt-0.5">
+          Use MM/AAAA entre {String(PRIMEIRO_MES).padStart(2, '0')}/{PRIMEIRO_ANO} e {ULTIMO_PERIODO_LABEL}.
+        </span>
+      )}
+    </>
+  );
+}
 
 // Tipos de diligência do Oficial de Justiça (GRD) e respectivo custo em UFESPs
 const DILIGENCIA_TIPOS = {
@@ -740,6 +806,8 @@ export default function WizardCalculator({
 
   // General Status copy feedback
   const [copiedMemo, setCopiedMemo] = useState<boolean>(false);
+  // Qual guia teve o valor copiado por último (para feedback visual no botão)
+  const [copiedGuia, setCopiedGuia] = useState<string | null>(null);
 
   // Parsing values helper
   const pVal = (s: string) => Math.max(0, parseFloat(s) || 0);
@@ -939,6 +1007,13 @@ export default function WizardCalculator({
   // Sum combined values
   const eSajTotalSum = eSajFinalItens.reduce((acc, current) => acc + current.value, 0);
 
+  // Valores por guia (cada guia oficial é recolhida separadamente no portal).
+  // DARE (taxa judiciária da classe) = total menos as despesas postais/diligências,
+  // que vão em guias próprias (FEDTJ e GRD).
+  const postalSum = postageAddresses > 0 ? postageAddresses * TARIFA_POSTAL_AR : 0;
+  const grdSum = additionsSum - postalSum;
+  const eSajDareSum = eSajTotalSum - additionsSum;
+
   // Dynamic plain text explanation for easy legal copy paste
   const eSajMemoText = `=====================================================
 MEMÓRIA JURISCALC SP DE AUDITORIA DE RECOLHIMENTOS
@@ -1042,6 +1117,16 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
   const finalUnifiedSum = subsystem === 'esaj' ? eSajTotalSum : (eprocTab === 'preparo' ? epAPreparo : eprocTab === 'complementares' ? epBFinal : epCFinal);
   const finalMemoStr = subsystem === 'esaj' ? eSajMemoText : eprocMemoText;
 
+  // Há alguma data INVÁLIDA que esteja efetivamente em uso no cálculo atual?
+  // Nesse caso o resultado usaria índices de fallback, então avisamos o usuário.
+  const datasAtivasInvalidas =
+    (subsystem === 'esaj' && isUptCause &&
+      (!isValidMonthYear(causaDataInicial) || !isValidMonthYear(causaDataFinal))) ||
+    (subsystem === 'esaj' && isUptCondenacao && temCondenacao &&
+      (!isValidMonthYear(condenacaoDataInicial) || !isValidMonthYear(condenacaoDataFinal))) ||
+    (subsystem === 'eproc' && eprocTab === 'preparo' && eprocCorrectionMode === 'official' &&
+      !isValidMonthYear(epAOrigMonth));
+
   // Em modo compacto (painel lateral), emite o total/memória para o shell renderizar
   // a barra de total fixa fora da área rolável.
   useEffect(() => {
@@ -1063,6 +1148,17 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
     navigator.clipboard.writeText(finalMemoStr);
     setCopiedMemo(true);
     setTimeout(() => setCopiedMemo(false), 2000);
+  };
+
+  // Ao emitir uma guia, copia o valor exato (formato pt-BR sem separador de milhar,
+  // pronto para colar no campo de valor do portal) e deixa o link abrir o sistema oficial.
+  // O Portal de Custas não aceita pré-preenchimento via URL, então copiar o valor é o
+  // máximo de automação possível hoje.
+  const handleEmitGuia = (valor: number, id: string) => {
+    const txt = valor.toFixed(2).replace('.', ',');
+    navigator.clipboard?.writeText(txt);
+    setCopiedGuia(id);
+    setTimeout(() => setCopiedGuia((cur) => (cur === id ? null : cur)), 2500);
   };
 
   return (
@@ -1241,22 +1337,20 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             <div className="space-y-1">
                               <span className="text-[10px] text-slate-500 font-bold uppercase">Mês Inicial</span>
-                              <input
-                                type="text"
+                              <MonthYearInput
                                 value={causaDataInicial}
-                                onChange={(e) => setCausaDataInicial(e.target.value)}
+                                onChange={setCausaDataInicial}
+                                ariaLabel="Mês inicial da correção da causa"
                                 className="w-full bg-white py-1 px-2 border border-slate-200 rounded text-xs font-semibold text-slate-800 focus:outline-none focus:border-indigo-400"
-                                placeholder="MM/AAAA"
                               />
                             </div>
                             <div className="space-y-1">
                               <span className="text-[10px] text-slate-500 font-bold uppercase">Mês Final</span>
-                              <input
-                                type="text"
+                              <MonthYearInput
                                 value={causaDataFinal}
-                                onChange={(e) => setCausaDataFinal(e.target.value)}
+                                onChange={setCausaDataFinal}
+                                ariaLabel="Mês final da correção da causa"
                                 className="w-full bg-white py-1 px-2 border border-slate-200 rounded text-xs font-semibold text-slate-800 focus:outline-none focus:border-indigo-400"
-                                placeholder="MM/AAAA"
                               />
                             </div>
                           </div>
@@ -1499,22 +1593,20 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                               <div className="grid grid-cols-2 gap-2 text-xs">
                                 <div className="space-y-1">
                                   <span className="text-[10px] text-slate-500 font-bold uppercase">Mês Inicial</span>
-                                  <input
-                                    type="text"
+                                  <MonthYearInput
                                     value={condenacaoDataInicial}
-                                    onChange={(e) => setCondenacaoDataInicial(e.target.value)}
+                                    onChange={setCondenacaoDataInicial}
+                                    ariaLabel="Mês inicial da correção da condenação"
                                     className="w-full bg-white py-1 px-2 border border-slate-200 rounded text-xs font-semibold text-slate-800 focus:outline-none focus:border-indigo-400"
-                                    placeholder="MM/AAAA"
                                   />
                                 </div>
                                 <div className="space-y-1">
                                   <span className="text-[10px] text-slate-500 font-bold uppercase">Mês Final</span>
-                                  <input
-                                    type="text"
+                                  <MonthYearInput
                                     value={condenacaoDataFinal}
-                                    onChange={(e) => setCondenacaoDataFinal(e.target.value)}
+                                    onChange={setCondenacaoDataFinal}
+                                    ariaLabel="Mês final da correção da condenação"
                                     className="w-full bg-white py-1 px-2 border border-slate-200 rounded text-xs font-semibold text-slate-800 focus:outline-none focus:border-indigo-400"
-                                    placeholder="MM/AAAA"
                                   />
                                 </div>
                               </div>
@@ -1758,12 +1850,12 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5 text-left">
                         <label className="text-[11.5px] font-bold text-slate-700">Mês/Ano Distribuição</label>
-                        <input
-                          type="text"
+                        <MonthYearInput
                           value={epAOrigMonth}
-                          onChange={(e) => setEpAOrigMonth(e.target.value)}
-                          className="w-full bg-slate-50 py-1.5 px-3 border border-slate-300 rounded text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none"
+                          onChange={setEpAOrigMonth}
+                          ariaLabel="Mês/ano da distribuição"
                           placeholder="Ex: 01/2023"
+                          className="w-full bg-slate-50 py-1.5 px-3 border border-slate-300 rounded text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none"
                         />
                       </div>
                       
@@ -2001,6 +2093,18 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                 </div>
               )}
 
+              {/* Alerta de data inválida em uso no cálculo */}
+              {datasAtivasInvalidas && (
+                <div className="flex items-start gap-2 p-3 rounded bg-red-500/15 border border-red-400/40 text-left">
+                  <ShieldAlert className="w-4 h-4 text-red-300 shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-red-100 leading-snug font-sans">
+                    Há um campo de <strong className="font-bold">data inválido</strong> sendo usado na correção monetária
+                    (formato MM/AAAA entre {String(PRIMEIRO_MES).padStart(2, '0')}/{PRIMEIRO_ANO} e {ULTIMO_PERIODO_LABEL}).
+                    Corrija a data para que o valor abaixo seja confiável.
+                  </p>
+                </div>
+              )}
+
               {/* Total money count */}
               <div className="space-y-0.5 text-left">
                 <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">
@@ -2061,16 +2165,22 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                 <div className="space-y-2 text-left">
                   <span className="block text-xs font-bold text-slate-200">Emissão do Portal de Custas e-SAJ (TJSP)</span>
                   <p className="text-[10.5px] text-slate-400 leading-relaxed font-sans">
-                    Utilize os atalhos abaixo para preencher os valores nos sistemas oficiais do Tribunal:
+                    Ao clicar, o <strong className="font-semibold text-slate-200">valor exato da guia é copiado</strong> e o sistema oficial do Tribunal abre em nova aba — basta colar no campo de valor:
                   </p>
                   <div className="grid grid-cols-1 gap-2 pt-1 text-xs font-bold font-sans">
                     <a
                       href="https://portaldecustas.tjsp.jus.br/portaltjsp"
                       target="_blank"
                       rel="noreferrer"
+                      onClick={() => handleEmitGuia(eSajDareSum, 'dare')}
                       className="flex items-center justify-between p-2.5 rounded bg-white/10 hover:bg-white/15 border border-white/10 text-white transition-colors"
                     >
-                      <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5 text-cyan-300" />Emitir Guia DARE (Código 230-6)</span>
+                      <span className="flex items-center gap-1.5">
+                        {copiedGuia === 'dare' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <FileText className="w-3.5 h-3.5 text-cyan-300" />}
+                        {copiedGuia === 'dare'
+                          ? `Valor R$ ${eSajDareSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} copiado`
+                          : 'Emitir Guia DARE (Código 230-6)'}
+                      </span>
                       <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                     </a>
                     {postageAddresses > 0 && (
@@ -2078,9 +2188,15 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                         href="https://www45.bb.com.br/fmc/frm/fw0707314_1.jsp"
                         target="_blank"
                         rel="noreferrer"
+                        onClick={() => handleEmitGuia(postalSum, 'fedtj')}
                         className="flex items-center justify-between p-2.5 rounded bg-white/10 hover:bg-white/15 border border-white/10 text-white transition-colors"
                        >
-                        <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5 text-slate-400" />Despesas Postais FEDTJ (Código 120-1)</span>
+                        <span className="flex items-center gap-1.5">
+                          {copiedGuia === 'fedtj' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <FileText className="w-3.5 h-3.5 text-slate-400" />}
+                          {copiedGuia === 'fedtj'
+                            ? `Valor R$ ${postalSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} copiado`
+                            : 'Despesas Postais FEDTJ (Código 120-1)'}
+                        </span>
                         <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                       </a>
                     )}
@@ -2089,9 +2205,15 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                         href="https://www63.bb.com.br/portalbb/boleto/boletos/oficialjustica/entrada,802,2270,3617,15,0.bbx"
                         target="_blank"
                         rel="noreferrer"
+                        onClick={() => handleEmitGuia(grdSum, 'grd')}
                         className="flex items-center justify-between p-2.5 rounded bg-white/10 hover:bg-white/15 border border-white/10 text-white transition-colors"
                       >
-                        <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5 text-slate-400" />Oficial de Justiça (GRD)</span>
+                        <span className="flex items-center gap-1.5">
+                          {copiedGuia === 'grd' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <FileText className="w-3.5 h-3.5 text-slate-400" />}
+                          {copiedGuia === 'grd'
+                            ? `Valor R$ ${grdSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} copiado`
+                            : 'Oficial de Justiça (GRD)'}
+                        </span>
                         <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                       </a>
                     )}
@@ -2222,12 +2344,12 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                   <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider">
                     Data Inicial (Mês/Ano)
                   </label>
-                  <input
-                    type="text"
+                  <MonthYearInput
                     value={mcDataInicial}
-                    onChange={(e) => setMcDataInicial(e.target.value)}
-                    className="w-full bg-slate-50 py-2 px-3 border border-slate-300 rounded text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none"
+                    onChange={setMcDataInicial}
+                    ariaLabel="Data inicial da correção"
                     placeholder="Ex: 01/2024"
+                    className="w-full bg-slate-50 py-2 px-3 border border-slate-300 rounded text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none"
                   />
                 </div>
 
@@ -2236,12 +2358,12 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                   <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider">
                     Data Final (Mês de Referência)
                   </label>
-                  <input
-                    type="text"
+                  <MonthYearInput
                     value={mcDataFinal}
-                    onChange={(e) => setMcDataFinal(e.target.value)}
-                    className="w-full bg-slate-50 py-2 px-3 border border-slate-300 rounded text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none"
+                    onChange={setMcDataFinal}
+                    ariaLabel="Data final da correção"
                     placeholder="Ex: 05/2026"
+                    className="w-full bg-slate-50 py-2 px-3 border border-slate-300 rounded text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none"
                   />
                 </div>
 
@@ -2366,8 +2488,9 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
               </button>
               <button
                 type="button"
+                disabled={!isValidMonthYear(mcDataInicial) || !isValidMonthYear(mcDataFinal)}
                 onClick={() => applyCorrectedValue(currentMcResult.valorCorrigido)}
-                className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded transition-colors cursor-pointer flex items-center space-x-1 shadow-3xs"
+                className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded transition-colors cursor-pointer flex items-center space-x-1 shadow-3xs disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600"
               >
                 <Check className="w-3.5 h-3.5" />
                 <span>Aplicar Valor no Campo</span>

@@ -233,3 +233,18 @@ export function buscarIndiceOficial(
   // Fallback seguro
   return { value: 104.414440, found: false };
 }
+
+/**
+ * Retorna o último mês/ano com índice oficial disponível na tabela comum
+ * (a mais recente das séries). Serve de limite superior para validar os
+ * campos de data, acompanhando automaticamente as atualizações das tabelas.
+ */
+export function getUltimoPeriodoDisponivel(): { ano: number; mes: number } {
+  const anos = Object.keys(NOVA_TABELA_POS_2024).map(Number).sort((a, b) => b - a);
+  const ano = anos[0];
+  // Em 2024 a série pós-reforma começa em setembro (mês 9); nos demais anos
+  // o índice do mês equivale ao comprimento do array (jan = 1).
+  const offset = ano === 2024 ? 8 : 0;
+  const mes = NOVA_TABELA_POS_2024[ano].length + offset;
+  return { ano, mes };
+}
