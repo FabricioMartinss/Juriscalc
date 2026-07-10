@@ -8,7 +8,7 @@ import { Chrome, ShieldCheck, ArrowRight, ExternalLink, Clock } from 'lucide-rea
  * Assim que esta constante tiver um valor, o botão passa a instalar em 1 clique
  * automaticamente — não precisa mexer em mais nada.
  */
-const CHROME_STORE_URL = '';
+const CHROME_STORE_URL = 'https://chromewebstore.google.com/detail/judscalc-sp-%E2%80%94-custas-tjsp/ljikjeanajpmnckkdbnepnpfkelgdnge';
 
 export default function ChromeExtensionTab() {
   const published = CHROME_STORE_URL.trim().length > 0;
