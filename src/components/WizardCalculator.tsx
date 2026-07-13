@@ -16,13 +16,25 @@ import {
   TrendingUp,
   Percent,
   RefreshCw,
-  X
+  X,
+  Chrome,
+  Zap
 } from 'lucide-react';
 import { UFESP_2026 } from '../data/tabelaPratica';
 import { buscarIndiceOficial, getUltimoPeriodoDisponivel, TipoTabelaCorrecao } from '../data/tabelasOficiais';
 
 // Constants
 const TARIFA_POSTAL_AR = 35.75; // Tarifa de envelopamento/AR dos Correios (TJSP 2026)
+
+// Mapeia a categoria de cálculo do app para o texto do "Tipo de Serviço" no
+// Portal de Custas (o autofill casa por trecho do texto). Vazio = usuário
+// seleciona o serviço no portal (fluxo ainda não mapeado).
+const PORTAL_TIPO_SERVICO: Record<string, string> = {
+  comum_3: 'APELACAO', // Preparo da Apelação - 230-6 (validado)
+};
+function mapServicoPortal(id: string): string {
+  return PORTAL_TIPO_SERVICO[id] || '';
+}
 
 // ===== Validação de campos de data (MM/AAAA) =====
 // Limite superior derivado das tabelas oficiais, para acompanhar atualizações.
@@ -809,6 +821,13 @@ export default function WizardCalculator({
   // Qual guia teve o valor copiado por último (para feedback visual no botão)
   const [copiedGuia, setCopiedGuia] = useState<string | null>(null);
 
+  // Emissão automática via extensão (autofill no Portal de Custas)
+  const [extPresente, setExtPresente] = useState<boolean>(false);
+  const [autofillEnviado, setAutofillEnviado] = useState<boolean>(false);
+  const [dadosEmissao, setDadosEmissao] = useState({
+    cpf: '', nome: '', telefone: '', endereco: '', municipio: '', processo: '',
+  });
+
   // Parsing values helper
   const pVal = (s: string) => Math.max(0, parseFloat(s) || 0);
 
@@ -1159,6 +1178,40 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
     navigator.clipboard?.writeText(txt);
     setCopiedGuia(id);
     setTimeout(() => setCopiedGuia((cur) => (cur === id ? null : cur)), 2500);
+  };
+
+  // Detecta a extensão JudsCalc (o content script anuncia 'JUDS_EXT_PRONTA').
+  useEffect(() => {
+    const onMsg = (ev: MessageEvent) => {
+      if (ev.source === window && ev.data && ev.data.type === 'JUDS_EXT_PRONTA') {
+        setExtPresente(true);
+      }
+    };
+    window.addEventListener('message', onMsg);
+    window.postMessage({ type: 'JUDS_PING' }, '*'); // caso a extensão já esteja pronta
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  // Envia os dados calculados + informados para a extensão preencher o portal.
+  const handleAutofillGuia = () => {
+    const fmt = (v: number) =>
+      v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const dados = {
+      cpf: dadosEmissao.cpf,
+      nome: dadosEmissao.nome,
+      telefone: dadosEmissao.telefone,
+      endereco: dadosEmissao.endereco,
+      uf: 'SP',
+      municipio: dadosEmissao.municipio,
+      processo: dadosEmissao.processo,
+      tipoServico: mapServicoPortal(selectedSajId),
+      valorCausa: fmt(currentInputs.valorCausa),
+      valorCondenacao: temCondenacao ? fmt(currentInputs.valorCondenacao) : '',
+      valorReceita: fmt(eSajDareSum),
+    };
+    window.postMessage({ type: 'JUDS_EMITIR_GUIA', dados }, '*');
+    setAutofillEnviado(true);
+    setTimeout(() => setAutofillEnviado(false), 4000);
   };
 
   return (
@@ -2167,6 +2220,51 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                   <p className="text-[10.5px] text-slate-400 leading-relaxed font-sans">
                     Ao clicar, o <strong className="font-semibold text-slate-200">valor exato da guia é copiado</strong> e o sistema oficial do Tribunal abre em nova aba — basta colar no campo de valor:
                   </p>
+
+                  {/* Emissão automática (aparece quando a extensão JudsCalc é detectada) */}
+                  {extPresente && (
+                    <div className="mb-3 p-3 rounded-lg bg-cyan-500/10 border border-cyan-400/30 space-y-2.5">
+                      <div className="flex items-center gap-1.5 text-cyan-200 text-[11px] font-bold uppercase tracking-wide">
+                        <Zap className="w-3.5 h-3.5 text-cyan-300" /> Emissão automática (extensão detectada)
+                      </div>
+                      <p className="text-[10px] text-slate-400 leading-snug font-sans">
+                        Preencha os dados abaixo e clique — a extensão abre o portal e preenche tudo. Você só confere e clica em Emitir.
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {([
+                          ['cpf', 'CPF/CNPJ'],
+                          ['nome', 'Nome'],
+                          ['telefone', 'Telefone'],
+                          ['endereco', 'Endereço'],
+                          ['municipio', 'Município'],
+                          ['processo', 'Nº do Processo'],
+                        ] as const).map(([campo, label]) => (
+                          <input
+                            key={campo}
+                            value={dadosEmissao[campo]}
+                            onChange={(e) => setDadosEmissao((d) => ({ ...d, [campo]: e.target.value }))}
+                            placeholder={label}
+                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
+                          />
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAutofillGuia}
+                        disabled={!dadosEmissao.cpf || !dadosEmissao.processo}
+                        className="w-full flex items-center justify-center gap-1.5 py-2 rounded bg-cyan-500 hover:bg-cyan-600 text-slate-950 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <Chrome className="w-3.5 h-3.5" />
+                        {autofillEnviado ? 'Abrindo o portal…' : 'Emitir Guia automaticamente'}
+                      </button>
+                      {!mapServicoPortal(selectedSajId) && (
+                        <p className="text-[9px] text-amber-300/80 leading-snug font-sans">
+                          Obs.: o preenchimento automático do "Tipo de Serviço" ainda está mapeado só para Apelação. Nesta categoria, selecione o serviço no portal (o resto é preenchido).
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 gap-2 pt-1 text-xs font-bold font-sans">
                     <a
                       href="https://portaldecustas.tjsp.jus.br/portaltjsp"

@@ -1,9 +1,16 @@
 {
   "manifest_version": 3,
   "name": "JudsCalc SP — Custas TJSP",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Calculadora e auditoria de custas processuais do TJSP (e-SAJ e E-PROC) em painel lateral de altura total.",
-  "permissions": ["sidePanel"],
+  "permissions": ["sidePanel", "storage"],
+  "host_permissions": ["https://portaldecustas.tjsp.jus.br/*"],
+  "externally_connectable": {
+    "matches": [
+      "https://juriscalc2.netlify.app/*",
+      "http://localhost:3000/*"
+    ]
+  },
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -25,6 +32,27 @@
   "background": {
     "service_worker": "background.js"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://juriscalc2.netlify.app/*",
+        "http://localhost:3000/*"
+      ],
+      "js": ["appbridge.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://portaldecustas.tjsp.jus.br/portaltjsp/pages/custas/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://portaldecustas.tjsp.jus.br/portaltjsp/pages/custas/*"],
+      "js": ["filler.js"],
+      "world": "MAIN",
+      "run_at": "document_idle"
+    }
+  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:;"
   }
