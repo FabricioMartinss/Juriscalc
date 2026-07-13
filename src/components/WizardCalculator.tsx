@@ -27,10 +27,25 @@ import { buscarIndiceOficial, getUltimoPeriodoDisponivel, TipoTabelaCorrecao } f
 const TARIFA_POSTAL_AR = 35.75; // Tarifa de envelopamento/AR dos Correios (TJSP 2026)
 
 // Mapeia a categoria de cálculo do app para o texto do "Tipo de Serviço" no
-// Portal de Custas (o autofill casa por trecho do texto). Vazio = usuário
-// seleciona o serviço no portal (fluxo ainda não mapeado).
+// Portal de Custas (o autofill casa por trecho do texto, sem acento). Cada
+// valor é um trecho que identifica de forma única a opção correta do portal.
+// Vazio/ausente = usuário seleciona o serviço no portal.
 const PORTAL_TIPO_SERVICO: Record<string, string> = {
-  comum_3: 'APELACAO', // Preparo da Apelação - 230-6 (validado)
+  comum_1: 'Petição Inicial',                         // Petição Inicial - 230-6
+  comum_2: 'Execução de Título Extrajudicial',        // Execução de Título Extrajudicial - 230-6
+  comum_3: 'Preparo da Apelação',                     // Preparo da Apelação - 230-6 (validado)
+  comum_4: 'Cumprimento de Sentença',                 // Cumprimento de Sentença - 230-6
+  comum_5: 'Cumprimento de Sentença',                 // idem (título de outro órgão)
+  comum_6: 'Satisfação da Execução',                  // Satisfação da Execução - 230-6
+  comum_7: 'Execução Fiscal',                         // Taxa Judiciária - Execução Fiscal - 230-6
+  comum_8: 'Agravo de Instrumento',                   // Agravo de Instrumento - 234-3
+  comum_9: 'Cartas Precatórias - Processo Origem TJSP', // padrão p/ cartas (usuário troca se for Ordem/Outros)
+  comum_10: 'Causa em que Haja Partilha',             // Causa em que Haja Partilha - 230-6
+  comum_11: 'Habilitação Retardatária de Crédito',    // Habilitação Retardatária de Crédito em Concordata - 230-6
+  comum_12: 'Ações Penais em Geral',                  // Ações Penais em Geral, Salvo Competência JECRIM - 230-6
+  comum_13: 'Ação Penal Privada - Inicial',           // padrão (distribuição); recurso o usuário troca
+  comum_15: 'Litisconsórcio Ativo Voluntário Ulterior', // Litisconsórcio Ativo Voluntário Ulterior - 230-6
+  jec_1: 'Recurso Inominado',                         // Recurso Inominado em Juizado Especial Cível - 230-6
 };
 function mapServicoPortal(id: string): string {
   return PORTAL_TIPO_SERVICO[id] || '';
@@ -2259,7 +2274,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       </button>
                       {!mapServicoPortal(selectedSajId) && (
                         <p className="text-[9px] text-amber-300/80 leading-snug font-sans">
-                          Obs.: o preenchimento automático do "Tipo de Serviço" ainda está mapeado só para Apelação. Nesta categoria, selecione o serviço no portal (o resto é preenchido).
+                          Obs.: esta categoria ainda não tem o "Tipo de Serviço" mapeado no portal — selecione-o lá manualmente (o restante dos dados é preenchido).
                         </p>
                       )}
                     </div>
