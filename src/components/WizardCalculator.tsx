@@ -51,6 +51,72 @@ function mapServicoPortal(id: string): string {
   return PORTAL_TIPO_SERVICO[id] || '';
 }
 
+// ---- Máscaras e validação dos campos de emissão automática ----
+function soDigitos(s: string): string {
+  return (s || '').replace(/\D/g, '');
+}
+// CPF (000.000.000-00) ou CNPJ (00.000.000/0000-00), conforme a quantidade de dígitos.
+function mascaraCpfCnpj(v: string): string {
+  const d = soDigitos(v).slice(0, 14);
+  if (d.length <= 11) {
+    let out = d.slice(0, 3);
+    if (d.length > 3) out += '.' + d.slice(3, 6);
+    if (d.length > 6) out += '.' + d.slice(6, 9);
+    if (d.length > 9) out += '-' + d.slice(9, 11);
+    return out;
+  }
+  let out = d.slice(0, 2) + '.' + d.slice(2, 5);
+  if (d.length > 5) out += '.' + d.slice(5, 8);
+  if (d.length > 8) out += '/' + d.slice(8, 12);
+  if (d.length > 12) out += '-' + d.slice(12, 14);
+  return out;
+}
+// Telefone (00) 0000-0000 ou (00) 00000-0000.
+function mascaraTelefone(v: string): string {
+  const d = soDigitos(v).slice(0, 11);
+  if (d.length === 0) return '';
+  let out = '(' + d.slice(0, 2);
+  if (d.length >= 3) {
+    const resto = d.slice(2);
+    out += ') ' + (resto.length > 4 ? resto.slice(0, resto.length - 4) + '-' + resto.slice(-4) : resto);
+  } else if (d.length === 2) {
+    out += ') ';
+  }
+  return out;
+}
+// Número do processo (CNJ): 0000000-00.0000.0.00.0000 (20 dígitos).
+function mascaraProcesso(v: string): string {
+  const d = soDigitos(v).slice(0, 20);
+  let out = d.slice(0, 7);
+  if (d.length > 7) out += '-' + d.slice(7, 9);
+  if (d.length > 9) out += '.' + d.slice(9, 13);
+  if (d.length > 13) out += '.' + d.slice(13, 14);
+  if (d.length > 14) out += '.' + d.slice(14, 16);
+  if (d.length > 16) out += '.' + d.slice(16, 20);
+  return out;
+}
+
+type CampoEmissaoKey = 'cpf' | 'nome' | 'telefone' | 'endereco' | 'municipio' | 'processo';
+interface CampoEmissaoDef {
+  campo: CampoEmissaoKey;
+  label: string;
+  mask?: (v: string) => string;
+  valido: (v: string) => boolean;
+  numerico?: boolean;
+  maxLength?: number;
+}
+const CAMPOS_EMISSAO: CampoEmissaoDef[] = [
+  { campo: 'cpf', label: 'CPF/CNPJ', mask: mascaraCpfCnpj, numerico: true, maxLength: 18,
+    valido: (v) => { const n = soDigitos(v).length; return n === 11 || n === 14; } },
+  { campo: 'nome', label: 'Nome', valido: (v) => v.trim().length >= 2 },
+  { campo: 'telefone', label: 'Telefone', mask: mascaraTelefone, numerico: true, maxLength: 16,
+    valido: (v) => { const n = soDigitos(v).length; return n === 10 || n === 11; } },
+  { campo: 'endereco', label: 'Endereço', valido: (v) => v.trim().length >= 3 },
+  { campo: 'municipio', label: 'Município', valido: (v) => v.trim().length >= 2 },
+  { campo: 'processo', label: 'Nº do Processo', mask: mascaraProcesso, numerico: true, maxLength: 25,
+    valido: (v) => soDigitos(v).length === 20 },
+];
+
 // ===== Validação de campos de data (MM/AAAA) =====
 // Limite superior derivado das tabelas oficiais, para acompanhar atualizações.
 const ULTIMO_PERIODO = getUltimoPeriodoDisponivel();
@@ -2246,27 +2312,32 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                         Preencha os dados abaixo e clique — a extensão abre o portal e preenche tudo. Você só confere e clica em Emitir.
                       </p>
                       <div className="grid grid-cols-2 gap-2">
-                        {([
-                          ['cpf', 'CPF/CNPJ'],
-                          ['nome', 'Nome'],
-                          ['telefone', 'Telefone'],
-                          ['endereco', 'Endereço'],
-                          ['municipio', 'Município'],
-                          ['processo', 'Nº do Processo'],
-                        ] as const).map(([campo, label]) => (
-                          <input
-                            key={campo}
-                            value={dadosEmissao[campo]}
-                            onChange={(e) => setDadosEmissao((d) => ({ ...d, [campo]: e.target.value }))}
-                            placeholder={label}
-                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
-                          />
-                        ))}
+                        {CAMPOS_EMISSAO.map((c) => {
+                          const valor = dadosEmissao[c.campo];
+                          const invalido = valor.length > 0 && !c.valido(valor);
+                          return (
+                            <input
+                              key={c.campo}
+                              value={valor}
+                              inputMode={c.numerico ? 'numeric' : undefined}
+                              maxLength={c.maxLength}
+                              aria-invalid={invalido}
+                              onChange={(e) => {
+                                const novo = c.mask ? c.mask(e.target.value) : e.target.value;
+                                setDadosEmissao((d) => ({ ...d, [c.campo]: novo }));
+                              }}
+                              placeholder={c.label}
+                              className={`w-full bg-white/10 border rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none ${
+                                invalido ? 'border-red-400 focus:border-red-400' : 'border-white/10 focus:border-cyan-400/60'
+                              }`}
+                            />
+                          );
+                        })}
                       </div>
                       <button
                         type="button"
                         onClick={handleAutofillGuia}
-                        disabled={!dadosEmissao.cpf || !dadosEmissao.processo}
+                        disabled={!CAMPOS_EMISSAO.every((c) => c.valido(dadosEmissao[c.campo]))}
                         className="w-full flex items-center justify-center gap-1.5 py-2 rounded bg-cyan-500 hover:bg-cyan-600 text-slate-950 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       >
                         <Chrome className="w-3.5 h-3.5" />
