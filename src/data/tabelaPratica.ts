@@ -25,7 +25,7 @@ export const LINKS = {
 // Histórico de valores da UFESP para referência
 export const HISTORICO_UFESP = [
   { ano: 2026, valor: 38.42 },
-  { ano: 2025, valor: 35.36 },
+  { ano: 2025, valor: 37.02 },
   { ano: 2024, valor: 35.36 },
   { ano: 2023, valor: 34.26 },
   { ano: 2022, valor: 31.97 },
@@ -35,99 +35,101 @@ export const HISTORICO_UFESP = [
 
 /**
  * Tabela Prática de Atualização Monetária do TJSP (Índices INPC/TJSP consolidado)
- * de Janeiro de 2020 a Maio de 2026 para fins de cálculo de correção financeira.
+ * de Janeiro de 2020 a Julho de 2026 para fins de cálculo de correção financeira.
  */
 export const TABELA_PRATICA_TJSP: IndexMes[] = [
   // 2020
-  { ano: 2020, mes: 1, indexValue: 72.8415 },
-  { ano: 2020, mes: 2, indexValue: 72.9799 },
-  { ano: 2020, mes: 3, indexValue: 73.1039 },
-  { ano: 2020, mes: 4, indexValue: 73.2355 },
-  { ano: 2020, mes: 5, indexValue: 73.0660 },
-  { ano: 2020, mes: 6, indexValue: 72.8833 },
-  { ano: 2020, mes: 7, indexValue: 73.1021 },
-  { ano: 2020, mes: 8, indexValue: 73.4238 },
-  { ano: 2020, mes: 9, indexValue: 73.6881 },
-  { ano: 2020, mes: 10, indexValue: 74.3285 },
-  { ano: 2020, mes: 11, indexValue: 75.0003 },
-  { ano: 2020, mes: 12, indexValue: 75.7153 },
+  { ano: 2020, mes: 1, indexValue: 73.008384 },
+  { ano: 2020, mes: 2, indexValue: 73.147099 },
+  { ano: 2020, mes: 3, indexValue: 73.271449 },
+  { ano: 2020, mes: 4, indexValue: 73.403337 },
+  { ano: 2020, mes: 5, indexValue: 73.234509 },
+  { ano: 2020, mes: 6, indexValue: 73.051422 },
+  { ano: 2020, mes: 7, indexValue: 73.270576 },
+  { ano: 2020, mes: 8, indexValue: 73.592966 },
+  { ano: 2020, mes: 9, indexValue: 73.857900 },
+  { ano: 2020, mes: 10, indexValue: 74.500463 },
+  { ano: 2020, mes: 11, indexValue: 75.163517 },
+  { ano: 2020, mes: 12, indexValue: 75.877570 },
   
   // 2021
-  { ano: 2021, mes: 1, indexValue: 76.8207 },
-  { ano: 2021, mes: 2, indexValue: 77.0281 },
-  { ano: 2021, mes: 3, indexValue: 77.6601 },
-  { ano: 2021, mes: 4, indexValue: 78.3279 },
-  { ano: 2021, mes: 5, indexValue: 78.6255 },
-  { ano: 2021, mes: 6, indexValue: 79.3795 },
-  { ano: 2021, mes: 7, indexValue: 79.8558 },
-  { ano: 2021, mes: 8, indexValue: 80.6703 },
-  { ano: 2021, mes: 9, indexValue: 81.3802 },
-  { ano: 2021, mes: 10, indexValue: 82.3568 },
-  { ano: 2021, mes: 11, indexValue: 83.3121 },
-  { ano: 2021, mes: 12, indexValue: 84.0120 },
+  { ano: 2021, mes: 1, indexValue: 76.985382 },
+  { ano: 2021, mes: 2, indexValue: 77.193242 },
+  { ano: 2021, mes: 3, indexValue: 77.826226 },
+  { ano: 2021, mes: 4, indexValue: 78.495531 },
+  { ano: 2021, mes: 5, indexValue: 78.793814 },
+  { ano: 2021, mes: 6, indexValue: 79.550234 },
+  { ano: 2021, mes: 7, indexValue: 80.027535 },
+  { ano: 2021, mes: 8, indexValue: 80.843815 },
+  { ano: 2021, mes: 9, indexValue: 81.555240 },
+  { ano: 2021, mes: 10, indexValue: 82.533902 },
+  { ano: 2021, mes: 11, indexValue: 83.491295 },
+  { ano: 2021, mes: 12, indexValue: 84.192621 },
 
   // 2022
-  { ano: 2022, mes: 1, indexValue: 84.6253 },
-  { ano: 2022, mes: 2, indexValue: 85.2431 },
-  { ano: 2022, mes: 3, indexValue: 86.0955 },
-  { ano: 2022, mes: 4, indexValue: 87.5677 },
-  { ano: 2022, mes: 5, indexValue: 88.4796 },
-  { ano: 2022, mes: 6, indexValue: 88.8876 },
-  { ano: 2022, mes: 7, indexValue: 89.4476 },
-  { ano: 2022, mes: 8, indexValue: 88.9115 },
-  { ano: 2022, mes: 9, indexValue: 88.6237 },
-  { ano: 2022, mes: 10, indexValue: 88.3391 },
-  { ano: 2022, mes: 11, indexValue: 88.7543 },
-  { ano: 2022, mes: 12, indexValue: 89.0916 },
+  { ano: 2022, mes: 1, indexValue: 84.807227 },
+  { ano: 2022, mes: 2, indexValue: 85.375435 },
+  { ano: 2022, mes: 3, indexValue: 86.229189 },
+  { ano: 2022, mes: 4, indexValue: 87.703708 },
+  { ano: 2022, mes: 5, indexValue: 88.615826 },
+  { ano: 2022, mes: 6, indexValue: 89.014597 },
+  { ano: 2022, mes: 7, indexValue: 89.566487 },
+  { ano: 2022, mes: 8, indexValue: 89.029088 },
+  { ano: 2022, mes: 9, indexValue: 88.753097 },
+  { ano: 2022, mes: 10, indexValue: 88.469087 },
+  { ano: 2022, mes: 11, indexValue: 88.884891 },
+  { ano: 2022, mes: 12, indexValue: 89.222653 },
 
   // 2023
-  { ano: 2023, mes: 1, indexValue: 89.5727 },
-  { ano: 2023, mes: 2, indexValue: 90.0474 },
-  { ano: 2023, mes: 3, indexValue: 90.7408 },
-  { ano: 2023, mes: 4, indexValue: 91.3201 },
-  { ano: 2023, mes: 5, indexValue: 91.8041 },
-  { ano: 2023, mes: 6, indexValue: 92.1346 },
-  { ano: 2023, mes: 7, indexValue: 92.0425 },
-  { ano: 2023, mes: 8, indexValue: 92.0149 },
-  { ano: 2023, mes: 9, indexValue: 92.1989 },
-  { ano: 2023, mes: 10, indexValue: 92.3003 },
-  { ano: 2023, mes: 11, indexValue: 92.4111 },
-  { ano: 2023, mes: 12, indexValue: 92.5035 },
+  { ano: 2023, mes: 1, indexValue: 89.838289 },
+  { ano: 2023, mes: 2, indexValue: 90.251545 },
+  { ano: 2023, mes: 3, indexValue: 90.946481 },
+  { ano: 2023, mes: 4, indexValue: 91.528538 },
+  { ano: 2023, mes: 5, indexValue: 92.013639 },
+  { ano: 2023, mes: 6, indexValue: 92.344888 },
+  { ano: 2023, mes: 7, indexValue: 92.252543 },
+  { ano: 2023, mes: 8, indexValue: 92.169515 },
+  { ano: 2023, mes: 9, indexValue: 92.353854 },
+  { ano: 2023, mes: 10, indexValue: 92.455443 },
+  { ano: 2023, mes: 11, indexValue: 92.566389 },
+  { ano: 2023, mes: 12, indexValue: 92.658955 },
 
   // 2024
-  { ano: 2024, mes: 1, indexValue: 93.0125 },
-  { ano: 2024, mes: 2, indexValue: 93.5422 },
-  { ano: 2024, mes: 3, indexValue: 94.3015 },
-  { ano: 2024, mes: 4, indexValue: 94.4851 },
-  { ano: 2024, mes: 5, indexValue: 94.8347 },
-  { ano: 2024, mes: 6, indexValue: 95.2709 },
-  { ano: 2024, mes: 7, indexValue: 95.5186 },
-  { ano: 2024, mes: 8, indexValue: 95.6523 },
-  { ano: 2024, mes: 9, indexValue: 95.7862 },
-  { ano: 2024, mes: 10, indexValue: 96.1118 },
-  { ano: 2024, mes: 11, indexValue: 96.7021 },
-  { ano: 2024, mes: 12, indexValue: 97.4124 },
+  { ano: 2024, mes: 1, indexValue: 93.168579 },
+  { ano: 2024, mes: 2, indexValue: 93.699639 },
+  { ano: 2024, mes: 3, indexValue: 94.458606 },
+  { ano: 2024, mes: 4, indexValue: 94.638077 },
+  { ano: 2024, mes: 5, indexValue: 94.988237 },
+  { ano: 2024, mes: 6, indexValue: 95.425182 },
+  { ano: 2024, mes: 7, indexValue: 95.663744 },
+  { ano: 2024, mes: 8, indexValue: 95.912469 },
+  { ano: 2024, mes: 9, indexValue: 96.094702 },
+  { ano: 2024, mes: 10, indexValue: 96.219625 },
+  { ano: 2024, mes: 11, indexValue: 96.739210 },
+  { ano: 2024, mes: 12, indexValue: 97.338993 },
 
   // 2025
-  { ano: 2025, mes: 1, indexValue: 97.9015 },
-  { ano: 2025, mes: 2, indexValue: 98.3125 },
-  { ano: 2025, mes: 3, indexValue: 98.8124 },
-  { ano: 2025, mes: 4, indexValue: 99.1123 },
-  { ano: 2025, mes: 5, indexValue: 99.4012 },
-  { ano: 2025, mes: 6, indexValue: 99.8124 },
-  { ano: 2025, mes: 7, indexValue: 100.1245 },
-  { ano: 2025, mes: 8, indexValue: 100.2515 },
-  { ano: 2025, mes: 9, indexValue: 100.3524 },
-  { ano: 2025, mes: 10, indexValue: 100.7511 },
-  { ano: 2025, mes: 11, indexValue: 101.2145 },
-  { ano: 2025, mes: 12, indexValue: 101.9515 },
+  { ano: 2025, mes: 1, indexValue: 97.669945 },
+  { ano: 2025, mes: 2, indexValue: 97.777381 },
+  { ano: 2025, mes: 3, indexValue: 98.980042 },
+  { ano: 2025, mes: 4, indexValue: 99.613514 },
+  { ano: 2025, mes: 5, indexValue: 100.041852 },
+  { ano: 2025, mes: 6, indexValue: 100.402002 },
+  { ano: 2025, mes: 7, indexValue: 100.663047 },
+  { ano: 2025, mes: 8, indexValue: 100.995235 },
+  { ano: 2025, mes: 9, indexValue: 100.853841 },
+  { ano: 2025, mes: 10, indexValue: 101.337939 },
+  { ano: 2025, mes: 11, indexValue: 101.520347 },
+  { ano: 2025, mes: 12, indexValue: 101.723387 },
 
   // 2026
-  { ano: 2026, mes: 1, indexValue: 102.3214 },
-  { ano: 2026, mes: 2, indexValue: 102.7125 },
-  { ano: 2026, mes: 3, indexValue: 103.1114 },
-  { ano: 2026, mes: 4, indexValue: 103.4514 },
-  { ano: 2026, mes: 5, indexValue: 103.7842 }, // Mês atual da requisição 05/2026
+  { ano: 2026, mes: 1, indexValue: 101.977695 },
+  { ano: 2026, mes: 2, indexValue: 102.181650 },
+  { ano: 2026, mes: 3, indexValue: 103.039975 },
+  { ano: 2026, mes: 4, indexValue: 103.493350 },
+  { ano: 2026, mes: 5, indexValue: 104.414440 },
+  { ano: 2026, mes: 6, indexValue: 105.061809 },
+  { ano: 2026, mes: 7, indexValue: 105.492562 }, // Último índice oficial disponível 07/2026
 ];
 
 export function buscarIndiceTJSP(ano: number, mes: number): { value: number; found: boolean } {
@@ -137,9 +139,9 @@ export function buscarIndiceTJSP(ano: number, mes: number): { value: number; fou
   }
   // Fallback: se for antes de 2020, retorna o primeiro índice. Se pós-2026, retorna o último.
   if (ano < 2020) {
-    return { value: 72.8415, found: false };
+    return { value: 73.008384, found: false };
   }
-  return { value: 103.7842, found: false };
+  return { value: 105.492562, found: false };
 }
 
 export interface CategoriaMeta {

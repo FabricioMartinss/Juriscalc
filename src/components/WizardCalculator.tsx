@@ -24,7 +24,7 @@ import { UFESP_2026 } from '../data/tabelaPratica';
 import { buscarIndiceOficial, getUltimoPeriodoDisponivel, TipoTabelaCorrecao } from '../data/tabelasOficiais';
 
 // Constants
-const TARIFA_POSTAL_AR = 35.75; // Tarifa de envelopamento/AR dos Correios (TJSP 2026)
+const TARIFA_POSTAL_AR = 34.35; // Carta registrada unipaginada c/ AR digital — Prov. CSM nº 2.777/25 e 2.788/25 (TJSP, consulta 16/07/2026)
 
 // Mapeia a categoria de cálculo do app para o texto do "Tipo de Serviço" no
 // Portal de Custas (o autofill casa por trecho do texto, sem acento). Cada
@@ -1838,7 +1838,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                         onChange={(e) => setPostageAddresses(Math.max(0, parseInt(e.target.value) || 0))}
                         className="w-20 py-1.5 bg-slate-50 border border-slate-300 rounded text-center text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none"
                       />
-                      <span className="text-xs text-slate-500 font-medium">Cartas (AR) (R$ 35,75 cada)</span>
+                      <span className="text-xs text-slate-500 font-medium">Cartas (AR) (R$ 34,35 cada)</span>
                     </div>
                   </div>
 
