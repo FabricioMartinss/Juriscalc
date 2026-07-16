@@ -22,7 +22,7 @@ export default function ChromeExtensionTab() {
         </div>
         <div className="flex items-center space-x-2">
           <span className="bg-cyan-500 text-slate-950 font-black px-2 py-0.5 rounded text-[9px] tracking-wide uppercase">Oficial</span>
-          <span className="text-slate-300 font-mono font-semibold">Extensão v2.0.0</span>
+          <span className="text-slate-300 font-mono font-semibold">Extensão v2.1.0</span>
         </div>
         <div>
           <h3 className="text-sm font-bold text-white tracking-tight uppercase">Extensão JudsCalc SP</h3>
