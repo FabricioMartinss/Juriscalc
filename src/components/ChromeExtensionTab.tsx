@@ -1,5 +1,9 @@
 import { Chrome, ShieldCheck, ArrowRight, ExternalLink, Clock } from 'lucide-react';
 
+// Lido do próprio manifest da extensão: o rótulo exibido aqui acompanha o que
+// for publicado na loja, sem depender de alguém lembrar de trocar o número.
+import manifestExtensao from '@/extension-src/manifest.json';
+
 /**
  * Link da extensão na Chrome Web Store.
  *
@@ -22,7 +26,7 @@ export default function ChromeExtensionTab() {
         </div>
         <div className="flex items-center space-x-2">
           <span className="bg-cyan-500 text-slate-950 font-black px-2 py-0.5 rounded text-[9px] tracking-wide uppercase">Oficial</span>
-          <span className="text-slate-300 font-mono font-semibold">Extensão v2.1.0</span>
+          <span className="text-slate-300 font-mono font-semibold">Extensão v{manifestExtensao.version}</span>
         </div>
         <div>
           <h3 className="text-sm font-bold text-white tracking-tight uppercase">Extensão JudsCalc SP</h3>
