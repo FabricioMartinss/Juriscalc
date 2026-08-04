@@ -47,12 +47,12 @@ jobs:
       - name: Detectar mudança
         id: diff
         run: |
-          if git diff --quiet -- src/data/indices.generated.ts; then
+          if git diff --quiet -- src/data/indices.generated.ts public/indices.json; then
             echo "mudou=false" >> "$GITHUB_OUTPUT"
             echo "Nenhum índice novo."
           else
             echo "mudou=true" >> "$GITHUB_OUTPUT"
-            git --no-pager diff -- src/data/indices.generated.ts
+            git --no-pager diff -- src/data/indices.generated.ts public/indices.json
           fi
 
       # Só faz sentido validar o build se os dados mudaram.
@@ -67,13 +67,14 @@ jobs:
         run: |
           git config user.name  'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add src/data/indices.generated.ts
+          git add src/data/indices.generated.ts public/indices.json
           git commit -m 'chore(indices): sincroniza tabelas praticas do TJSP'
           git push
 
-      - name: Lembrete sobre a extensão
+      - name: Aviso
         if: steps.diff.outputs.mudou == 'true'
         run: |
-          echo '::notice::Os indices mudaram. O bundle da extensao em extension/ NAO foi'\
-               'regerado por este workflow: rode `npm run build:ext` e republique na'\
-               'Chrome Web Store para que a extensao use os fatores novos.'
+          echo '::notice::Indices atualizados. A extensao publicada pega os fatores novos'\
+               'sozinha via public/indices.json assim que o deploy do site subir -- nao e'\
+               'preciso republicar na Chrome Web Store. O bundle em extension/ so precisa'\
+               'ser regerado (npm run build:ext) quando o CODIGO da extensao mudar.'

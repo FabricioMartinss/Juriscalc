@@ -1,10 +1,13 @@
 {
   "manifest_version": 3,
   "name": "JudsCalc SP — Custas TJSP",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Calculadora e auditoria de custas processuais do TJSP (e-SAJ e E-PROC) em painel lateral de altura total.",
   "permissions": ["sidePanel", "storage"],
-  "host_permissions": ["https://portaldecustas.tjsp.jus.br/*"],
+  "host_permissions": [
+    "https://portaldecustas.tjsp.jus.br/*",
+    "https://juriscalc2.netlify.app/*"
+  ],
   "externally_connectable": {
     "matches": [
       "https://juriscalc2.netlify.app/*",

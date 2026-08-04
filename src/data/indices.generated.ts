@@ -53,7 +53,7 @@ export const SERIE_IPCA_E: SerieIndices = {
 
 /** Procedência dos dados acima. */
 export const INDICES_META = {
-  geradoEm: "2026-08-03",
+  geradoEm: "2026-08-04",
   comunicado: "https://www.tjsp.jus.br/PrimeiraInstancia/CalculosJudiciais/Comunicado?codigoComunicado=2524&pagina=1",
   arquivos: {
     SERIE_NOVA: "https://api.tjsp.jus.br/Handlers/Handler/FileFetch.ashx?codigo=195452",

@@ -15,7 +15,7 @@
  */
 
 import { SERIE_COMUM_HISTORICA, SERIE_IPCA_E_HISTORICA } from './indicesHistoricos';
-import { SERIE_ANTIGA, SERIE_IPCA_E, SERIE_NOVA } from './indices.generated';
+import { ChaveSerie, serieVigente } from './indicesRemotos';
 import {
   SerieIndices,
   primeiroValorSerie,
@@ -55,10 +55,10 @@ export const LISTA_TABELAS: TabelaInfo[] = [
   }
 ];
 
-/** Série recente correspondente a cada tabela de débitos judiciais. */
-const SERIE_RECENTE: Record<'nova_tabela' | 'antiga_tabela', SerieIndices> = {
-  nova_tabela: SERIE_NOVA,
-  antiga_tabela: SERIE_ANTIGA,
+/** Chave da série recente correspondente a cada tabela de débitos judiciais. */
+const CHAVE_RECENTE: Record<'nova_tabela' | 'antiga_tabela', ChaveSerie> = {
+  nova_tabela: 'SERIE_NOVA',
+  antiga_tabela: 'SERIE_ANTIGA',
 };
 
 /**
@@ -93,10 +93,10 @@ export function buscarIndiceOficial(
   mes: number
 ): { value: number; found: boolean } {
   if (tabela === 'ipca_e') {
-    return consultar(SERIE_IPCA_E_HISTORICA, SERIE_IPCA_E, ano, mes);
+    return consultar(SERIE_IPCA_E_HISTORICA, serieVigente('SERIE_IPCA_E'), ano, mes);
   }
   // Nova e Antiga compartilham o histórico até ago/2024 e bifurcam a partir de set/2024.
-  return consultar(SERIE_COMUM_HISTORICA, SERIE_RECENTE[tabela], ano, mes);
+  return consultar(SERIE_COMUM_HISTORICA, serieVigente(CHAVE_RECENTE[tabela]), ano, mes);
 }
 
 /**
@@ -105,5 +105,5 @@ export function buscarIndiceOficial(
  * campos de data, acompanhando automaticamente as atualizações das tabelas.
  */
 export function getUltimoPeriodoDisponivel(): { ano: number; mes: number } {
-  return ultimoPeriodoSerie(SERIE_NOVA);
+  return ultimoPeriodoSerie(serieVigente('SERIE_NOVA'));
 }

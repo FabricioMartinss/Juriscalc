@@ -25,6 +25,15 @@ import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const ARQUIVO_GERADO = resolve(AQUI, '../src/data/indices.generated.ts');
+/**
+ * Cópia em JSON dos mesmos fatores, servida estaticamente (Vite copia `public/`
+ * para `dist/`). É o que permite à extensão publicada pegar um mês novo sem
+ * passar por nova revisão da Chrome Web Store.
+ */
+const ARQUIVO_JSON = resolve(AQUI, '../public/indices.json');
+
+/** Versão do formato de `indices.json`. O cliente recusa o que não reconhece. */
+const VERSAO_JSON = 1;
 
 const PAGINA_COMUNICADO =
   'https://www.tjsp.jus.br/PrimeiraInstancia/CalculosJudiciais/Comunicado?codigoComunicado=2524&pagina=1';
@@ -376,6 +385,32 @@ function gerarArquivo(dados, urls) {
   return linhas.join('\n');
 }
 
+/** Monta o payload servido em `/indices.json`, com a mesma forma de `SerieIndices`. */
+function gerarJson(dados, urls) {
+  const series = {};
+  for (const serie of SERIES) {
+    const { chave, nome, anoInicial, mesInicial } = serie;
+    const fatores = dados[chave];
+    const valores = {};
+    for (const [ano, mes] of periodosDe(fatores, anoInicial, mesInicial)) {
+      if (!valores[ano]) valores[ano] = [];
+      valores[ano].push(Number(fatores[`${ano}-${mes}`]));
+    }
+    series[chave] = { nome, anoInicial, mesInicial, valores };
+  }
+  return JSON.stringify(
+    {
+      versao: VERSAO_JSON,
+      geradoEm: new Date().toISOString().slice(0, 10),
+      comunicado: PAGINA_COMUNICADO,
+      arquivos: urls,
+      series,
+    },
+    null,
+    2
+  ) + '\n';
+}
+
 async function main() {
   console.log('Descobrindo os arquivos publicados pelo TJSP...');
   const urls = await descobrirArquivos();
@@ -403,7 +438,9 @@ async function main() {
     totalNovos += novos;
   }
 
-  if (totalNovos === 0) {
+  // O JSON pode faltar mesmo sem mês novo (por exemplo, na primeira execução
+  // depois que este arquivo passou a ser gerado).
+  if (totalNovos === 0 && existsSync(ARQUIVO_JSON)) {
     console.log('\nNada novo — as tabelas já estão em dia.');
     return;
   }
@@ -414,7 +451,8 @@ async function main() {
   }
 
   writeFileSync(ARQUIVO_GERADO, gerarArquivo(dados, urls), 'utf8');
-  console.log(`\nGravado ${ARQUIVO_GERADO} (+${totalNovos} mês(es)).`);
+  writeFileSync(ARQUIVO_JSON, gerarJson(dados, urls), 'utf8');
+  console.log(`\nGravado:\n  ${ARQUIVO_GERADO}\n  ${ARQUIVO_JSON}\n(+${totalNovos} mês(es))`);
 }
 
 main().catch((e) => falhar(e.stack || String(e)));
