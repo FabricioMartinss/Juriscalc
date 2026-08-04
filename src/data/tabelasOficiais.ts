@@ -105,5 +105,24 @@ export function buscarIndiceOficial(
  * campos de data, acompanhando automaticamente as atualizações das tabelas.
  */
 export function getUltimoPeriodoDisponivel(): { ano: number; mes: number } {
-  return ultimoPeriodoSerie(serieVigente('SERIE_NOVA'));
+  return getUltimoPeriodoDaTabela('nova_tabela');
+}
+
+/**
+ * Último mês publicado para UMA tabela específica.
+ *
+ * As três não andam juntas: a Antiga depende do INPC, que sai por volta do dia 10,
+ * enquanto a Nova e a IPCA-E dependem do IPCA-15 e saem no começo do mês. Usar o
+ * limite da tabela errada faz a interface oferecer um mês que aquela série ainda
+ * não tem.
+ */
+export function getUltimoPeriodoDaTabela(tabela: TipoTabelaCorrecao): { ano: number; mes: number } {
+  if (tabela === 'ipca_e') return ultimoPeriodoSerie(serieVigente('SERIE_IPCA_E'));
+  return ultimoPeriodoSerie(serieVigente(CHAVE_RECENTE[tabela]));
+}
+
+/** Primeiro período coberto por uma tabela (out/1964, ou jan/1992 na IPCA-E). */
+export function getPrimeiroPeriodoDaTabela(tabela: TipoTabelaCorrecao): { ano: number; mes: number } {
+  const historica = tabela === 'ipca_e' ? SERIE_IPCA_E_HISTORICA : SERIE_COMUM_HISTORICA;
+  return { ano: historica.anoInicial, mes: historica.mesInicial };
 }

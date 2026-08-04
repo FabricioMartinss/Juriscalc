@@ -5,7 +5,7 @@
 
 import { CalculationInputs, CalculationResult, CalculatedItem, TipoTabelaCorrecao } from '../types';
 import { UFESP_2026, CUTOFF_DATE, CODES } from '../data/tabelaPratica';
-import { buscarIndiceOficial } from '../data/tabelasOficiais';
+import { buscarIndiceOficial, getUltimoPeriodoDaTabela } from '../data/tabelasOficiais';
 
 /**
  * Converte valor float em centavos inteiros para evitar quebra de ponto flutuante
@@ -29,14 +29,19 @@ export function corrigirMonetariamente(
   valorOriginal: number,
   dataDistribuicao: string, // YYYY-MM
   tabela: TipoTabelaCorrecao = 'nova_tabela',
-  dataAtual: string = '2026-05' // Mês Corrente do TJSP
+  // Omitido = corrige até o último índice publicado na tabela escolhida.
+  // Era uma data fixa ('2026-05'), que envelhecia a cada mês novo do TJSP.
+  dataAtual?: string
 ): { valorAtualizado: number; indiceOrigem: number; indiceAtual: number; success: boolean } {
   if (!dataDistribuicao) {
     return { valorAtualizado: valorOriginal, indiceOrigem: 1, indiceAtual: 1, success: false };
   }
 
   const [anoOrigem, mesOrigem] = dataDistribuicao.split('-').map(Number);
-  const [anoAtual, mesAtual] = dataAtual.split('-').map(Number);
+  const destino = getUltimoPeriodoDaTabela(tabela);
+  const [anoAtual, mesAtual] = dataAtual
+    ? dataAtual.split('-').map(Number)
+    : [destino.ano, destino.mes];
 
   const idxOrigem = buscarIndiceOficial(tabela, anoOrigem, mesOrigem);
   const idxAtual = buscarIndiceOficial(tabela, anoAtual, mesAtual);

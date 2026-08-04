@@ -4,17 +4,35 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Search, Copy, Check, Calculator, RefreshCw } from 'lucide-react';
+import { Copy, Check, RefreshCw, AlertTriangle } from 'lucide-react';
 import { TipoTabelaCorrecao } from '../types';
 import { corrigirMonetariamente } from '../utils/calculator';
+import { getPrimeiroPeriodoDaTabela, getUltimoPeriodoDaTabela } from '../data/tabelasOficiais';
 
 export default function IndexTableConsultant() {
   const [valorOriginal, setValorOriginal] = useState<string>('0.00');
   const [tipoTabela, setTipoTabela] = useState<TipoTabelaCorrecao>('nova_tabela');
-  
-  const minYear = tipoTabela === 'ipca_e' ? 1992 : 1964;
-  const anosDisponiveis = Array.from({ length: 2026 - minYear + 1 }, (_, i) => 2026 - i);
-  
+
+  // Limites vindos das próprias tabelas: acompanham a sincronização mensal em vez
+  // de depender de um ano fixo no código.
+  const primeiro = getPrimeiroPeriodoDaTabela(tipoTabela);
+  const ultimo = getUltimoPeriodoDaTabela(tipoTabela);
+
+  const minYear = primeiro.ano;
+  const anosDisponiveis = Array.from({ length: ultimo.ano - minYear + 1 }, (_, i) => ultimo.ano - i);
+
+  /** Há índice oficial publicado para este mês/ano na tabela escolhida? */
+  const periodoValido = (ano: number, mes: number) =>
+    ano * 12 + mes >= primeiro.ano * 12 + primeiro.mes &&
+    ano * 12 + mes <= ultimo.ano * 12 + ultimo.mes;
+
+  /** Aproxima uma seleção para o período válido mais próximo. */
+  const ajustar = (ano: number, mes: number): [number, number] => {
+    if (ano * 12 + mes < primeiro.ano * 12 + primeiro.mes) return [primeiro.ano, primeiro.mes];
+    if (ano * 12 + mes > ultimo.ano * 12 + ultimo.mes) return [ultimo.ano, ultimo.mes];
+    return [ano, mes];
+  };
+
   const mesesDisponiveis = [
     { num: 1, nome: 'Janeiro' },
     { num: 2, nome: 'Fevereiro' },
@@ -37,15 +55,17 @@ export default function IndexTableConsultant() {
 
   const [copiado, setCopiado] = useState<boolean>(false);
 
+  // Trocar de tabela pode invalidar o que já estava escolhido: a IPCA-E começa em
+  // 1992 e a Antiga costuma estar um mês atrás das outras.
   useEffect(() => {
-    const limit = tipoTabela === 'ipca_e' ? 1992 : 1964;
-    if (anoOrigem < limit) {
-      setAnoOrigem(limit);
-    }
-    if (anoDestino < limit) {
-      setAnoDestino(limit);
-    }
-  }, [tipoTabela, anoOrigem, anoDestino]);
+    const [ao, mo] = ajustar(anoOrigem, mesOrigem);
+    if (ao !== anoOrigem) setAnoOrigem(ao);
+    if (mo !== mesOrigem) setMesOrigem(mo);
+
+    const [ad, md] = ajustar(anoDestino, mesDestino);
+    if (ad !== anoDestino) setAnoDestino(ad);
+    if (md !== mesDestino) setMesDestino(md);
+  }, [tipoTabela, anoOrigem, mesOrigem, anoDestino, mesDestino]);
 
   // Handlers for currency formatting
   const handleMoneyChange = (val: string, setter: (v: string) => void) => {
@@ -97,6 +117,18 @@ export default function IndexTableConsultant() {
     ? 'Antiga Tabela Prática (Jurisprudência Predominante)'
     : 'Tabela IPCA-E';
 
+  // `success: false` significa que um dos períodos não tem índice publicado e o
+  // cálculo caiu no último disponível. Isso precisa aparecer também no texto que
+  // vai para a petição — não só na tela.
+  const avisoAproximacao = res.success
+    ? ''
+    : `
+*** ATENCAO: VALOR APROXIMADO ***
+Nao ha indice oficial publicado para um dos periodos informados nesta tabela.
+O calculo utilizou o ultimo indice disponivel (${String(ultimo.mes).padStart(2, '0')}/${ultimo.ano}).
+Confira antes de protocolar.
+`;
+
   const textoPeticao = `=====================================================
 DEMONSTRATIVO DE CORREÇÃO MONETÁRIA - ${nomeTabelaExtenso.toUpperCase()}
 =====================================================
@@ -112,7 +144,7 @@ Fórmula Aplicada: Valor_Atualizado = Valor_Original * (Índice_Atual / Índice_
 Fator Multiplicador: ${(res.indiceAtual / res.indiceOrigem).toFixed(6)}
 
 VALOR TOTAL DA CAUSA CORRIGIDO: ${formatBRL(res.valorAtualizado)}
------------------------------------------------------
+-----------------------------------------------------${avisoAproximacao}
 Demonstrativo emitido automaticamente via JURISCALC SP conforme jurisprudência e Súmula 14 do STJ.`;
 
   const handleCopy = () => {
@@ -188,7 +220,9 @@ Demonstrativo emitido automaticamente via JURISCALC SP conforme jurisprudência 
                 id="select-mes-origem"
               >
                 {mesesDisponiveis.map(m => (
-                  <option key={m.num} value={m.num}>{m.nome}</option>
+                  <option key={m.num} value={m.num} disabled={!periodoValido(anoOrigem, m.num)}>
+                    {m.nome}
+                  </option>
                 ))}
               </select>
               <select
@@ -217,7 +251,9 @@ Demonstrativo emitido automaticamente via JURISCALC SP conforme jurisprudência 
                 id="select-mes-destino"
               >
                 {mesesDisponiveis.map(m => (
-                  <option key={m.num} value={m.num}>{m.nome}</option>
+                  <option key={m.num} value={m.num} disabled={!periodoValido(anoDestino, m.num)}>
+                    {m.nome}
+                  </option>
                 ))}
               </select>
               <select
@@ -249,6 +285,21 @@ Demonstrativo emitido automaticamente via JURISCALC SP conforme jurisprudência 
             <span>{formatBRL(res.valorAtualizado)}</span>
           </div>
         </div>
+
+        {!res.success && (
+          <div
+            className="mt-3 flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-300"
+            id="aviso-indice-aproximado"
+          >
+            <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-[11px] leading-snug text-amber-900 font-sans">
+              <strong className="font-bold">Valor aproximado.</strong> Não há índice oficial
+              publicado para um dos períodos nesta tabela — o cálculo usou o último disponível
+              ({String(ultimo.mes).padStart(2, '0')}/{ultimo.ano}). O demonstrativo copiado
+              traz esse aviso.
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="mt-4 pt-4 border-t border-slate-200 space-y-2">
