@@ -1,8 +1,12 @@
 name: Sincronizar índices do TJSP
 
-# ATENÇÃO: o GitHub só dispara `schedule` a partir do arquivo de workflow que
-# estiver na branch PADRÃO do repositório. Enquanto este arquivo viver apenas em
-# `New-UI`, o agendamento não roda — use "Run workflow" (workflow_dispatch).
+# O GitHub só dispara `schedule` a partir do arquivo de workflow que estiver na
+# branch PADRÃO do repositório. Hoje a padrão é `New-UI` (a mesma de onde o
+# Netlify publica), então o agendamento roda. Se a branch padrão mudar, o cron
+# para de disparar até este arquivo chegar na nova padrão.
+#
+# Requer, em Settings > Actions > General, a opção "Read and write permissions"
+# em Workflow permissions — sem ela o `git push` do job falha com 403.
 
 on:
   schedule:
