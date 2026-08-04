@@ -23,6 +23,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: sync-indices
@@ -82,3 +83,40 @@ jobs:
                'sozinha via public/indices.json assim que o deploy do site subir -- nao e'\
                'preciso republicar na Chrome Web Store. O bundle em extension/ so precisa'\
                'ser regerado (npm run build:ext) quando o CODIGO da extensao mudar.'
+
+      # Uma falha aqui é silenciosa por natureza: o job roda sozinho, de madrugada,
+      # e ninguém fica olhando a aba Actions. A issue torna o problema visível sem
+      # depender de configuração de notificação de cada pessoa.
+      - name: Abrir issue se a sincronizacao falhar
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITULO: Falha na sincronizacao dos indices do TJSP
+        run: |
+          URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          cat > corpo.md <<EOF
+          A sincronização automática das Tabelas Práticas do TJSP falhou.
+
+          **Execução:** $URL
+
+          O script aborta de propósito em vez de gravar um número errado. Causas típicas:
+
+          - um fator já conhecido divergiu do PDF — ou o TJSP revisou a tabela, ou o parser leu a coluna errada;
+          - a série ficou com buraco, ou a variação mês a mês saiu da faixa de -2% a +4%;
+          - o layout do PDF mudou e o parser precisa de ajuste;
+          - a página do comunicado saiu do ar ou trocou os links dos arquivos.
+
+          A mensagem exata está no log, no passo **Buscar e validar as tabelas do TJSP** — ela diz qual período divergiu e de quanto para quanto.
+
+          Enquanto isso o app e a extensão seguem com os últimos índices validados. Nenhum valor incorreto entrou.
+          EOF
+
+          # Uma issue aberta por incidente, não uma por dia de cron falhando.
+          NUM=$(gh issue list --state open --search "$TITULO in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$NUM" ]; then
+            gh issue comment "$NUM" --body-file corpo.md
+            echo "Falha registrada na issue #$NUM"
+          else
+            gh issue create --title "$TITULO" --body-file corpo.md
+          fi
