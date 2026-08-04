@@ -1,0 +1,79 @@
+name: Sincronizar índices do TJSP
+
+# ATENÇÃO: o GitHub só dispara `schedule` a partir do arquivo de workflow que
+# estiver na branch PADRÃO do repositório. Enquanto este arquivo viver apenas em
+# `New-UI`, o agendamento não roda — use "Run workflow" (workflow_dispatch).
+
+on:
+  schedule:
+    # 11:00 UTC = 08:00 em Brasília. O TJSP costuma republicar as tabelas no
+    # começo do mês (IPCA-15) e por volta do dia 10 (INPC), mas a data varia —
+    # por isso conferimos todo dia e só commitamos quando há mês novo.
+    - cron: '0 11 * * *'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch que recebe o commit'
+        required: false
+        default: 'New-UI'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-indices
+  cancel-in-progress: false
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch || 'New-UI' }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      # Falha se algum fator já conhecido divergir do PDF ou se a variação
+      # mês a mês sair da faixa plausível. Nesses casos nada é commitado.
+      - name: Buscar e validar as tabelas do TJSP
+        run: npm run sync:indices
+
+      - name: Detectar mudança
+        id: diff
+        run: |
+          if git diff --quiet -- src/data/indices.generated.ts; then
+            echo "mudou=false" >> "$GITHUB_OUTPUT"
+            echo "Nenhum índice novo."
+          else
+            echo "mudou=true" >> "$GITHUB_OUTPUT"
+            git --no-pager diff -- src/data/indices.generated.ts
+          fi
+
+      # Só faz sentido validar o build se os dados mudaram.
+      - name: Typecheck e build
+        if: steps.diff.outputs.mudou == 'true'
+        run: |
+          npm run lint
+          npm run build
+
+      - name: Commitar
+        if: steps.diff.outputs.mudou == 'true'
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add src/data/indices.generated.ts
+          git commit -m 'chore(indices): sincroniza tabelas praticas do TJSP'
+          git push
+
+      - name: Lembrete sobre a extensão
+        if: steps.diff.outputs.mudou == 'true'
+        run: |
+          echo '::notice::Os indices mudaram. O bundle da extensao em extension/ NAO foi'\
+               'regerado por este workflow: rode `npm run build:ext` e republique na'\
+               'Chrome Web Store para que a extensao use os fatores novos.'

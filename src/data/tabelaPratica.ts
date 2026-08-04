@@ -4,6 +4,7 @@
  */
 
 import { IndexMes, CalculationCategory } from '../types';
+import { buscarIndiceOficial, getUltimoPeriodoDisponivel } from './tabelasOficiais';
 
 export const UFESP_2026 = 38.42;
 export const CUTOFF_DATE = '2024-01-03';
@@ -33,115 +34,32 @@ export const HISTORICO_UFESP = [
   { ano: 2020, valor: 27.61 },
 ];
 
+/** Primeiro ano exposto pela tabela prática consolidada. */
+const ANO_INICIAL_TABELA_PRATICA = 2020;
+
 /**
- * Tabela Prática de Atualização Monetária do TJSP (Índices INPC/TJSP consolidado)
- * de Janeiro de 2020 a Julho de 2026 para fins de cálculo de correção financeira.
+ * Tabela Prática de Atualização Monetária do TJSP consolidada mês a mês, de
+ * janeiro de 2020 até o último índice oficial publicado.
+ *
+ * Derivada das séries oficiais — não há fator digitado aqui. Segue a linhagem
+ * da Nova Tabela (Lei nº 14.905/2024), que a partir de set/2024 passa a usar o
+ * IPCA-15. O intervalo acompanha sozinho as atualizações mensais.
  */
-export const TABELA_PRATICA_TJSP: IndexMes[] = [
-  // 2020
-  { ano: 2020, mes: 1, indexValue: 73.008384 },
-  { ano: 2020, mes: 2, indexValue: 73.147099 },
-  { ano: 2020, mes: 3, indexValue: 73.271449 },
-  { ano: 2020, mes: 4, indexValue: 73.403337 },
-  { ano: 2020, mes: 5, indexValue: 73.234509 },
-  { ano: 2020, mes: 6, indexValue: 73.051422 },
-  { ano: 2020, mes: 7, indexValue: 73.270576 },
-  { ano: 2020, mes: 8, indexValue: 73.592966 },
-  { ano: 2020, mes: 9, indexValue: 73.857900 },
-  { ano: 2020, mes: 10, indexValue: 74.500463 },
-  { ano: 2020, mes: 11, indexValue: 75.163517 },
-  { ano: 2020, mes: 12, indexValue: 75.877570 },
-  
-  // 2021
-  { ano: 2021, mes: 1, indexValue: 76.985382 },
-  { ano: 2021, mes: 2, indexValue: 77.193242 },
-  { ano: 2021, mes: 3, indexValue: 77.826226 },
-  { ano: 2021, mes: 4, indexValue: 78.495531 },
-  { ano: 2021, mes: 5, indexValue: 78.793814 },
-  { ano: 2021, mes: 6, indexValue: 79.550234 },
-  { ano: 2021, mes: 7, indexValue: 80.027535 },
-  { ano: 2021, mes: 8, indexValue: 80.843815 },
-  { ano: 2021, mes: 9, indexValue: 81.555240 },
-  { ano: 2021, mes: 10, indexValue: 82.533902 },
-  { ano: 2021, mes: 11, indexValue: 83.491295 },
-  { ano: 2021, mes: 12, indexValue: 84.192621 },
+export const TABELA_PRATICA_TJSP: IndexMes[] = (() => {
+  const fim = getUltimoPeriodoDisponivel();
+  const linhas: IndexMes[] = [];
+  for (let ano = ANO_INICIAL_TABELA_PRATICA; ano <= fim.ano; ano++) {
+    const ultimoMes = ano === fim.ano ? fim.mes : 12;
+    for (let mes = 1; mes <= ultimoMes; mes++) {
+      linhas.push({ ano, mes, indexValue: buscarIndiceOficial('nova_tabela', ano, mes).value });
+    }
+  }
+  return linhas;
+})();
 
-  // 2022
-  { ano: 2022, mes: 1, indexValue: 84.807227 },
-  { ano: 2022, mes: 2, indexValue: 85.375435 },
-  { ano: 2022, mes: 3, indexValue: 86.229189 },
-  { ano: 2022, mes: 4, indexValue: 87.703708 },
-  { ano: 2022, mes: 5, indexValue: 88.615826 },
-  { ano: 2022, mes: 6, indexValue: 89.014597 },
-  { ano: 2022, mes: 7, indexValue: 89.566487 },
-  { ano: 2022, mes: 8, indexValue: 89.029088 },
-  { ano: 2022, mes: 9, indexValue: 88.753097 },
-  { ano: 2022, mes: 10, indexValue: 88.469087 },
-  { ano: 2022, mes: 11, indexValue: 88.884891 },
-  { ano: 2022, mes: 12, indexValue: 89.222653 },
-
-  // 2023
-  { ano: 2023, mes: 1, indexValue: 89.838289 },
-  { ano: 2023, mes: 2, indexValue: 90.251545 },
-  { ano: 2023, mes: 3, indexValue: 90.946481 },
-  { ano: 2023, mes: 4, indexValue: 91.528538 },
-  { ano: 2023, mes: 5, indexValue: 92.013639 },
-  { ano: 2023, mes: 6, indexValue: 92.344888 },
-  { ano: 2023, mes: 7, indexValue: 92.252543 },
-  { ano: 2023, mes: 8, indexValue: 92.169515 },
-  { ano: 2023, mes: 9, indexValue: 92.353854 },
-  { ano: 2023, mes: 10, indexValue: 92.455443 },
-  { ano: 2023, mes: 11, indexValue: 92.566389 },
-  { ano: 2023, mes: 12, indexValue: 92.658955 },
-
-  // 2024
-  { ano: 2024, mes: 1, indexValue: 93.168579 },
-  { ano: 2024, mes: 2, indexValue: 93.699639 },
-  { ano: 2024, mes: 3, indexValue: 94.458606 },
-  { ano: 2024, mes: 4, indexValue: 94.638077 },
-  { ano: 2024, mes: 5, indexValue: 94.988237 },
-  { ano: 2024, mes: 6, indexValue: 95.425182 },
-  { ano: 2024, mes: 7, indexValue: 95.663744 },
-  { ano: 2024, mes: 8, indexValue: 95.912469 },
-  { ano: 2024, mes: 9, indexValue: 96.094702 },
-  { ano: 2024, mes: 10, indexValue: 96.219625 },
-  { ano: 2024, mes: 11, indexValue: 96.739210 },
-  { ano: 2024, mes: 12, indexValue: 97.338993 },
-
-  // 2025
-  { ano: 2025, mes: 1, indexValue: 97.669945 },
-  { ano: 2025, mes: 2, indexValue: 97.777381 },
-  { ano: 2025, mes: 3, indexValue: 98.980042 },
-  { ano: 2025, mes: 4, indexValue: 99.613514 },
-  { ano: 2025, mes: 5, indexValue: 100.041852 },
-  { ano: 2025, mes: 6, indexValue: 100.402002 },
-  { ano: 2025, mes: 7, indexValue: 100.663047 },
-  { ano: 2025, mes: 8, indexValue: 100.995235 },
-  { ano: 2025, mes: 9, indexValue: 100.853841 },
-  { ano: 2025, mes: 10, indexValue: 101.337939 },
-  { ano: 2025, mes: 11, indexValue: 101.520347 },
-  { ano: 2025, mes: 12, indexValue: 101.723387 },
-
-  // 2026
-  { ano: 2026, mes: 1, indexValue: 101.977695 },
-  { ano: 2026, mes: 2, indexValue: 102.181650 },
-  { ano: 2026, mes: 3, indexValue: 103.039975 },
-  { ano: 2026, mes: 4, indexValue: 103.493350 },
-  { ano: 2026, mes: 5, indexValue: 104.414440 },
-  { ano: 2026, mes: 6, indexValue: 105.061809 },
-  { ano: 2026, mes: 7, indexValue: 105.492562 }, // Último índice oficial disponível 07/2026
-];
-
+/** Consulta um índice na linhagem da Nova Tabela Prática. */
 export function buscarIndiceTJSP(ano: number, mes: number): { value: number; found: boolean } {
-  const item = TABELA_PRATICA_TJSP.find((idx) => idx.ano === ano && idx.mes === mes);
-  if (item) {
-    return { value: item.indexValue, found: true };
-  }
-  // Fallback: se for antes de 2020, retorna o primeiro índice. Se pós-2026, retorna o último.
-  if (ano < 2020) {
-    return { value: 73.008384, found: false };
-  }
-  return { value: 105.492562, found: false };
+  return buscarIndiceOficial('nova_tabela', ano, mes);
 }
 
 export interface CategoriaMeta {
