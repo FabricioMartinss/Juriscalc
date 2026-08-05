@@ -1288,7 +1288,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
     setTimeout(() => setCopiedGuia((cur) => (cur === id ? null : cur)), 2500);
   };
 
-  // Detecta a extensão JudsCalc (o content script anuncia 'JUDS_EXT_PRONTA').
+  // Detecta a extensão JuriscalcSP (o content script anuncia 'JUDS_EXT_PRONTA').
   useEffect(() => {
     const onMsg = (ev: MessageEvent) => {
       if (ev.source === window && ev.data && ev.data.type === 'JUDS_EXT_PRONTA') {
@@ -2334,7 +2334,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                     Ao clicar, o <strong className="font-semibold text-slate-200">valor exato da guia é copiado</strong> e o sistema oficial do Tribunal abre em nova aba — basta colar no campo de valor:
                   </p>
 
-                  {/* Emissão automática (aparece quando a extensão JudsCalc é detectada) */}
+                  {/* Emissão automática (aparece quando a extensão JuriscalcSP é detectada) */}
                   {extPresente && (
                     <div className="mb-3 p-3 rounded-lg bg-cyan-500/10 border border-cyan-400/30 space-y-2.5">
                       <div className="flex items-center gap-1.5 text-cyan-200 text-[11px] font-bold uppercase tracking-wide">

@@ -1,4 +1,4 @@
-# Ficha da Chrome Web Store — JudsCalc SP
+# Ficha da Chrome Web Store — JuriscalcSP
 
 Textos prontos para colar no painel da Chrome Web Store ao publicar a extensão
 (visibilidade **Não listada**).
@@ -6,7 +6,7 @@ Textos prontos para colar no painel da Chrome Web Store ao publicar a extensão
 ---
 
 ## Nome
-JudsCalc SP — Custas TJSP
+JuriscalcSP — Custas TJSP
 
 ## Resumo (summary — máx. 132 caracteres)
 Calculadora de custas e preparos do TJSP (e-SAJ e E-PROC) em painel lateral. Auditoria sob a Lei Estadual nº 11.608/2003.
@@ -18,7 +18,7 @@ Ferramentas (Tools)
 Português (Brasil)
 
 ## Descrição detalhada
-O JudsCalc SP é uma calculadora e auditora de custas processuais do Tribunal de
+O JuriscalcSP é uma calculadora e auditora de custas processuais do Tribunal de
 Justiça de São Paulo (TJSP), disponível como painel lateral do Chrome para uso
 junto aos sistemas e-SAJ e E-PROC.
 

@@ -95,7 +95,7 @@
               txt('valorReceitaCustasIniciais', dados.valorReceitaCustasIniciais);
               setTimeout(function () {
                 click('bt_salvar_servico');
-                console.log('[JudsCalc SP] Preenchimento concluido. Confira e clique em Emitir Guia.');
+                console.log('[JuriscalcSP] Preenchimento concluido. Confira e clique em Emitir Guia.');
               }, 1500);
             }, 3000);
           }, 1500);

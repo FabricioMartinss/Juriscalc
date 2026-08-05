@@ -1,6 +1,6 @@
 /**
  * Gerador de ícones da extensão (PNG) sem dependências externas.
- * Desenha a marca JudsCalc SP — balança (cyan #22d3ee) sobre fundo navy (#0b2545),
+ * Desenha a marca JuriscalcSP — balança (cyan #22d3ee) sobre fundo navy (#0b2545),
  * com cantos arredondados. Renderiza em 4x (supersampling) e reduz por média,
  * gerando bordas suaves. Saída: extension-src/icons/icon{16,32,48,128}.png
  *

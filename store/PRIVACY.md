@@ -1,8 +1,8 @@
-# Política de Privacidade — JudsCalc SP (extensão Chrome)
+# Política de Privacidade — JuriscalcSP (extensão Chrome)
 
 **Última atualização:** julho de 2026
 
-A extensão **JudsCalc SP — Custas TJSP**, de propriedade de Plataforma Camelsec
+A extensão **JuriscalcSP — Custas TJSP**, de propriedade de Plataforma Camelsec
 Ltda (CNPJ 51.811.543/0001-20), respeita a sua privacidade.
 
 ## Coleta de dados

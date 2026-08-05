@@ -1,0 +1,7 @@
+# O roteamento é do lado do cliente (react-router). Sem esta regra, abrir
+# /app direto ou recarregar a página resultaria em 404 no Netlify, porque não
+# existe arquivo nesse caminho.
+#
+# Arquivos reais (/indices.json, /privacidade/) têm precedência sobre a regra,
+# então continuam sendo servidos normalmente.
+/*  /index.html  200

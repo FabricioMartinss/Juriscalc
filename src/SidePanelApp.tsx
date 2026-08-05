@@ -28,7 +28,7 @@ export default function SidePanelApp() {
         </div>
         <div className="leading-tight">
           <div className="font-black uppercase text-sm tracking-tight">
-            JudsCalc <span className="text-cyan-400">SP</span>
+            Juriscalc<span className="text-cyan-400">SP</span>
           </div>
           <div className="text-[10px] font-mono text-blue-200/70">
             UFESP 2026 · R$ {UFESP_2026.toFixed(2)}
