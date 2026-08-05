@@ -22,34 +22,13 @@ import {
 } from 'lucide-react';
 import { UFESP_2026 } from '../data/tabelaPratica';
 import { buscarIndiceOficial, getUltimoPeriodoDisponivel, TipoTabelaCorrecao } from '../data/tabelasOficiais';
+import { servicoPorValor, servicoPadrao, servicosDoEnquadramento, destinoDoDado } from '../data/servicosPortal';
 
 // Constants
 const TARIFA_POSTAL_AR = 34.35; // Carta registrada unipaginada c/ AR digital — Prov. CSM nº 2.777/25 e 2.788/25 (TJSP, consulta 16/07/2026)
 
-// Mapeia a categoria de cálculo do app para o texto do "Tipo de Serviço" no
-// Portal de Custas (o autofill casa por trecho do texto, sem acento). Cada
-// valor é um trecho que identifica de forma única a opção correta do portal.
-// Vazio/ausente = usuário seleciona o serviço no portal.
-const PORTAL_TIPO_SERVICO: Record<string, string> = {
-  comum_1: 'Petição Inicial',                         // Petição Inicial - 230-6
-  comum_2: 'Execução de Título Extrajudicial',        // Execução de Título Extrajudicial - 230-6
-  comum_3: 'Preparo da Apelação',                     // Preparo da Apelação - 230-6 (validado)
-  comum_4: 'Cumprimento de Sentença',                 // Cumprimento de Sentença - 230-6
-  comum_5: 'Cumprimento de Sentença',                 // idem (título de outro órgão)
-  comum_6: 'Satisfação da Execução',                  // Satisfação da Execução - 230-6
-  comum_7: 'Execução Fiscal',                         // Taxa Judiciária - Execução Fiscal - 230-6
-  comum_8: 'Agravo de Instrumento',                   // Agravo de Instrumento - 234-3
-  comum_9: 'Cartas Precatórias - Processo Origem TJSP', // padrão p/ cartas (usuário troca se for Ordem/Outros)
-  comum_10: 'Causa em que Haja Partilha',             // Causa em que Haja Partilha - 230-6
-  comum_11: 'Habilitação Retardatária de Crédito',    // Habilitação Retardatária de Crédito em Concordata - 230-6
-  comum_12: 'Ações Penais em Geral',                  // Ações Penais em Geral, Salvo Competência JECRIM - 230-6
-  comum_13: 'Ação Penal Privada - Inicial',           // padrão (distribuição); recurso o usuário troca
-  comum_15: 'Litisconsórcio Ativo Voluntário Ulterior', // Litisconsórcio Ativo Voluntário Ulterior - 230-6
-  jec_1: 'Recurso Inominado',                         // Recurso Inominado em Juizado Especial Cível - 230-6
-};
-function mapServicoPortal(id: string): string {
-  return PORTAL_TIPO_SERVICO[id] || '';
-}
+// O mapeamento enquadramento -> serviço do portal vive em `data/servicosPortal.ts`,
+// junto dos identificadores reais do `<select>` e dos códigos de receita.
 
 // ---- Máscaras e validação dos campos de emissão automática ----
 function soDigitos(s: string): string {
@@ -372,13 +351,15 @@ interface Option {
       value: number;
       baseLegal: string;
       /**
-       * Em qual campo de receita do Portal de Custas esta parcela entra.
-       * O portal separa a receita quando o serviço tem duas exigências legais
-       * distintas — hoje só o Recurso Inominado do JEC, que soma ingresso
-       * dispensado (custas iniciais) e preparo recursal, cada um com piso
-       * próprio de 5 UFESPs. Omitido = vai no campo único de receita.
+       * `id` do campo do Portal de Custas que recebe esta parcela.
+       *
+       * Cada serviço do portal pede um conjunto próprio de campos: Recurso
+       * Inominado separa `valorReceitaCustasIniciais` do `valorReceita`;
+       * Reconvenção tem `valorLitisconsorcio` e nem exibe `valorCondenacao`.
+       *
+       * Omitido = soma no campo de receita padrão (`valorReceita`).
        */
-      receitaPortal?: 'custas_iniciais' | 'preparo';
+      campoPortal?: string;
     }[];
     detalheMemoria: string;
     warning?: string;
@@ -760,8 +741,8 @@ const eSajOptions: Option[] = [
       return {
         valorTotal: parIngSelection + parPrepSelection,
         itens: [
-          { name: `Ingresso Dispensado JEC (${(aliqIng * 100).toFixed(1)}% - com Piso)`, value: parIngSelection, baseLegal: 'Art. 54, p.único, Lei 9099', receitaPortal: 'custas_iniciais' },
-          { name: 'Preparo Recursal JEC (4.0% - com Piso)', value: parPrepSelection, baseLegal: 'Art. 4º, II, Lei 11.608', receitaPortal: 'preparo' }
+          { name: `Ingresso Dispensado JEC (${(aliqIng * 100).toFixed(1)}% - com Piso)`, value: parIngSelection, baseLegal: 'Art. 54, p.único, Lei 9099', campoPortal: 'valorReceitaCustasIniciais' },
+          { name: 'Preparo Recursal JEC (4.0% - com Piso)', value: parPrepSelection, baseLegal: 'Art. 4º, II, Lei 11.608', campoPortal: 'valorReceita' }
         ],
         detalheMemoria: `* Parcela de Ingresso: Base de R$ ${valorCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} com alíquota de ${(aliqIng * 100).toFixed(1)}% (Respeitado o piso de R$ ${floorJec.toFixed(2)}) => R$ ${parIngSelection.toLocaleString('pt-BR')}\n* Parcela de Preparo: Base de R$ ${basePrep.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} com alíquota de 4.0% (Respeitado o piso de R$ ${floorJec.toFixed(2)}) => R$ ${parPrepSelection.toLocaleString('pt-BR')}\n* Consolidado Preparo JEC: R$ ${(parIngSelection + parPrepSelection).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       };
@@ -920,6 +901,17 @@ export default function WizardCalculator({
   const [dadosEmissao, setDadosEmissao] = useState({
     cpf: '', nome: '', telefone: '', endereco: '', municipio: '', processo: '',
   });
+
+  // Serviço do portal escolhido. Vazio = usar o padrão do enquadramento; só os
+  // quatro enquadramentos com mais de uma opção mostram o seletor.
+  const [servicoEscolhido, setServicoEscolhido] = useState<string>('');
+  const opcoesServico = servicosDoEnquadramento(selectedSajId);
+  const servicoAtual = servicoPorValor(servicoEscolhido) || servicoPadrao(selectedSajId);
+
+  // Trocar de enquadramento invalida a escolha anterior.
+  useEffect(() => {
+    setServicoEscolhido('');
+  }, [selectedSajId]);
 
   // Parsing values helper
   const pVal = (s: string) => Math.max(0, parseFloat(s) || 0);
@@ -1090,7 +1082,7 @@ export default function WizardCalculator({
     value: number;
     baseLegal: string;
     source: string;
-    receitaPortal?: 'custas_iniciais' | 'preparo';
+    campoPortal?: string;
   }[] = [];
   
   // Fill the list from calculations applying possible preparo em dobro
@@ -1108,8 +1100,10 @@ export default function WizardCalculator({
       name: it.name + labelExtra,
       value: finalVal,
       baseLegal: it.baseLegal,
-      source: 'DARE-SP (230-6)',
-      receitaPortal: it.receitaPortal
+      // O código varia por serviço: Agravo é 234-3, Cartas são 233-1, o resto
+      // 230-6. Antes tudo saía carimbado como 230-6 na memória de cálculo.
+      source: `DARE-SP (${servicoAtual?.codigo ?? '230-6'})`,
+      campoPortal: it.campoPortal
     });
   });
 
@@ -1133,13 +1127,21 @@ export default function WizardCalculator({
   const grdSum = additionsSum - postalSum;
   const eSajDareSum = eSajTotalSum - additionsSum;
 
-  // Soma das parcelas destinadas a um campo específico de receita do portal.
-  // Despesas postais e de oficial ficam de fora: vão em guias próprias.
-  const somaReceita = (alvo: 'custas_iniciais' | 'preparo') =>
-    eSajFinalItens.filter((i) => i.receitaPortal === alvo).reduce((acc, i) => acc + i.value, 0);
-
-  // O portal só mostra os dois campos quando o serviço tem as duas exigências.
-  const temReceitaSeparada = eSajFinalItens.some((i) => i.receitaPortal);
+  /**
+   * Agrupa as parcelas da DARE pelo campo do portal que as recebe.
+   *
+   * Só entram itens da própria guia: despesas postais (FEDTJ) e de oficial
+   * (GRD) são recolhidas separadamente e não pertencem a esta tela.
+   */
+  const valoresPorCampoPortal = (): Record<string, number> => {
+    const soma: Record<string, number> = {};
+    for (const item of eSajFinalItens) {
+      if (!item.source.startsWith('DARE')) continue;
+      const campo = item.campoPortal || 'valorReceita';
+      soma[campo] = (soma[campo] || 0) + item.value;
+    }
+    return soma;
+  };
 
   // Dynamic plain text explanation for easy legal copy paste
   const eSajMemoText = `=====================================================
@@ -1300,6 +1302,40 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
     return () => window.removeEventListener('message', onMsg);
   }, []);
 
+  /**
+   * Dados informados pelo usuário que vão para a guia.
+   *
+   * Manda SÓ o que o enquadramento selecionado declara usar. Os valores ficam
+   * na tela ao trocar de enquadramento (o que é conveniente), mas alguns
+   * enquadramentos nem exibem certos campos — o Litisconsórcio, por exemplo, só
+   * pergunta a quantidade de autores. Mandar `valorCausa` sempre fazia um valor
+   * de um cálculo anterior entrar numa guia oficial sem ninguém ter digitado.
+   */
+  const dadosInformadosParaOPortal = (): Record<string, string> => {
+    const fmt = (v: number) =>
+      v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const valores: Record<string, number> = {
+      valorCausa: currentInputs.valorCausa,
+      valorCondenacao: temCondenacao ? currentInputs.valorCondenacao : 0,
+      valorSatisfacao: currentInputs.valorSatisfacao,
+      valorCredito: currentInputs.valorCredito,
+      valorMonteMor: currentInputs.valorMonteMor,
+    };
+
+    const saida: Record<string, string> = {};
+    for (const [dado, usado] of Object.entries(selectedESajOpt.inputs)) {
+      if (!usado) continue;
+      if (dado === 'valorCondenacao' && !temCondenacao) continue;
+      const destino = destinoDoDado(selectedSajId, dado);
+      const valor = valores[dado];
+      // Destino desconhecido ou dado que não é monetário: usuário preenche.
+      if (!destino || valor === undefined) continue;
+      saida[destino] = fmt(valor);
+    }
+    return saida;
+  };
+
   // Envia os dados calculados + informados para a extensão preencher o portal.
   const handleAutofillGuia = () => {
     const fmt = (v: number) =>
@@ -1312,15 +1348,20 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
       uf: 'SP',
       municipio: dadosEmissao.municipio,
       processo: dadosEmissao.processo,
-      tipoServico: mapServicoPortal(selectedSajId),
+      // Identificador do <option>, não o rótulo: o portal repete termos entre
+      // serviços e casar por texto selecionaria o errado.
+      tipoServico: servicoAtual?.valor || '',
       valorCausa: fmt(currentInputs.valorCausa),
       valorCondenacao: temCondenacao ? fmt(currentInputs.valorCondenacao) : '',
-      // Serviços com duas exigências legais (hoje só o Recurso Inominado do JEC)
-      // têm campos de receita separados no portal. Mandar a soma num campo só
-      // deixava "Custas Iniciais" em zero — que o portal recusa — e inflava o
-      // campo de preparo com o valor das duas parcelas.
-      valorReceita: fmt(temReceitaSeparada ? somaReceita('preparo') : eSajDareSum),
-      valorReceitaCustasIniciais: temReceitaSeparada ? fmt(somaReceita('custas_iniciais')) : '',
+      // Mapa `id do campo -> valor`. A extensão preenche o que existir na
+      // página e ignora o resto, então o conjunto pode variar por serviço sem
+      // exigir nova versão da extensão.
+      campos: {
+        ...dadosInformadosParaOPortal(),
+        ...Object.fromEntries(
+          Object.entries(valoresPorCampoPortal()).map(([campo, valor]) => [campo, fmt(valor)]),
+        ),
+      },
     };
     window.postMessage({ type: 'JUDS_EMITIR_GUIA', dados }, '*');
     setAutofillEnviado(true);
@@ -2366,6 +2407,31 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                           );
                         })}
                       </div>
+                      {/* Enquadramentos que cobrem mais de um serviço: o cálculo
+                          é o mesmo, mas o ato praticado muda o nome da guia. */}
+                      {opcoesServico.length > 1 && (
+                        <div className="space-y-1">
+                          <label
+                            htmlFor="select-servico-portal"
+                            className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider"
+                          >
+                            Tipo de serviço na guia
+                          </label>
+                          <select
+                            id="select-servico-portal"
+                            value={servicoAtual?.valor ?? ''}
+                            onChange={(e) => setServicoEscolhido(e.target.value)}
+                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-400/60"
+                          >
+                            {opcoesServico.map((s) => (
+                              <option key={s.valor} value={s.valor} className="text-slate-900">
+                                {s.rotulo}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
                       <button
                         type="button"
                         onClick={handleAutofillGuia}
@@ -2375,7 +2441,12 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                         <Chrome className="w-3.5 h-3.5" />
                         {autofillEnviado ? 'Abrindo o portal…' : 'Emitir Guia automaticamente'}
                       </button>
-                      {!mapServicoPortal(selectedSajId) && (
+                      {servicoAtual ? (
+                        <p className="text-[9px] text-slate-400 leading-snug font-sans">
+                          Guia: <strong className="text-slate-300">{servicoAtual.rotulo}</strong> — receita{' '}
+                          <span className="font-mono">{servicoAtual.codigo}</span>.
+                        </p>
+                      ) : (
                         <p className="text-[9px] text-amber-300/80 leading-snug font-sans">
                           Obs.: esta categoria ainda não tem o "Tipo de Serviço" mapeado no portal — selecione-o lá manualmente (o restante dos dados é preenchido).
                         </p>
