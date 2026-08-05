@@ -10,10 +10,17 @@ name: Sincronizar índices do TJSP
 
 on:
   schedule:
-    # 11:00 UTC = 08:00 em Brasília. O TJSP costuma republicar as tabelas no
+    # 14:47 UTC = 11:47 em Brasília. O TJSP costuma republicar as tabelas no
     # começo do mês (IPCA-15) e por volta do dia 10 (INPC), mas a data varia —
     # por isso conferimos todo dia e só commitamos quando há mês novo.
-    - cron: '0 11 * * *'
+    #
+    # O minuto quebrado é de propósito. O agendador do GitHub congestiona no
+    # topo da hora, onde todo mundo agenda: as execuções atrasam muito e podem
+    # ser descartadas. Era o que acontecia com o horário anterior ('0 11 * * *').
+    - cron: '47 14 * * *'
+    # TEMPORÁRIO — segunda tentativa no mesmo dia, só para confirmar que o
+    # agendamento dispara de fato. Remover depois da confirmação.
+    - cron: '23 16 * * *'
   workflow_dispatch:
     inputs:
       branch:
