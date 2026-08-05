@@ -367,7 +367,19 @@ interface Option {
   };
   calculate: (params: CalculationInputsRef) => {
     valorTotal: number;
-    itens: { name: string; value: number; baseLegal: string }[];
+    itens: {
+      name: string;
+      value: number;
+      baseLegal: string;
+      /**
+       * Em qual campo de receita do Portal de Custas esta parcela entra.
+       * O portal separa a receita quando o serviço tem duas exigências legais
+       * distintas — hoje só o Recurso Inominado do JEC, que soma ingresso
+       * dispensado (custas iniciais) e preparo recursal, cada um com piso
+       * próprio de 5 UFESPs. Omitido = vai no campo único de receita.
+       */
+      receitaPortal?: 'custas_iniciais' | 'preparo';
+    }[];
     detalheMemoria: string;
     warning?: string;
   };
@@ -748,8 +760,8 @@ const eSajOptions: Option[] = [
       return {
         valorTotal: parIngSelection + parPrepSelection,
         itens: [
-          { name: `Ingresso Dispensado JEC (${(aliqIng * 100).toFixed(1)}% - com Piso)`, value: parIngSelection, baseLegal: 'Art. 54, p.único, Lei 9099' },
-          { name: 'Preparo Recursal JEC (4.0% - com Piso)', value: parPrepSelection, baseLegal: 'Art. 4º, II, Lei 11.608' }
+          { name: `Ingresso Dispensado JEC (${(aliqIng * 100).toFixed(1)}% - com Piso)`, value: parIngSelection, baseLegal: 'Art. 54, p.único, Lei 9099', receitaPortal: 'custas_iniciais' },
+          { name: 'Preparo Recursal JEC (4.0% - com Piso)', value: parPrepSelection, baseLegal: 'Art. 4º, II, Lei 11.608', receitaPortal: 'preparo' }
         ],
         detalheMemoria: `* Parcela de Ingresso: Base de R$ ${valorCausa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} com alíquota de ${(aliqIng * 100).toFixed(1)}% (Respeitado o piso de R$ ${floorJec.toFixed(2)}) => R$ ${parIngSelection.toLocaleString('pt-BR')}\n* Parcela de Preparo: Base de R$ ${basePrep.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} com alíquota de 4.0% (Respeitado o piso de R$ ${floorJec.toFixed(2)}) => R$ ${parPrepSelection.toLocaleString('pt-BR')}\n* Consolidado Preparo JEC: R$ ${(parIngSelection + parPrepSelection).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       };
@@ -1073,7 +1085,13 @@ export default function WizardCalculator({
   }
 
   // Pre-prepare total lists
-  const eSajFinalItens: { name: string; value: number; baseLegal: string; source: string }[] = [];
+  const eSajFinalItens: {
+    name: string;
+    value: number;
+    baseLegal: string;
+    source: string;
+    receitaPortal?: 'custas_iniciais' | 'preparo';
+  }[] = [];
   
   // Fill the list from calculations applying possible preparo em dobro
   calcResults.itens.forEach((it) => {
@@ -1090,7 +1108,8 @@ export default function WizardCalculator({
       name: it.name + labelExtra,
       value: finalVal,
       baseLegal: it.baseLegal,
-      source: 'DARE-SP (230-6)'
+      source: 'DARE-SP (230-6)',
+      receitaPortal: it.receitaPortal
     });
   });
 
@@ -1113,6 +1132,14 @@ export default function WizardCalculator({
   const postalSum = postageAddresses > 0 ? postageAddresses * TARIFA_POSTAL_AR : 0;
   const grdSum = additionsSum - postalSum;
   const eSajDareSum = eSajTotalSum - additionsSum;
+
+  // Soma das parcelas destinadas a um campo específico de receita do portal.
+  // Despesas postais e de oficial ficam de fora: vão em guias próprias.
+  const somaReceita = (alvo: 'custas_iniciais' | 'preparo') =>
+    eSajFinalItens.filter((i) => i.receitaPortal === alvo).reduce((acc, i) => acc + i.value, 0);
+
+  // O portal só mostra os dois campos quando o serviço tem as duas exigências.
+  const temReceitaSeparada = eSajFinalItens.some((i) => i.receitaPortal);
 
   // Dynamic plain text explanation for easy legal copy paste
   const eSajMemoText = `=====================================================
@@ -1288,7 +1315,12 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
       tipoServico: mapServicoPortal(selectedSajId),
       valorCausa: fmt(currentInputs.valorCausa),
       valorCondenacao: temCondenacao ? fmt(currentInputs.valorCondenacao) : '',
-      valorReceita: fmt(eSajDareSum),
+      // Serviços com duas exigências legais (hoje só o Recurso Inominado do JEC)
+      // têm campos de receita separados no portal. Mandar a soma num campo só
+      // deixava "Custas Iniciais" em zero — que o portal recusa — e inflava o
+      // campo de preparo com o valor das duas parcelas.
+      valorReceita: fmt(temReceitaSeparada ? somaReceita('preparo') : eSajDareSum),
+      valorReceitaCustasIniciais: temReceitaSeparada ? fmt(somaReceita('custas_iniciais')) : '',
     };
     window.postMessage({ type: 'JUDS_EMITIR_GUIA', dados }, '*');
     setAutofillEnviado(true);

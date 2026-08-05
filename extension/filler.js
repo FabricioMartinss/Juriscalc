@@ -89,6 +89,10 @@
               txt('valorCausa', dados.valorCausa);
               txt('valorCondenacao', dados.valorCondenacao);
               txt('valorReceita', dados.valorReceita);
+              // Servicos com duas exigencias legais (Recurso Inominado do JEC)
+              // tem um campo separado para as custas iniciais. Vem vazio quando
+              // o servico so tem uma receita, e txt() ignora valor vazio.
+              txt('valorReceitaCustasIniciais', dados.valorReceitaCustasIniciais);
               setTimeout(function () {
                 click('bt_salvar_servico');
                 console.log('[JudsCalc SP] Preenchimento concluido. Confira e clique em Emitir Guia.');
