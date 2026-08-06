@@ -2614,9 +2614,15 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
         )}
       </div>
 
-      {/* No painel lateral a coluna de resultados não existe; a emissão entra aqui. */}
+      {/* No painel lateral a coluna de resultados não existe; a emissão entra aqui.
+          O bloco foi desenhado para o card escuro daquela coluna — usa texto claro —,
+          então aqui ele recebe o mesmo fundo. Sem isso vira claro sobre claro. */}
       {compact && blocoEmissao && (
-        <div className="px-4 pb-4">{blocoEmissao}</div>
+        <div className="px-3 pb-4">
+          <div className="bg-[#12161f] border border-slate-800 rounded-lg p-3 text-left">
+            {blocoEmissao}
+          </div>
+        </div>
       )}
 
       {/* Compact total bar (fallback quando não há shell via onResult) */}
