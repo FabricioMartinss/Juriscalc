@@ -1413,6 +1413,92 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
     setTimeout(() => setAutofillEnviado(false), 4000);
   };
 
+  /**
+   * Bloco de emissão automática.
+   *
+   * Extraído para variável porque aparece em dois lugares: na coluna de
+   * resultados do app completo e no painel lateral, que usa o layout compacto
+   * e não renderiza aquela coluna. Antes ficava só no primeiro, e por isso a
+   * emissão não existia no painel.
+   */
+  const blocoEmissao = extPresente && (
+                  <div className="mb-3 p-3 rounded-lg bg-cyan-500/10 border border-cyan-400/30 space-y-2.5">
+                    <div className="flex items-center gap-1.5 text-cyan-200 text-[11px] font-bold uppercase tracking-wide">
+                      <Zap className="w-3.5 h-3.5 text-cyan-300" /> Emissão automática (extensão detectada)
+                    </div>
+                    <p className="text-[10px] text-slate-400 leading-snug font-sans">
+                      Preencha os dados abaixo e clique — a extensão abre o portal e preenche tudo. Você só confere e clica em Emitir.
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {CAMPOS_EMISSAO.map((c) => {
+                        const valor = dadosEmissao[c.campo];
+                        const invalido = valor.length > 0 && !c.valido(valor);
+                        return (
+                          <input
+                            key={c.campo}
+                            value={valor}
+                            inputMode={c.numerico ? 'numeric' : undefined}
+                            maxLength={c.maxLength}
+                            aria-invalid={invalido}
+                            onChange={(e) => {
+                              const novo = c.mask ? c.mask(e.target.value) : e.target.value;
+                              setDadosEmissao((d) => ({ ...d, [c.campo]: novo }));
+                            }}
+                            placeholder={c.label}
+                            className={`w-full bg-white/10 border rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none ${
+                              invalido ? 'border-red-400 focus:border-red-400' : 'border-white/10 focus:border-cyan-400/60'
+                            }`}
+                          />
+                        );
+                      })}
+                    </div>
+                    {/* Enquadramentos que cobrem mais de um serviço: o cálculo
+                        é o mesmo, mas o ato praticado muda o nome da guia. */}
+                    {opcoesServico.length > 1 && (
+                      <div className="space-y-1">
+                        <label
+                          htmlFor="select-servico-portal"
+                          className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider"
+                        >
+                          Tipo de serviço na guia
+                        </label>
+                        <select
+                          id="select-servico-portal"
+                          value={servicoAtual?.valor ?? ''}
+                          onChange={(e) => setServicoEscolhido(e.target.value)}
+                          className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-400/60"
+                        >
+                          {opcoesServico.map((s) => (
+                            <option key={s.valor} value={s.valor} className="text-slate-900">
+                              {s.rotulo}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleAutofillGuia}
+                      disabled={!CAMPOS_EMISSAO.every((c) => c.valido(dadosEmissao[c.campo]))}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded bg-cyan-500 hover:bg-cyan-600 text-slate-950 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Chrome className="w-3.5 h-3.5" />
+                      {autofillEnviado ? 'Abrindo o portal…' : 'Emitir Guia automaticamente'}
+                    </button>
+                    {servicoAtual ? (
+                      <p className="text-[9px] text-slate-400 leading-snug font-sans">
+                        Guia: <strong className="text-slate-300">{servicoAtual.rotulo}</strong> — receita{' '}
+                        <span className="font-mono">{servicoAtual.codigo}</span>.
+                      </p>
+                    ) : (
+                      <p className="text-[9px] text-amber-300/80 leading-snug font-sans">
+                        Obs.: esta categoria ainda não tem o "Tipo de Serviço" mapeado no portal — selecione-o lá manualmente (o restante dos dados é preenchido).
+                      </p>
+                    )}
+                  </div>
+  );
+
   return (
     <div className={`w-full bg-white rounded-xl border ${col.cardBorder} shadow-xs transition-all duration-300 font-sans`} id="juriscalc-main-appcard">
       
@@ -2420,84 +2506,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                     Ao clicar, o <strong className="font-semibold text-slate-200">valor exato da guia é copiado</strong> e o sistema oficial do Tribunal abre em nova aba — basta colar no campo de valor:
                   </p>
 
-                  {/* Emissão automática (aparece quando a extensão JuriscalcSP é detectada) */}
-                  {extPresente && (
-                    <div className="mb-3 p-3 rounded-lg bg-cyan-500/10 border border-cyan-400/30 space-y-2.5">
-                      <div className="flex items-center gap-1.5 text-cyan-200 text-[11px] font-bold uppercase tracking-wide">
-                        <Zap className="w-3.5 h-3.5 text-cyan-300" /> Emissão automática (extensão detectada)
-                      </div>
-                      <p className="text-[10px] text-slate-400 leading-snug font-sans">
-                        Preencha os dados abaixo e clique — a extensão abre o portal e preenche tudo. Você só confere e clica em Emitir.
-                      </p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {CAMPOS_EMISSAO.map((c) => {
-                          const valor = dadosEmissao[c.campo];
-                          const invalido = valor.length > 0 && !c.valido(valor);
-                          return (
-                            <input
-                              key={c.campo}
-                              value={valor}
-                              inputMode={c.numerico ? 'numeric' : undefined}
-                              maxLength={c.maxLength}
-                              aria-invalid={invalido}
-                              onChange={(e) => {
-                                const novo = c.mask ? c.mask(e.target.value) : e.target.value;
-                                setDadosEmissao((d) => ({ ...d, [c.campo]: novo }));
-                              }}
-                              placeholder={c.label}
-                              className={`w-full bg-white/10 border rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none ${
-                                invalido ? 'border-red-400 focus:border-red-400' : 'border-white/10 focus:border-cyan-400/60'
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                      {/* Enquadramentos que cobrem mais de um serviço: o cálculo
-                          é o mesmo, mas o ato praticado muda o nome da guia. */}
-                      {opcoesServico.length > 1 && (
-                        <div className="space-y-1">
-                          <label
-                            htmlFor="select-servico-portal"
-                            className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider"
-                          >
-                            Tipo de serviço na guia
-                          </label>
-                          <select
-                            id="select-servico-portal"
-                            value={servicoAtual?.valor ?? ''}
-                            onChange={(e) => setServicoEscolhido(e.target.value)}
-                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-400/60"
-                          >
-                            {opcoesServico.map((s) => (
-                              <option key={s.valor} value={s.valor} className="text-slate-900">
-                                {s.rotulo}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={handleAutofillGuia}
-                        disabled={!CAMPOS_EMISSAO.every((c) => c.valido(dadosEmissao[c.campo]))}
-                        className="w-full flex items-center justify-center gap-1.5 py-2 rounded bg-cyan-500 hover:bg-cyan-600 text-slate-950 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                      >
-                        <Chrome className="w-3.5 h-3.5" />
-                        {autofillEnviado ? 'Abrindo o portal…' : 'Emitir Guia automaticamente'}
-                      </button>
-                      {servicoAtual ? (
-                        <p className="text-[9px] text-slate-400 leading-snug font-sans">
-                          Guia: <strong className="text-slate-300">{servicoAtual.rotulo}</strong> — receita{' '}
-                          <span className="font-mono">{servicoAtual.codigo}</span>.
-                        </p>
-                      ) : (
-                        <p className="text-[9px] text-amber-300/80 leading-snug font-sans">
-                          Obs.: esta categoria ainda não tem o "Tipo de Serviço" mapeado no portal — selecione-o lá manualmente (o restante dos dados é preenchido).
-                        </p>
-                      )}
-                    </div>
-                  )}
+                  {blocoEmissao}
 
                   <div className="grid grid-cols-1 gap-2 pt-1 text-xs font-bold font-sans">
                     <a
@@ -2604,6 +2613,11 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
         </div>
         )}
       </div>
+
+      {/* No painel lateral a coluna de resultados não existe; a emissão entra aqui. */}
+      {compact && blocoEmissao && (
+        <div className="px-4 pb-4">{blocoEmissao}</div>
+      )}
 
       {/* Compact total bar (fallback quando não há shell via onResult) */}
       {compact && !onResult && (
