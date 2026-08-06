@@ -1414,17 +1414,19 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
   };
 
   /**
-   * Bloco de emissão automática.
+   * Bloco de emissão automática — exclusivo do painel lateral da extensão.
    *
-   * Extraído para variável porque aparece em dois lugares: na coluna de
-   * resultados do app completo e no painel lateral, que usa o layout compacto
-   * e não renderiza aquela coluna. Antes ficava só no primeiro, e por isso a
-   * emissão não existia no painel.
+   * A condição é estar rodando DENTRO da extensão, não o modo compacto: hoje dá
+   * no mesmo, mas o critério do produto é "só na extensão", e amarrar isso ao
+   * layout deixaria a regra de negócio dependendo de uma decisão visual.
+   *
+   * No site, quem tem a extensão instalada vê no lugar um aviso apontando para
+   * o painel — some sem explicação gera dúvida em quem já usava.
    */
-  const blocoEmissao = extPresente && (
+  const blocoEmissao = noPainelDaExtensao() && (
                   <div className="mb-3 p-3 rounded-lg bg-cyan-500/10 border border-cyan-400/30 space-y-2.5">
                     <div className="flex items-center gap-1.5 text-cyan-200 text-[11px] font-bold uppercase tracking-wide">
-                      <Zap className="w-3.5 h-3.5 text-cyan-300" /> Emissão automática (extensão detectada)
+                      <Zap className="w-3.5 h-3.5 text-cyan-300" /> Emissão automática
                     </div>
                     <p className="text-[10px] text-slate-400 leading-snug font-sans">
                       Preencha os dados abaixo e clique — a extensão abre o portal e preenche tudo. Você só confere e clica em Emitir.
@@ -2506,7 +2508,18 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                     Ao clicar, o <strong className="font-semibold text-slate-200">valor exato da guia é copiado</strong> e o sistema oficial do Tribunal abre em nova aba — basta colar no campo de valor:
                   </p>
 
-                  {blocoEmissao}
+                  {/* A emissão automática vive só na extensão. Aqui, quem a tem
+                      instalada recebe o caminho em vez de não achar mais nada. */}
+                  {extPresente && (
+                    <div className="mb-3 p-3 rounded-lg bg-cyan-500/10 border border-cyan-400/30 flex items-start gap-2">
+                      <Zap className="w-3.5 h-3.5 text-cyan-300 shrink-0 mt-0.5" />
+                      <p className="text-[10.5px] text-slate-300 leading-snug font-sans">
+                        <strong className="font-bold text-cyan-200">Emissão automática disponível.</strong>{' '}
+                        Clique no ícone da extensão para abrir o painel lateral — de lá o portal é
+                        preenchido sozinho, sem redigitar valores.
+                      </p>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 gap-2 pt-1 text-xs font-bold font-sans">
                     <a
