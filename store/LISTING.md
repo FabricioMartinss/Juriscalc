@@ -45,7 +45,7 @@ guia que o próprio usuário mandou emitir e (b) uma cópia da tabela de índice
 oficiais do TJSP.
 
 ## URL da política de privacidade
-https://juriscalc2.netlify.app/privacidade/
+https://juriscalcsp.com/privacidade/
 
 ---
 
@@ -82,12 +82,14 @@ Preencher automaticamente o formulário da guia DARE no Portal de Custas do TJSP
 com os valores já calculados, quando o usuário aciona a emissão. Sem esse acesso
 o preenchimento automático não funciona e os valores teriam de ser redigitados.
 
-**Justificativa do host `https://juriscalc2.netlify.app/*`:**
-Baixar `indices.json`, um arquivo estático com as Tabelas Práticas de Atualização
-Monetária publicadas pelo TJSP. O tribunal divulga um índice novo por mês; buscar
-esse arquivo mantém a correção monetária correta sem exigir uma nova versão da
-extensão a cada mês. É apenas leitura de dados públicos — nenhuma informação do
-usuário é enviada.
+**Justificativa dos hosts `https://juriscalcsp.com/*` e `https://juriscalc2.netlify.app/*`:**
+São os dois endereços do site do próprio produto — o domínio próprio e o do
+serviço de hospedagem. A extensão os usa para duas coisas: receber os dados do
+cálculo que o usuário fez no site, e baixar `indices.json`, um arquivo estático
+com as Tabelas Práticas de Atualização Monetária publicadas pelo TJSP. O tribunal
+divulga um índice novo por mês; buscar esse arquivo mantém a correção monetária
+correta sem exigir uma nova versão da extensão a cada mês. É apenas leitura de
+dados públicos — nenhuma informação do usuário é enviada para fora do navegador.
 
 **Justificativa dos content scripts:**
 `bridge.js` e `filler.js` atuam somente em

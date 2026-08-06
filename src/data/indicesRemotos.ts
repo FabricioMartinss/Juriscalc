@@ -35,8 +35,20 @@ const CHAVES = Object.keys(EMBUTIDAS) as ChaveSerie[];
 /** Versão de formato aceita. Um `indices.json` mais novo é ignorado. */
 const VERSAO_SUPORTADA = 1;
 
-/** Onde a extensão busca o arquivo — o mesmo host que serve o app web. */
-const URL_ABSOLUTA = 'https://juriscalc2.netlify.app/indices.json';
+/**
+ * Onde a extensão busca o arquivo, em ordem de preferência.
+ *
+ * São dois porque o mesmo site responde no domínio próprio e no endereço do
+ * Netlify. Tentar ambos evita que a extensão pare de receber índices se um sair
+ * do ar — e a extensão publicada não se corrige sozinha: dependeria de nova
+ * revisão da loja.
+ *
+ * Os dois precisam estar em `host_permissions` no manifest.
+ */
+const URLS_ABSOLUTAS = [
+  'https://juriscalcsp.com/indices.json',
+  'https://juriscalc2.netlify.app/indices.json',
+];
 
 const CHAVE_CACHE = 'juriscalc:indices';
 
@@ -196,12 +208,21 @@ async function gravarCache(dados: unknown): Promise<void> {
 }
 
 async function buscarRemoto(): Promise<unknown> {
-  // No app web o arquivo é servido pela própria origem; na extensão é preciso
-  // o host absoluto, liberado em `host_permissions`.
-  const url = noContextoDaExtensao() ? URL_ABSOLUTA : '/indices.json';
-  const resp = await fetch(url, { cache: 'no-cache' });
-  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-  return resp.json();
+  // No app web o arquivo vem da própria origem, seja qual for o domínio. Na
+  // extensão é preciso host absoluto, liberado em `host_permissions`.
+  const urls = noContextoDaExtensao() ? URLS_ABSOLUTAS : ['/indices.json'];
+
+  let ultimoErro: unknown;
+  for (const url of urls) {
+    try {
+      const resp = await fetch(url, { cache: 'no-cache' });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      return await resp.json();
+    } catch (erro) {
+      ultimoErro = erro; // tenta o próximo host antes de desistir
+    }
+  }
+  throw ultimoErro ?? new Error('nenhum host respondeu');
 }
 
 function prazo(ms: number): Promise<void> {

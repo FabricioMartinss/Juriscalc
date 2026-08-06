@@ -1,4 +1,4 @@
-import{r as l,s as ea,v as Ga,p as Tt,a as _t,u as Lt,j as e}from"./sidepanel-DR5QAlAg.js";/**
+import{r as l,s as ea,v as Ga,p as Tt,a as _t,u as Lt,j as e}from"./sidepanel-D5dGlw1B.js";/**
  * @license lucide-react v0.546.0 - ISC
  *
  * This source code is licensed under the ISC license.
