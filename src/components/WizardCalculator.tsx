@@ -30,6 +30,30 @@ const TARIFA_POSTAL_AR = 34.35; // Carta registrada unipaginada c/ AR digital �
 // O mapeamento enquadramento -> serviço do portal vive em `data/servicosPortal.ts`,
 // junto dos identificadores reais do `<select>` e dos códigos de receita.
 
+/** APIs da extensão disponíveis quando o código roda dentro dela. */
+interface ApiExtensao {
+  runtime?: {
+    id?: string;
+    sendMessage(msg: unknown): void;
+  };
+  storage?: { local?: { set(itens: Record<string, unknown>): Promise<void> } };
+}
+
+function apiExtensao(): ApiExtensao | undefined {
+  return (globalThis as { chrome?: ApiExtensao }).chrome;
+}
+
+/**
+ * true quando a calculadora está sendo exibida no painel lateral da extensão.
+ *
+ * Ali não existe a ponte `appbridge.js` — ela é content script e só roda nas
+ * páginas do site. Em compensação, o painel tem acesso direto às APIs da
+ * extensão, então a emissão sai sem intermediário.
+ */
+function noPainelDaExtensao(): boolean {
+  return !!apiExtensao()?.runtime?.id;
+}
+
 // ---- Máscaras e validação dos campos de emissão automática ----
 function soDigitos(s: string): string {
   return (s || '').replace(/\D/g, '');
@@ -1291,7 +1315,13 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
   };
 
   // Detecta a extensão JuriscalcSP (o content script anuncia 'JUDS_EXT_PRONTA').
+  // No painel lateral isso nunca chega: `appbridge.js` é content script e só roda
+  // nas páginas do site, não dentro da própria extensão. Lá a presença é certa.
   useEffect(() => {
+    if (noPainelDaExtensao()) {
+      setExtPresente(true);
+      return;
+    }
     const onMsg = (ev: MessageEvent) => {
       if (ev.source === window && ev.data && ev.data.type === 'JUDS_EXT_PRONTA') {
         setExtPresente(true);
@@ -1351,8 +1381,6 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
       // Identificador do <option>, não o rótulo: o portal repete termos entre
       // serviços e casar por texto selecionaria o errado.
       tipoServico: servicoAtual?.valor || '',
-      valorCausa: fmt(currentInputs.valorCausa),
-      valorCondenacao: temCondenacao ? fmt(currentInputs.valorCondenacao) : '',
       // Mapa `id do campo -> valor`. A extensão preenche o que existir na
       // página e ignora o resto, então o conjunto pode variar por serviço sem
       // exigir nova versão da extensão.
@@ -1363,7 +1391,24 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
         ),
       },
     };
-    window.postMessage({ type: 'JUDS_EMITIR_GUIA', dados }, '*');
+
+    // Dois caminhos para o mesmo destino. No site, a ponte `appbridge.js`
+    // escuta o postMessage e repassa. No painel lateral não há content script
+    // ouvindo, mas há acesso direto às APIs da extensão — mais curto e sem
+    // depender de a página estar num domínio autorizado.
+    const api = apiExtensao();
+    if (noPainelDaExtensao() && api?.storage?.local && api.runtime) {
+      const runtime = api.runtime;
+      void api.storage.local
+        .set({ guiaDados: dados })
+        .then(() => runtime.sendMessage({ type: 'ABRIR_PORTAL' }))
+        .catch(() => {
+          // Sem contexto de extensão (recarregada, por exemplo): silencioso.
+        });
+    } else {
+      window.postMessage({ type: 'JUDS_EMITIR_GUIA', dados }, '*');
+    }
+
     setAutofillEnviado(true);
     setTimeout(() => setAutofillEnviado(false), 4000);
   };
