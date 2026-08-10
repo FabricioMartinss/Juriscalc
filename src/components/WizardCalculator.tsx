@@ -2537,7 +2537,12 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       </span>
                       <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                     </a>
-                    {postageAddresses > 0 && (
+                    {/* As três guias aparecem sempre. FEDTJ e GRD só existem quando
+                        há AR ou diligência de oficial no cálculo — antes elas
+                        simplesmente não eram renderizadas, o que dava a impressão
+                        de que o produto só emite a DARE. Apagadas, elas informam
+                        que existem e o que preencher para ativá-las. */}
+                    {postageAddresses > 0 ? (
                       <a
                         href="https://www45.bb.com.br/fmc/frm/fw0707314_1.jsp"
                         target="_blank"
@@ -2553,8 +2558,18 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                         </span>
                         <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                       </a>
+                    ) : (
+                      <div className="flex items-center justify-between p-2.5 rounded bg-white/5 border border-white/5 text-slate-500 cursor-default">
+                        <span className="flex items-center gap-1.5">
+                          <FileText className="w-3.5 h-3.5 text-slate-600" />
+                          Despesas Postais FEDTJ (Código 120-1)
+                        </span>
+                        <span className="text-[9px] font-normal normal-case text-slate-500 shrink-0 pl-2 text-right">
+                          informe as cartas AR
+                        </span>
+                      </div>
                     )}
-                    {totalDiligencias > 0 && (
+                    {totalDiligencias > 0 ? (
                       <a
                         href="https://www63.bb.com.br/portalbb/boleto/boletos/oficialjustica/entrada,802,2270,3617,15,0.bbx"
                         target="_blank"
@@ -2570,6 +2585,16 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                         </span>
                         <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                       </a>
+                    ) : (
+                      <div className="flex items-center justify-between p-2.5 rounded bg-white/5 border border-white/5 text-slate-500 cursor-default">
+                        <span className="flex items-center gap-1.5">
+                          <FileText className="w-3.5 h-3.5 text-slate-600" />
+                          Oficial de Justiça (GRD)
+                        </span>
+                        <span className="text-[9px] font-normal normal-case text-slate-500 shrink-0 pl-2 text-right">
+                          informe as diligências
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>
