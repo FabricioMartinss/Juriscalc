@@ -1,0 +1,22 @@
+# Configuração do Netlify.
+#
+# Só a chave `ignore` é definida aqui de propósito: o que estiver neste arquivo
+# sobrepõe o painel, e o comando de build e a pasta publicada já estão
+# configurados lá e funcionando. Definir de novo só criaria dois lugares para
+# manter em sincronia.
+
+[build]
+  # Pula o build quando o push não tocou em nada que o site publica.
+  #
+  # Boa parte dos commits deste repositório mexe só na extensão (`extension/`),
+  # na documentação da loja (`store/`), no workflow ou nos scripts — nada disso
+  # muda o site, mas cada push disparava um build assim mesmo.
+  #
+  # `git diff --quiet` sai com 0 quando não há diferença nos caminhos listados,
+  # e o Netlify entende 0 como "pode pular". Se a comparação falhar (primeiro
+  # build, histórico raso), o código é diferente de 0 e o build acontece — o
+  # padrão seguro é construir.
+  #
+  # `public/` está na lista, então a atualização mensal dos índices publica
+  # normalmente.
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- src public index.html package.json package-lock.json vite.config.ts tsconfig.json"
