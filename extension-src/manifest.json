@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "JuriscalcSP — Custas TJSP",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "description": "Calculadora e auditoria de custas processuais do TJSP (e-SAJ e E-PROC) em painel lateral de altura total.",
   "permissions": ["sidePanel", "storage"],
   "host_permissions": [
