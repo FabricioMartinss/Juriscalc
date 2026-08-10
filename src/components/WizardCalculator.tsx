@@ -1501,6 +1501,92 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                   </div>
   );
 
+  /**
+   * As três guias oficiais (DARE, FEDTJ e GRD).
+   *
+   * Extraída para variável porque aparece na coluna de resultados do app
+   * completo e também no painel lateral, que usa layout compacto e não
+   * renderiza aquela coluna.
+   */
+  const blocoGuias = (
+                <div className="grid grid-cols-1 gap-2 pt-1 text-xs font-bold font-sans">
+                  <a
+                    href="https://portaldecustas.tjsp.jus.br/portaltjsp"
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => handleEmitGuia(eSajDareSum, 'dare')}
+                    className="flex items-center justify-between p-2.5 rounded bg-white/10 hover:bg-white/15 border border-white/10 text-white transition-colors"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      {copiedGuia === 'dare' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <FileText className="w-3.5 h-3.5 text-cyan-300" />}
+                      {copiedGuia === 'dare'
+                        ? `Valor R$ ${eSajDareSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} copiado`
+                        : 'Emitir Guia DARE (Código 230-6)'}
+                    </span>
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                  </a>
+                  {/* As três guias aparecem sempre. FEDTJ e GRD só existem quando
+                      há AR ou diligência de oficial no cálculo — antes elas
+                      simplesmente não eram renderizadas, o que dava a impressão
+                      de que o produto só emite a DARE. Apagadas, elas informam
+                      que existem e o que preencher para ativá-las. */}
+                  {postageAddresses > 0 ? (
+                    <a
+                      href="https://www45.bb.com.br/fmc/frm/fw0707314_1.jsp"
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => handleEmitGuia(postalSum, 'fedtj')}
+                      className="flex items-center justify-between p-2.5 rounded bg-white/10 hover:bg-white/15 border border-white/10 text-white transition-colors"
+                     >
+                      <span className="flex items-center gap-1.5">
+                        {copiedGuia === 'fedtj' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <FileText className="w-3.5 h-3.5 text-slate-400" />}
+                        {copiedGuia === 'fedtj'
+                          ? `Valor R$ ${postalSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} copiado`
+                          : 'Despesas Postais FEDTJ (Código 120-1)'}
+                      </span>
+                      <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                    </a>
+                  ) : (
+                    <div className="flex items-center justify-between p-2.5 rounded bg-white/5 border border-white/5 text-slate-500 cursor-default">
+                      <span className="flex items-center gap-1.5">
+                        <FileText className="w-3.5 h-3.5 text-slate-600" />
+                        Despesas Postais FEDTJ (Código 120-1)
+                      </span>
+                      <span className="text-[9px] font-normal normal-case text-slate-500 shrink-0 pl-2 text-right">
+                        informe as cartas AR
+                      </span>
+                    </div>
+                  )}
+                  {totalDiligencias > 0 ? (
+                    <a
+                      href="https://www63.bb.com.br/portalbb/boleto/boletos/oficialjustica/entrada,802,2270,3617,15,0.bbx"
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => handleEmitGuia(grdSum, 'grd')}
+                      className="flex items-center justify-between p-2.5 rounded bg-white/10 hover:bg-white/15 border border-white/10 text-white transition-colors"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        {copiedGuia === 'grd' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <FileText className="w-3.5 h-3.5 text-slate-400" />}
+                        {copiedGuia === 'grd'
+                          ? `Valor R$ ${grdSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} copiado`
+                          : 'Oficial de Justiça (GRD)'}
+                      </span>
+                      <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                    </a>
+                  ) : (
+                    <div className="flex items-center justify-between p-2.5 rounded bg-white/5 border border-white/5 text-slate-500 cursor-default">
+                      <span className="flex items-center gap-1.5">
+                        <FileText className="w-3.5 h-3.5 text-slate-600" />
+                        Oficial de Justiça (GRD)
+                      </span>
+                      <span className="text-[9px] font-normal normal-case text-slate-500 shrink-0 pl-2 text-right">
+                        informe as diligências
+                      </span>
+                    </div>
+                  )}
+                </div>
+  );
+
   return (
     <div className={`w-full bg-white rounded-xl border ${col.cardBorder} shadow-xs transition-all duration-300 font-sans`} id="juriscalc-main-appcard">
       
@@ -2521,82 +2607,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 gap-2 pt-1 text-xs font-bold font-sans">
-                    <a
-                      href="https://portaldecustas.tjsp.jus.br/portaltjsp"
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={() => handleEmitGuia(eSajDareSum, 'dare')}
-                      className="flex items-center justify-between p-2.5 rounded bg-white/10 hover:bg-white/15 border border-white/10 text-white transition-colors"
-                    >
-                      <span className="flex items-center gap-1.5">
-                        {copiedGuia === 'dare' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <FileText className="w-3.5 h-3.5 text-cyan-300" />}
-                        {copiedGuia === 'dare'
-                          ? `Valor R$ ${eSajDareSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} copiado`
-                          : 'Emitir Guia DARE (Código 230-6)'}
-                      </span>
-                      <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-                    </a>
-                    {/* As três guias aparecem sempre. FEDTJ e GRD só existem quando
-                        há AR ou diligência de oficial no cálculo — antes elas
-                        simplesmente não eram renderizadas, o que dava a impressão
-                        de que o produto só emite a DARE. Apagadas, elas informam
-                        que existem e o que preencher para ativá-las. */}
-                    {postageAddresses > 0 ? (
-                      <a
-                        href="https://www45.bb.com.br/fmc/frm/fw0707314_1.jsp"
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={() => handleEmitGuia(postalSum, 'fedtj')}
-                        className="flex items-center justify-between p-2.5 rounded bg-white/10 hover:bg-white/15 border border-white/10 text-white transition-colors"
-                       >
-                        <span className="flex items-center gap-1.5">
-                          {copiedGuia === 'fedtj' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <FileText className="w-3.5 h-3.5 text-slate-400" />}
-                          {copiedGuia === 'fedtj'
-                            ? `Valor R$ ${postalSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} copiado`
-                            : 'Despesas Postais FEDTJ (Código 120-1)'}
-                        </span>
-                        <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-                      </a>
-                    ) : (
-                      <div className="flex items-center justify-between p-2.5 rounded bg-white/5 border border-white/5 text-slate-500 cursor-default">
-                        <span className="flex items-center gap-1.5">
-                          <FileText className="w-3.5 h-3.5 text-slate-600" />
-                          Despesas Postais FEDTJ (Código 120-1)
-                        </span>
-                        <span className="text-[9px] font-normal normal-case text-slate-500 shrink-0 pl-2 text-right">
-                          informe as cartas AR
-                        </span>
-                      </div>
-                    )}
-                    {totalDiligencias > 0 ? (
-                      <a
-                        href="https://www63.bb.com.br/portalbb/boleto/boletos/oficialjustica/entrada,802,2270,3617,15,0.bbx"
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={() => handleEmitGuia(grdSum, 'grd')}
-                        className="flex items-center justify-between p-2.5 rounded bg-white/10 hover:bg-white/15 border border-white/10 text-white transition-colors"
-                      >
-                        <span className="flex items-center gap-1.5">
-                          {copiedGuia === 'grd' ? <Check className="w-3.5 h-3.5 text-green-400" /> : <FileText className="w-3.5 h-3.5 text-slate-400" />}
-                          {copiedGuia === 'grd'
-                            ? `Valor R$ ${grdSum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} copiado`
-                            : 'Oficial de Justiça (GRD)'}
-                        </span>
-                        <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-                      </a>
-                    ) : (
-                      <div className="flex items-center justify-between p-2.5 rounded bg-white/5 border border-white/5 text-slate-500 cursor-default">
-                        <span className="flex items-center gap-1.5">
-                          <FileText className="w-3.5 h-3.5 text-slate-600" />
-                          Oficial de Justiça (GRD)
-                        </span>
-                        <span className="text-[9px] font-normal normal-case text-slate-500 shrink-0 pl-2 text-right">
-                          informe as diligências
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                  {blocoGuias}
                 </div>
               ) : (
                 <div className="p-3.5 bg-white/5 border border-white/10 rounded space-y-2 text-left">
@@ -2652,13 +2663,22 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
         )}
       </div>
 
-      {/* No painel lateral a coluna de resultados não existe; a emissão entra aqui.
-          O bloco foi desenhado para o card escuro daquela coluna — usa texto claro —,
-          então aqui ele recebe o mesmo fundo. Sem isso vira claro sobre claro. */}
-      {compact && blocoEmissao && (
+      {/* No painel lateral a coluna de resultados não existe, então a emissão e
+          as guias entram aqui. Os dois blocos foram desenhados para o card escuro
+          daquela coluna — usam texto claro —, e por isso recebem o mesmo fundo.
+          Sem isso viram claro sobre claro.
+
+          As guias aparecem sempre; a emissão automática, só dentro da extensão. */}
+      {compact && subsystem === 'esaj' && (
         <div className="px-3 pb-4">
           <div className="bg-[#12161f] border border-slate-800 rounded-lg p-3 text-left">
             {blocoEmissao}
+            <div className={blocoEmissao ? 'mt-3 pt-3 border-t border-slate-800' : ''}>
+              <span className="block mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                Guias para recolhimento
+              </span>
+              {blocoGuias}
+            </div>
           </div>
         </div>
       )}
