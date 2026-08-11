@@ -5,14 +5,23 @@
 // PARA aqui de propósito: o usuário confere e clica em "Emitir Guia".
 (function () {
   // Remove acentos sem usar regex de combining chars (mantém o fonte 100% ASCII).
+  //
+  // Tambem descarta o que nao for letra, numero ou espaco, e junta espacos
+  // repetidos. Onze municipios de SP tem apostrofo ou hifen no nome
+  // ("Santa Barbara d'Oeste", "Embu-Guacu", "Pariquera-Acu") e o portal nao
+  // necessariamente usa o mesmo caractere que o IBGE -- apostrofo reto contra
+  // curvo ja seria suficiente para o nome nunca casar.
   function norm(x) {
     var d = (x || '').normalize('NFD');
     var out = '';
     for (var i = 0; i < d.length; i++) {
       var code = d.charCodeAt(i);
-      if (code < 0x0300 || code > 0x036f) out += d[i];
+      if (code >= 0x0300 && code <= 0x036f) continue; // acento
+      var c = d[i].toUpperCase();
+      if ((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) out += c;
+      else if (out.length && out[out.length - 1] !== ' ') out += ' ';
     }
-    return out.toUpperCase();
+    return out.replace(/ $/, '');
   }
   function getDados() {
     try {
@@ -47,17 +56,46 @@
       if (!e) return;
       $(e).val(v).trigger('input').trigger('keyup').trigger('change').trigger('blur');
     }
-    // Casa por trecho de texto. Serve para UF e municipio, onde o rotulo e unico.
+    // Casa por texto. Serve para UF e municipio, onde o rotulo identifica.
+    //
+    // Tenta o nome exato primeiro e so depois cai no substring, porque 30 dos
+    // 645 municipios de SP estao contidos no nome de outro. Como o portal lista
+    // em ordem alfabetica, o antigo "primeiro que contem" errava sempre que o
+    // nome maior vinha antes: "Uru" selecionava Bauru, "Leme" selecionava
+    // Clementina, "Itu" selecionava Boituva. Errado e sem aviso.
+    //
+    // No substring, escolhe o rotulo mais curto entre os candidatos -- o mais
+    // proximo do alvo. Isso cobre tanto "Itu" contra "Itupeva" quanto um portal
+    // que escreva "SAO PAULO - SP" em vez de "SAO PAULO".
     function opt(id, alvo) {
-      if (!alvo) return;
+      if (!alvo) return false;
       var e = document.getElementById(id);
-      if (!e) return;
-      var o = [].slice.call(e.options).filter(function (x) {
-        return norm(x.text).indexOf(norm(alvo)) >= 0;
+      if (!e) return false;
+      var lista = [].slice.call(e.options);
+      var n = norm(alvo);
+
+      var o = lista.filter(function (x) {
+        return norm(x.text) === n;
       })[0];
-      if (o) {
-        $(e).val(o.value).trigger('change').trigger('chosen:updated');
+
+      if (!o) {
+        o = lista
+          .filter(function (x) {
+            return n && norm(x.text).indexOf(n) >= 0;
+          })
+          .sort(function (a, b) {
+            return norm(a.text).length - norm(b.text).length;
+          })[0];
       }
+
+      if (!o) {
+        // Antes daqui saia em silencio, e a guia era emitida com o campo
+        // vazio sem ninguem perceber.
+        console.warn('[JuriscalcSP] "' + alvo + '" nao existe em #' + id + '. Selecione a mao.');
+        return false;
+      }
+      $(e).val(o.value).trigger('change').trigger('chosen:updated');
+      return true;
     }
 
     // Seleciona pelo `value` exato do <option>.

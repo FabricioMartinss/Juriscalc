@@ -23,6 +23,7 @@ import {
 import { UFESP_2026 } from '../data/tabelaPratica';
 import { buscarIndiceOficial, getUltimoPeriodoDisponivel, TipoTabelaCorrecao } from '../data/tabelasOficiais';
 import { servicoPorValor, servicoPadrao, servicosDoEnquadramento, destinoDoDado } from '../data/servicosPortal';
+import { MUNICIPIOS_SP } from '../data/municipiosSP';
 
 // Constants
 const TARIFA_POSTAL_AR = 34.35; // Carta registrada unipaginada c/ AR digital — Prov. CSM nº 2.777/25 e 2.788/25 (TJSP, consulta 16/07/2026)
@@ -99,6 +100,26 @@ function mascaraProcesso(v: string): string {
   return out;
 }
 
+// Chave de comparação de município: reduz o nome a letras e números, para que
+// "sao jose do rio preto" ache "São José do Rio Preto".
+//
+// Descarta espaço e pontuação por completo, e não só os normaliza, porque oito
+// municípios têm apóstrofo no nome e ninguém digita "santa barbara d'oeste" —
+// digita "santa barbara doeste". Sem separador as duas formas viram a mesma
+// chave. Conferido: os 645 nomes continuam gerando 645 chaves distintas, então
+// nada é engolido pelo Map.
+//
+// É mais tolerante que o norm() do filler.js de propósito: aqui a entrada é
+// humana; lá os dois lados já são nomes oficiais.
+function chaveMunicipio(v: string): string {
+  return v
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/[^a-zA-Z0-9]+/g, '')
+    .toUpperCase();
+}
+const MUNICIPIO_POR_CHAVE = new Map(MUNICIPIOS_SP.map((m) => [chaveMunicipio(m), m]));
+
 type CampoEmissaoKey = 'cpf' | 'nome' | 'telefone' | 'endereco' | 'municipio' | 'processo';
 interface CampoEmissaoDef {
   campo: CampoEmissaoKey;
@@ -107,6 +128,10 @@ interface CampoEmissaoDef {
   valido: (v: string) => boolean;
   numerico?: boolean;
   maxLength?: number;
+  // Quando presente, o campo vira lista suspensa em vez de digitação. Só o
+  // município usa hoje, e é o que garante que o nome chegue à extensão exatamente
+  // como o portal escreve — ver o cabeçalho de data/municipiosSP.ts.
+  opcoes?: readonly string[];
 }
 const CAMPOS_EMISSAO: CampoEmissaoDef[] = [
   { campo: 'cpf', label: 'CPF/CNPJ', mask: mascaraCpfCnpj, numerico: true, maxLength: 18,
@@ -115,7 +140,14 @@ const CAMPOS_EMISSAO: CampoEmissaoDef[] = [
   { campo: 'telefone', label: 'Telefone', mask: mascaraTelefone, numerico: true, maxLength: 16,
     valido: (v) => { const n = soDigitos(v).length; return n === 10 || n === 11; } },
   { campo: 'endereco', label: 'Endereço', valido: (v) => v.trim().length >= 3 },
-  { campo: 'municipio', label: 'Município', valido: (v) => v.trim().length >= 2 },
+  // Aceita só nome que existe na lista: campo vazio ou meio preenchido trava o
+  // botão de emitir, em vez de mandar para o portal um município que não casa.
+  //
+  // Compara pela chave, não pelo texto: "leme" e "sao carlos" já valem, sem
+  // depender de o usuário ter clicado na sugestão. O nome oficial é resolvido
+  // na hora de montar os dados da guia.
+  { campo: 'municipio', label: 'Município', opcoes: MUNICIPIOS_SP,
+    valido: (v) => MUNICIPIO_POR_CHAVE.has(chaveMunicipio(v)) },
   { campo: 'processo', label: 'Nº do Processo', mask: mascaraProcesso, numerico: true, maxLength: 25,
     valido: (v) => soDigitos(v).length === 20 },
 ];
@@ -1376,7 +1408,12 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
       telefone: dadosEmissao.telefone,
       endereco: dadosEmissao.endereco,
       uf: 'SP',
-      municipio: dadosEmissao.municipio,
+      // Sempre o nome oficial, nunca o que foi digitado: o filler casa este
+      // texto contra o <select> do portal, e "leme" ou "sao carlos" com caixa
+      // ou acento diferente é justamente o que fazia o casamento errar.
+      municipio:
+        MUNICIPIO_POR_CHAVE.get(chaveMunicipio(dadosEmissao.municipio)) ??
+        dadosEmissao.municipio,
       processo: dadosEmissao.processo,
       // Identificador do <option>, não o rótulo: o portal repete termos entre
       // serviços e casar por texto selecionaria o errado.
@@ -1434,7 +1471,60 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                     <div className="grid grid-cols-2 gap-2">
                       {CAMPOS_EMISSAO.map((c) => {
                         const valor = dadosEmissao[c.campo];
-                        const invalido = valor.length > 0 && !c.valido(valor);
+
+                        // Num campo de lista, o texto parcial de quem está
+                        // digitando não é erro: "lem" ainda pode virar "Leme".
+                        // Sem isso a borda ficaria vermelha a cada tecla.
+                        const emProgresso =
+                          !!c.opcoes &&
+                          valor.length > 0 &&
+                          c.opcoes.some((o) => chaveMunicipio(o).includes(chaveMunicipio(valor)));
+                        const invalido = valor.length > 0 && !c.valido(valor) && !emProgresso;
+                        const classe = `w-full bg-white/10 border rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none ${
+                          invalido ? 'border-red-400 focus:border-red-400' : 'border-white/10 focus:border-cyan-400/60'
+                        }`;
+
+                        // Campo de lista fechada (município). O <datalist> dá as
+                        // duas coisas de graça: clicar mostra os 645 nomes, e
+                        // digitar filtra por trecho — sem componente próprio.
+                        //
+                        // O valor continua tendo que estar na lista para o botão
+                        // de emitir liberar, então digitar livremente não passa.
+                        if (c.opcoes) {
+                          const idLista = `lista-${c.campo}`;
+                          return (
+                            <React.Fragment key={c.campo}>
+                              <input
+                                list={idLista}
+                                value={valor}
+                                aria-label={c.label}
+                                aria-invalid={invalido}
+                                placeholder={c.label}
+                                onChange={(e) =>
+                                  setDadosEmissao((d) => ({ ...d, [c.campo]: e.target.value }))
+                                }
+                                // Ao sair do campo, troca o que foi digitado pelo
+                                // nome oficial: quem digita "sao carlos" e não
+                                // clica na sugestão sairia com um valor que a
+                                // lista não reconhece, e o botão travaria sem
+                                // explicar por quê.
+                                onBlur={() => {
+                                  const oficial = MUNICIPIO_POR_CHAVE.get(chaveMunicipio(valor));
+                                  if (oficial && oficial !== valor) {
+                                    setDadosEmissao((d) => ({ ...d, [c.campo]: oficial }));
+                                  }
+                                }}
+                                className={classe}
+                              />
+                              <datalist id={idLista}>
+                                {c.opcoes.map((o) => (
+                                  <option key={o} value={o} />
+                                ))}
+                              </datalist>
+                            </React.Fragment>
+                          );
+                        }
+
                         return (
                           <input
                             key={c.campo}
@@ -1447,9 +1537,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                               setDadosEmissao((d) => ({ ...d, [c.campo]: novo }));
                             }}
                             placeholder={c.label}
-                            className={`w-full bg-white/10 border rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none ${
-                              invalido ? 'border-red-400 focus:border-red-400' : 'border-white/10 focus:border-cyan-400/60'
-                            }`}
+                            className={classe}
                           />
                         );
                       })}

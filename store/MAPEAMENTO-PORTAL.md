@@ -91,6 +91,44 @@ listas são enormes (~500 classes, ~300 comarcas) e virariam uma segunda cópia
 para manter atualizada; e os dropdowns são encadeados, o que torna o
 preenchimento automático lento e quebradiço.
 
+## Município é outra coisa — e tem lista fixa
+
+O `cmb_cidades` **não** é a comarca: fica no bloco do contribuinte, junto de CPF,
+nome, telefone e endereço. É o município do endereço de quem paga.
+
+Por isso ele foge da decisão acima e tem lista fechada em `src/data/municipiosSP.ts`:
+são 645 nomes, não encadeados, e o conjunto é estável há décadas.
+
+O campo era texto livre até a v2.4.0, e o `opt()` casava o que foi digitado
+contra o `<select>` do portal pelo primeiro rótulo que **contivesse** o texto.
+Isso errava em silêncio:
+
+- Nome digitado errado não casava com nada e o `opt()` retornava sem avisar. A
+  guia era emitida com a cidade em branco.
+- **30 dos 645 municípios estão contidos no nome de outro.** Como o portal lista
+  em ordem alfabética, quem vem antes ganhava. Dez casos saíam errados sempre:
+  `Uru`→Bauru, `Leme`→Clementina, `Itu`→Boituva, `Poá`→Marapoama,
+  `Tietê`→Igaraçu do Tietê, `São Pedro`→Águas de São Pedro,
+  `Lindóia`→Águas de Lindóia, `Itararé`→Bom Sucesso de Itararé,
+  `Paranapanema`→Mirante do Paranapanema, `Rinópolis`→Marinópolis.
+
+O campo passou a ser um `<input list>` com `<datalist>`: clicar mostra os 645
+nomes, digitar filtra por trecho, e o botão de emitir só libera com um município
+da lista. Isso elimina o primeiro caso.
+
+Para o segundo, o `opt()` do filler passou a tentar o nome exato antes do
+substring, e a escolher o rótulo **mais curto** entre os candidatos quando cai
+no substring. O `norm()` também passou a descartar pontuação, porque onze
+municípios têm apóstrofo ou hífen no nome e não há garantia de que o portal use
+o mesmo caractere que o IBGE. Quando nada casa, agora sai `console.warn` em vez
+de silêncio.
+
+O que vai para a extensão é sempre o nome oficial, resolvido por
+`chaveMunicipio()` — não o texto digitado. A chave reduz o nome a letras e
+números, então "leme", "SAO CARLOS" e "santa barbara doeste" chegam ao portal
+como `Leme`, `São Carlos` e `Santa Bárbara d'Oeste`. Os 645 nomes geram 645
+chaves distintas, conferido.
+
 ## A extensão para antes de "Adicionar"
 
 O autofill preenche e **não clica em Adicionar** (`bt_salvar_servico`). Quem
