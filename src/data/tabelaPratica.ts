@@ -16,11 +16,25 @@ export const CODES = {
   GRD_DILIGENCIA_OFICIAL: 'GRD-Oficial', // Não tem código numérico simples no BB, é guia GRD específica
 };
 
-// Links para emissão física das guias
+// Links para emissão física das guias.
+//
+// Fonte da verdade dos três botões de guia (WizardCalculator). Ficavam também
+// escritos direto no JSX, e a cópia de lá foi a que apodreceu: o endereço antigo
+// da GRD no www63 virou 404 e ninguém percebeu, porque corrigir aqui não mudava
+// nada na tela.
+//
+// Ao conferir, use um navegador de verdade: os dois domínios do BB respondem 403
+// para linha de comando, então 403 não quer dizer link quebrado.
+//
+// Conferido em 12/08/2026 contra a página oficial do TJSP:
+// https://www.tjsp.jus.br/IndicesTaxasJudiciarias/DespesasProcessuais
 export const LINKS = {
   DARE_SP: 'https://portaldecustas.tjsp.jus.br/portaltjsp',
+  // O TJSP hoje indica www.bb.com.br/site/setor-publico/judiciario/formularios,
+  // mas este endereço continua respondendo 200 e cai direto no formulário, sem
+  // passar pelo índice. Trocar só quando parar de funcionar.
   FEDTJ_BB: 'https://www45.bb.com.br/fmc/frm/fw0707314_1.jsp',
-  GRD_BB: 'https://www63.bb.com.br/portalbb/boleto/boletos/oficialjustica/entrada,802,2270,3617,15,0.bbx'
+  GRD_BB: 'https://boleto.apps.bb.com.br/emissao-guia',
 };
 
 // Histórico de valores da UFESP para referência

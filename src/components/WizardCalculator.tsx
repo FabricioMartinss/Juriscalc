@@ -20,7 +20,7 @@ import {
   Chrome,
   Zap
 } from 'lucide-react';
-import { UFESP_2026 } from '../data/tabelaPratica';
+import { UFESP_2026, LINKS } from '../data/tabelaPratica';
 import { buscarIndiceOficial, getUltimoPeriodoDisponivel, TipoTabelaCorrecao } from '../data/tabelasOficiais';
 import { servicoPorValor, servicoPadrao, servicosDoEnquadramento, destinoDoDado } from '../data/servicosPortal';
 import { MUNICIPIOS_SP } from '../data/municipiosSP';
@@ -1599,7 +1599,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
   const blocoGuias = (
                 <div className="grid grid-cols-1 gap-2 pt-1 text-xs font-bold font-sans">
                   <a
-                    href="https://portaldecustas.tjsp.jus.br/portaltjsp"
+                    href={LINKS.DARE_SP}
                     target="_blank"
                     rel="noreferrer"
                     onClick={() => handleEmitGuia(eSajDareSum, 'dare')}
@@ -1620,7 +1620,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       que existem e o que preencher para ativá-las. */}
                   {postageAddresses > 0 ? (
                     <a
-                      href="https://www45.bb.com.br/fmc/frm/fw0707314_1.jsp"
+                      href={LINKS.FEDTJ_BB}
                       target="_blank"
                       rel="noreferrer"
                       onClick={() => handleEmitGuia(postalSum, 'fedtj')}
@@ -1647,7 +1647,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                   )}
                   {totalDiligencias > 0 ? (
                     <a
-                      href="https://www63.bb.com.br/portalbb/boleto/boletos/oficialjustica/entrada,802,2270,3617,15,0.bbx"
+                      href={LINKS.GRD_BB}
                       target="_blank"
                       rel="noreferrer"
                       onClick={() => handleEmitGuia(grdSum, 'grd')}
