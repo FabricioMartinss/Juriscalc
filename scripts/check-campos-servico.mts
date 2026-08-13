@@ -47,8 +47,12 @@ for (const [chave, campos] of Object.entries(CAMPOS_POR_SERVICO)) {
 }
 console.log('  nenhum');
 
-// 4. Relatorio: quais enquadramentos passam a pedir campo digitado.
-console.log('\nenquadramentos afetados (pelo servico padrao):');
+// 4. Relatorio: o que cada enquadramento DECLARA, pelo servico padrao.
+//
+// Nao e o que o usuario vai ver. A tela ainda esconde o que o calculo cobre --
+// o comum_10 declara `valorMonteMor` e mesmo assim nao mostra o campo, porque o
+// app ja preenche. Para saber o que aparece, olhe `camposParaDigitar`.
+console.log('\ncampos declarados por enquadramento (pelo servico padrao):');
 for (const [enq, chaves] of Object.entries(SERVICOS_POR_ENQUADRAMENTO)) {
   const campos = camposDoServico(servicoPadrao(enq)?.valor);
   if (campos.length) console.log(`  ${enq.padEnd(10)} ${chaves[0].padEnd(45)} ${campos.map((c) => c.id).join(', ')}`);

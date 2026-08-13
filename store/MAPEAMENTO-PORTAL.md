@@ -219,9 +219,40 @@ nesses casos, basta declarar o `campoPortal` das parcelas.
 
 ## Processo novo pede muito mais
 
-Quando o campo oculto `novoProcesso` vale `true` — caso da Petição Inicial —, o
-portal também pede instância, comarca, foro, ofício, serventia, classe e partes.
-Com processo existente, ele preenche tudo sozinho a partir do número validado.
+Quando o campo oculto `novoProcesso` vale `true`, o portal também pede
+instância, comarca, foro, ofício, serventia, classe e partes. Com processo
+existente, ele preenche tudo sozinho a partir do número validado.
+
+**São três serviços, não um** (conferido em 13/08/2026): `PETICAO_INICIAL`,
+`EXECUCAO_TITULO_EXTRA_JUDICIAL` e `ACAO_PENAL_PRIVADA_INICIAL` — os atos que
+iniciam processo, onde não existe número a validar. Este arquivo dizia que era
+só a Petição Inicial.
+
+Nesses três, `txt_numeroProcesso` e `bt_validar_processo` **não existem**, então
+o passo de validação do filler vira no-op — mesma situação das cartas de outro
+tribunal.
+
+Os campos do bloco, conferidos:
+
+| Campo | Controle |
+|---|---|
+| `rd_instancia_1`, `rd_instancia_2` | **radio** — nem `txt()` nem `opt()` servem |
+| `cmb_comarca1/2_ativa_alocacao` | Chosen, encadeado |
+| `cmb_foro1/2_ativo_alocacao` | Chosen, encadeado à comarca |
+| `cmb_oficio1/2_ativo_alocacao` | Chosen, encadeado ao foro |
+| `cmb_serventia1/2_ativa_alocacao` | Chosen, encadeado ao ofício |
+| `cmb_classe` | Chosen, lista grande |
+| `parteCpfCnpj`, `parteNome` | texto |
+| `semParteCheck`, `multiplasPartesCheck` | **checkbox** |
+| `participacaoSelecionada` | Chosen |
+| `bt_add_partes_processo` | botão — partes entram uma a uma |
+
+Note o **1 e o 2**: são dois conjuntos de alocação, ainda não sabemos se são
+polo ativo e passivo ou principal e alternativo. Descobrir antes de automatizar.
+
+Três tipos de controle novos aparecem aqui — radio, checkbox e botão de repetir
+— nenhum coberto por `txt()` ou `opt()`. Este bloco exige extensão nova, não só
+dado.
 
 **Decisão: esses campos ficam manuais.** São dados do processo, não do cálculo; as
 listas são enormes (~500 classes, ~300 comarcas) e virariam uma segunda cópia

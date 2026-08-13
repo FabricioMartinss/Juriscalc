@@ -208,6 +208,17 @@ const TRIBUNAIS_CARTA_ORDEM: OpcaoSelect[] = [
 ];
 
 /**
+ * Cartas expedidas pelo próprio TJSP — precatória e de ordem, sem diferença.
+ *
+ * Ao contrário das que vêm de fora, seguem o fluxo padrão do portal: número do
+ * processo validado no modal, e nada de origem para informar. O único campo
+ * além do valor é para onde a carta vai.
+ */
+const CAMPOS_CARTA_DO_TJSP: CampoGuia[] = [
+  { id: 'forosDeprecado', label: 'Foro deprecado', select: true },
+];
+
+/**
  * Cartas vindas de outro tribunal. Precatória e de ordem pedem os mesmos
  * campos; só a lista de tribunais de origem difere.
  *
@@ -269,6 +280,134 @@ export const CAMPOS_POR_SERVICO: Partial<Record<ChaveServico, CampoGuia[]>> = {
   CARTA_PRECATORIA_PROCESSO_OUTRO_TRIBUNAL: camposCartaDeOutroTribunal(TRIBUNAIS_PRECATORIA),
   // Mesmos campos da precatória; muda só a lista de tribunais de origem.
   CARTA_ORDEM_PROCESSO_OUTRO_TRIBUNAL: camposCartaDeOutroTribunal(TRIBUNAIS_CARTA_ORDEM),
+
+  // Conferido em 13/08/2026: as duas de origem TJSP são idênticas entre si e
+  // voltam ao fluxo padrão -- têm `txt_numeroProcesso`, `bt_validar_processo`,
+  // `novoProcesso` e `instancia`, que o filler já preenche sem mudança.
+  //
+  // Nada de tribunal, estado, comarca ou processo de origem: a carta sai do
+  // próprio TJSP, então não há origem a informar. Sobra só o foro de destino.
+  // Também não tem `valorCausa` -- só `valorReceita`, que o app já calcula.
+  CARTA_PRECATORIA: CAMPOS_CARTA_DO_TJSP,
+  CARTA_ORDEM: CAMPOS_CARTA_DO_TJSP,
+
+  // Conferido em 13/08/2026: `valorMonteMor*` e `valorReceita*`. Já coberto --
+  // o comum_10 declara `valorMonteMor` em `inputs` e o DESTINO_PADRAO o mapeia,
+  // então o app preenche e `camposParaDigitar` esconde o campo.
+  //
+  // Declarado ainda assim como rede: se um dia o enquadramento parar de
+  // declarar esse dado, o campo reaparece para digitar em vez de sair em
+  // branco numa guia -- que foi exatamente o que aconteceu com o `valorCausa`
+  // no Litisconsórcio e na Satisfação.
+  CAUSA_EM_QUE_HAJA_PARTILHA: [
+    { id: 'valorMonteMor', label: 'Valor do monte-mor', tipo: 'dinheiro' },
+  ],
+
+  // Conferido em 13/08/2026: `valorCausa` (sem asterisco, ao contrário dos
+  // outros serviços), `valorReceita*` rotulado "Preparo Recursal" e
+  // `valorReceitaCustasIniciais*` rotulado "Custas Iniciais".
+  //
+  // Já coberto, e é o serviço que prova o mecanismo de `campoPortal`: o cálculo
+  // do jec_1 declara `campoPortal: 'valorReceitaCustasIniciais'` na parcela de
+  // ingresso e `'valorReceita'` no preparo, e a página separa os dois campos.
+  //
+  // O jec_1 declara `valorCondenacao` em `inputs`, mas esta página NÃO tem esse
+  // campo -- o app manda e o filler ignora, como desenhado para id
+  // desconhecido. A tabela "Campos de valor" deste doc diz que serviços
+  // recursais têm `valorCondenacao`; para o Recurso Inominado, não têm.
+  RECURSO_INOMINADO_JUIZADO_ESPECIAL_CIVEL: [
+    { id: 'valorCausa', label: 'Valor da causa', tipo: 'dinheiro' },
+    { id: 'valorReceitaCustasIniciais', label: 'Custas iniciais', tipo: 'dinheiro' },
+  ],
+
+  // Conferido em 13/08/2026: `valorCausa*`, `valorLitisconsorcio` (sem
+  // asterisco) e `valorReceita*`. Confirma o comentário antigo do código: a
+  // Reconvenção tem litisconsórcio e NÃO exibe `valorCondenacao`.
+  //
+  // `valorLitisconsorcio` nunca era preenchido -- nenhum item de cálculo
+  // declara `campoPortal` para ele, o nome só aparecia em comentários. Passa a
+  // ser digitado no painel.
+  RECONVENCAO: [
+    { id: 'valorCausa', label: 'Valor da causa', tipo: 'dinheiro' },
+    { id: 'valorLitisconsorcio', label: 'Receita do litisconsórcio', tipo: 'dinheiro' },
+  ],
+
+  // Conferido em 13/08/2026: `valorAtualizadoCredito*` e `valorReceita*`. Já
+  // coberto pela exceção de destino do comum_11, que manda o valor informado
+  // para `valorAtualizadoCredito` em vez de `valorCausa`.
+  HABILITACAO_RETARDATARIA_CREDITO_CONCORDATA: [
+    { id: 'valorAtualizadoCredito', label: 'Valor atualizado do crédito', tipo: 'dinheiro' },
+  ],
+
+  // Conferido em 13/08/2026: só `valorReceita*`, que o app sempre calcula.
+  // Nada a declarar -- a entrada vazia registra que foi inspecionado, para não
+  // ser confundido com serviço ainda não conferido.
+  AGRAVO_INSTRUMENTO: [],
+
+  // Conferido em 13/08/2026: `valorCausa*`, `valorCondenacao` (sem asterisco) e
+  // `valorReceita*`. Já coberto -- o comum_3 declara os dois em `inputs`, e a
+  // condenação só é enviada quando existe.
+  //
+  // Aqui a nota da tabela "Campos de valor" se confirma: serviço recursal COM
+  // `valorCondenacao`. O Recurso Inominado, também recursal, não tem. Ou seja,
+  // a regra é por serviço, não por natureza do ato.
+  PREPARO_APELACAO: [
+    { id: 'valorCausa', label: 'Valor da causa', tipo: 'dinheiro' },
+    { id: 'valorCondenacao', label: 'Valor da condenação', tipo: 'dinheiro' },
+  ],
+
+  // --- Conferidos em 13/08/2026, todos já cobertos pelo cálculo. ---
+
+  // `valorCausa*` e `valorReceita*`. Igual à Petição Inicial nos valores, mas
+  // sem o bloco de processo novo — embargos correm em processo existente.
+  ACAO_OPOSICAO_EMBARGOS: [
+    { id: 'valorCausa', label: 'Valor da causa', tipo: 'dinheiro' },
+  ],
+
+  // `valorCausa*` e `valorReceita*`.
+  TAXA_JUDICIARIA_EXECUCAO_FISCAL: [
+    { id: 'valorCausa', label: 'Valor da causa', tipo: 'dinheiro' },
+  ],
+
+  // Idêntico ao Preparo da Apelação, como esperado: os dois são o comum_3.
+  RECURSO_ADESIVO: [
+    { id: 'valorCausa', label: 'Valor da causa', tipo: 'dinheiro' },
+    { id: 'valorCondenacao', label: 'Valor da condenação', tipo: 'dinheiro' },
+  ],
+
+  // Só `valorReceita*` — sem valor da causa, coerente com ação penal.
+  ACAO_PENAL_GERAL: [],
+  ACAO_PENAL_PRIVADA_INTERPOSICAO: [],
+
+  // --- Serviços que abrem o bloco de PROCESSO NOVO ---
+  //
+  // São três, e não só a Petição Inicial como este projeto assumia: também a
+  // Execução de Título Extrajudicial e a Ação Penal Privada - Inicial. São
+  // justamente os atos que iniciam processo, onde não há número a validar.
+  //
+  // Nesses, `txt_numeroProcesso` e `bt_validar_processo` NÃO existem — o passo
+  // de validação do filler vira no-op, como nas cartas de outro tribunal.
+  //
+  // O bloco de processo novo (instância, comarca, foro, ofício, serventia,
+  // classe e partes) ainda não é preenchido. Ver a seção do
+  // MAPEAMENTO-PORTAL.md sobre o que falta.
+
+  // `valorCausa*`, `valorReceita*` e `valorLitisconsorcio`.
+  PETICAO_INICIAL: [
+    { id: 'valorCausa', label: 'Valor da causa', tipo: 'dinheiro' },
+    { id: 'valorLitisconsorcio', label: 'Receita do litisconsórcio', tipo: 'dinheiro' },
+  ],
+
+  // `valorCausa*` e `valorReceita*`.
+  EXECUCAO_TITULO_EXTRA_JUDICIAL: [
+    { id: 'valorCausa', label: 'Valor da causa', tipo: 'dinheiro' },
+  ],
+
+  // `valorReceita*` e `valorLitisconsorcio`, sem valor da causa. O
+  // `valorLitisconsorcio` não era preenchido — mesma lacuna da Reconvenção.
+  ACAO_PENAL_PRIVADA_INICIAL: [
+    { id: 'valorLitisconsorcio', label: 'Receita do litisconsórcio', tipo: 'dinheiro' },
+  ],
   COMPRIMENTO_SENTENCA: [
     { id: 'valorCondenacao', label: 'Valor da condenação', tipo: 'dinheiro' },
   ],
