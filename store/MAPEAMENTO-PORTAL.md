@@ -232,27 +232,61 @@ Nesses três, `txt_numeroProcesso` e `bt_validar_processo` **não existem**, ent
 o passo de validação do filler vira no-op — mesma situação das cartas de outro
 tribunal.
 
-Os campos do bloco, conferidos:
+Os campos do bloco, conferidos e **todos automatizados desde a v2.6.0**:
 
-| Campo | Controle |
-|---|---|
-| `rd_instancia_1`, `rd_instancia_2` | **radio** — nem `txt()` nem `opt()` servem |
-| `cmb_comarca1/2_ativa_alocacao` | Chosen, encadeado |
-| `cmb_foro1/2_ativo_alocacao` | Chosen, encadeado à comarca |
-| `cmb_oficio1/2_ativo_alocacao` | Chosen, encadeado ao foro |
-| `cmb_serventia1/2_ativa_alocacao` | Chosen, encadeado ao ofício |
-| `cmb_classe` | Chosen, lista grande |
-| `parteCpfCnpj`, `parteNome` | texto |
-| `semParteCheck`, `multiplasPartesCheck` | **checkbox** |
-| `participacaoSelecionada` | Chosen |
-| `bt_add_partes_processo` | botão — partes entram uma a uma |
+| Campo | Controle | Origem da lista |
+|---|---|---|
+| `rd_instancia_1/2` | **radio** | duas opções fixas |
+| `cmb_comarca1_ativa_alocacao` | Chosen | `comarcasTJSP.ts` (321) |
+| `cmb_foro1_ativo_alocacao` | Chosen, **encadeado** | `forosTJSP.ts` (524) |
+| `cmb_classe` | Chosen | `classesTJSP.ts` (541) |
+| `parteCpfCnpj`, `parteNome` | texto | — |
+| `semParteCheck`, `multiplasPartesCheck` | **checkbox** | — |
+| `participacaoSelecionada` | Chosen | 4 opções fixas |
 
-Note o **1 e o 2**: são dois conjuntos de alocação, ainda não sabemos se são
-polo ativo e passivo ou principal e alternativo. Descobrir antes de automatizar.
+**Os campos só existem depois de marcar a instância.** Nascem escondidos e o
+portal os revela quando o radio é clicado. Por isso o filler processa `cliques`
+antes de tudo. E por isso eles não apareciam nos dumps: eram tirados antes.
 
-Três tipos de controle novos aparecem aqui — radio, checkbox e botão de repetir
-— nenhum coberto por `txt()` ou `opt()`. Este bloco exige extensão nova, não só
-dado.
+Este arquivo chegou a afirmar que comarca e foro **não eram campos**, por lerem
+`oculto` no dump. Errado duas vezes: primeiro por supor que `oculto` significava
+"Chosen escondendo o nativo" (ele esconde em todos, inclusive nos visíveis), e
+depois por não ter clicado a instância antes de medir.
+
+**Ofício e serventia não existem na tela** — nem antes nem depois da instância.
+O conjunto `2` (`cmb_comarca2`, `cmb_foro2`) fica escondido nos dois estados e
+não é usado.
+
+### O encadeamento comarca → foro
+
+Cada comarca traz seus foros por AJAX. Adamantina tem 1; São Paulo tem 54. Os
+ids coincidem com os de `forosDeprecado`, então a mesma lista de 524 serve.
+
+A extensão não mapeia quem depende de quem: `aplicarSelects` tenta todos os
+selects e repete os que falharam, a cada 400ms, até 10 vezes (~4s). Vale para
+qualquer encadeamento futuro sem declarar a relação. Esgotado o prazo, avisa no
+console em vez de sair em silêncio.
+
+### Partes
+
+Só a primeira é preenchida. Havendo litisconsortes, o usuário acrescenta no
+portal por `bt_add_partes_processo`. O CPF da parte é perguntado, e não
+reaproveitado do contribuinte: costumam ser a mesma pessoa, mas quem recolhe
+pode ser o advogado.
+
+As duas caixas parecem simétricas e **não são**:
+
+- `semParteCheck` ("Declaro que a parte não possui CPF/CNPJ") é declaração de
+  ausência: marcada, o portal **desabilita** o campo do CPF. O painel espelha
+  isso — limpa e trava o campo, para que declarar ausência e digitar um CPF não
+  possam coexistir. Limpar de verdade importa: guardado, o valor voltaria
+  sozinho ao desmarcar.
+- `multiplasPartesCheck` ("Outra(s) parte(s) do mesmo pólo") é só sinalizador.
+  Conferido em 13/08/2026: o Nome **continua editável** e obrigatório.
+
+Por causa da primeira, o filler processa `checks` **antes** dos campos de texto.
+Na ordem inversa o CPF era escrito e logo apagado pelo handler da caixa — o
+dado certo se perdia por sequência, não por conteúdo.
 
 **Decisão: esses campos ficam manuais.** São dados do processo, não do cálculo; as
 listas são enormes (~500 classes, ~300 comarcas) e virariam uma segunda cópia

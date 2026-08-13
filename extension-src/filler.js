@@ -153,6 +153,32 @@
               // Isso e proposital: descobrir um campo novo passa a ser mudanca
               // de DADO no site, nao de codigo na extensao -- ou seja, sem
               // passar por nova revisao da Chrome Web Store.
+              // Radios, antes de tudo. A instancia do processo novo sao dois
+              // <input type=radio> separados, nao um <select> -- nem `txt()`
+              // nem `opt()` servem, e a escolha e um clique.
+              //
+              // Vem primeiro porque escolher a instancia pode alterar o que o
+              // portal exibe depois.
+              (dados.cliques || []).forEach(function (idCampo) {
+                if (!click(idCampo)) {
+                  console.warn('[JuriscalcSP] nao achei #' + idCampo + ' para clicar.');
+                }
+              });
+
+              // Checkboxes ANTES do texto. Marcar "a parte nao possui CPF"
+              // desabilita o campo do CPF na pagina; na ordem inversa, o valor
+              // seria escrito e logo apagado pelo handler da caixa.
+              //
+              // Compara antes de agir: `click()` alterna, entao clicar num que
+              // ja esta no estado certo o desmarcaria. E clica em vez de setar
+              // `.checked` justamente para os handlers da pagina rodarem.
+              var checks = dados.checks || {};
+              Object.keys(checks).forEach(function (idCampo) {
+                var e = document.getElementById(idCampo);
+                if (!e) return;
+                if (e.checked !== !!checks[idCampo]) e.click();
+              });
+
               var campos = dados.campos || {};
               Object.keys(campos).forEach(function (idCampo) {
                 txt(idCampo, campos[idCampo]);
@@ -171,20 +197,52 @@
               // nao achar. O `value` e identificador estavel (JUSTICA_ESTADUAL),
               // enquanto o rotulo e texto de tela que o TJSP pode reescrever.
               // Mesma razao pela qual o tipo de servico usa `optPorValor`.
-              var selects = dados.selects || {};
-              Object.keys(selects).forEach(function (idCampo) {
+              // Tenta selecionar; devolve false se a opcao ainda nao existe.
+              function selecionar(idCampo, alvo) {
                 var e = document.getElementById(idCampo);
-                if (!e) return;
-                var alvo = selects[idCampo];
+                if (!e) return false;
                 var porValor = [].slice.call(e.options).filter(function (x) {
                   return x.value === alvo;
                 })[0];
                 if (porValor) {
                   $(e).val(porValor.value).trigger('change').trigger('chosen:updated');
-                } else if (!opt(idCampo, alvo)) {
-                  console.warn('[JuriscalcSP] "' + alvo + '" nao existe em #' + idCampo + '.');
+                  return true;
                 }
-              });
+                return opt(idCampo, alvo);
+              }
+
+              // Dropdowns encadeados: o foro so lista as opcoes depois que a
+              // comarca e escolhida e o portal responde por AJAX. Em vez de
+              // saber quem depende de quem, tenta todos e repete o que faltou
+              // ate as opcoes aparecerem. Assim vale para qualquer encadeamento
+              // futuro sem mapear a relacao.
+              //
+              // Onze tentativas a 400ms dao ~4s, folga confortavel para o AJAX
+              // do portal. Esgotado, avisa em vez de sair em silencio.
+              function aplicarSelects(mapa, restantes) {
+                var faltando = {};
+                var sobrou = false;
+                Object.keys(mapa).forEach(function (idCampo) {
+                  if (!selecionar(idCampo, mapa[idCampo])) {
+                    faltando[idCampo] = mapa[idCampo];
+                    sobrou = true;
+                  }
+                });
+                if (!sobrou) return;
+                if (restantes > 0) {
+                  setTimeout(function () {
+                    aplicarSelects(faltando, restantes - 1);
+                  }, 400);
+                  return;
+                }
+                Object.keys(faltando).forEach(function (idCampo) {
+                  console.warn(
+                    '[JuriscalcSP] "' + faltando[idCampo] + '" nao apareceu em #' + idCampo + '.'
+                  );
+                });
+              }
+
+              aplicarSelects(dados.selects || {}, 10);
               // PARA AQUI DE PROPOSITO.
               //
               // Nao clicamos em "Adicionar" (bt_salvar_servico): quem confere e

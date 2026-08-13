@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { UFESP_2026, LINKS } from '../data/tabelaPratica';
 import { buscarIndiceOficial, getUltimoPeriodoDisponivel, TipoTabelaCorrecao } from '../data/tabelasOficiais';
-import { servicoPorValor, servicoPadrao, servicosDoEnquadramento, destinoDoDado, camposDoServico, opcoesDoCampo } from '../data/servicosPortal';
+import { servicoPorValor, servicoPadrao, servicosDoEnquadramento, destinoDoDado, camposDoServico, opcoesDoCampo, temListaConhecida } from '../data/servicosPortal';
 import { MUNICIPIOS_SP } from '../data/municipiosSP';
 
 // Constants
@@ -1443,10 +1443,14 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
     );
   })();
 
-  /** Dropdowns cujas opções já colhemos do portal — viram lista no painel. */
-  const camposSelecionaveis = camposDoServicoAtual.filter(
-    (c) => c.select && opcoesDoCampo(c).length > 0,
-  );
+  /**
+   * Dropdowns cujas opções já colhemos do portal — viram lista no painel.
+   *
+   * Usa `temListaConhecida`, e não a contagem já filtrada: o foro fica com zero
+   * opções enquanto a comarca não é escolhida, e cair no aviso de "pendente no
+   * portal" faria o campo sumir e voltar a cada troca de comarca.
+   */
+  const camposSelecionaveis = camposDoServicoAtual.filter((c) => c.select && temListaConhecida(c));
 
   /**
    * Dropdowns que este serviço pede e cuja lista ainda não colhemos. Ficam
@@ -1454,7 +1458,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
    * descobrir no meio da emissão.
    */
   const camposPendentesNoPortal = camposDoServicoAtual.filter(
-    (c) => c.select && opcoesDoCampo(c).length === 0,
+    (c) => c.select && !temListaConhecida(c),
   );
 
   // Envia os dados calculados + informados para a extensão preencher o portal.
@@ -1494,6 +1498,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
         ),
         ...Object.fromEntries(
           camposParaDigitar
+            .filter((c) => c.tipo !== 'checkbox')
             .map((c) => [c.id, (camposExtras[c.id] || '').trim()])
             .filter(([, v]) => v !== ''),
         ),
@@ -1508,8 +1513,23 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
       // caixa de texto, e o dropdown continuaria mostrando o valor antigo.
       selects: Object.fromEntries(
         camposSelecionaveis
+          .filter((c) => !c.clique)
           .map((c) => [c.id, camposExtras[c.id] || ''])
           .filter(([, v]) => v !== ''),
+      ),
+      // Ids a clicar. Radio não se preenche: se escolhe. A instância do
+      // processo novo são dois inputs separados, e o valor guardado aqui já é
+      // o id daquele que o usuário marcou.
+      cliques: camposSelecionaveis
+        .filter((c) => c.clique)
+        .map((c) => camposExtras[c.id] || '')
+        .filter((v) => v !== ''),
+      // Só o que o usuário marcou. A extensão compara com o estado da página
+      // antes de clicar, porque clique em checkbox alterna.
+      checks: Object.fromEntries(
+        camposParaDigitar
+          .filter((c) => c.tipo === 'checkbox')
+          .map((c) => [c.id, camposExtras[c.id] === 'sim']),
       ),
     };
 
@@ -1630,22 +1650,43 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                           O valor enviado é o `value` do <option>, não o rótulo. */}
                       {camposSelecionaveis.map((c) => {
                         const valor = camposExtras[c.id] || '';
+                        const opcoes = opcoesDoCampo(c, camposExtras);
+                        // Campo dependente antes de o pai ser escolhido: fica
+                        // desabilitado dizendo o que falta, em vez de aberto e
+                        // vazio, que parece defeito.
+                        const esperandoPai = !!c.dependeDe && opcoes.length === 0;
+                        const paiLabel = camposDoServicoAtual.find((p) => p.id === c.dependeDe)?.label;
                         return (
                           <select
                             key={c.id}
                             value={valor}
                             aria-label={c.label}
-                            onChange={(e) =>
-                              setCamposExtras((d) => ({ ...d, [c.id]: e.target.value }))
-                            }
-                            className={`w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-cyan-400/60 ${
+                            disabled={esperandoPai}
+                            onChange={(e) => {
+                              const novo = e.target.value;
+                              setCamposExtras((d) => {
+                                const proximo = { ...d, [c.id]: novo };
+                                // Trocar o pai invalida o filho: o foro
+                                // escolhido não pertence à comarca nova.
+                                camposDoServicoAtual
+                                  .filter((f) => f.dependeDe === c.id)
+                                  .forEach((f) => {
+                                    const disponiveis = opcoesDoCampo(f, { ...proximo, [f.id]: '' });
+                                    // Opção única não merece pergunta.
+                                    proximo[f.id] =
+                                      disponiveis.length === 1 ? disponiveis[0].valor : '';
+                                  });
+                                return proximo;
+                              });
+                            }}
+                            className={`w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-cyan-400/60 disabled:opacity-40 ${
                               valor ? 'text-white' : 'text-slate-400'
                             }`}
                           >
                             <option value="" className="text-slate-900">
-                              {c.label}
+                              {esperandoPai ? `${c.label} — escolha ${paiLabel} antes` : c.label}
                             </option>
-                            {opcoesDoCampo(c).map((o) => (
+                            {opcoes.map((o) => (
                               <option key={o.valor} value={o.valor} className="text-slate-900">
                                 {o.rotulo}
                               </option>
@@ -1654,24 +1695,65 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                         );
                       })}
 
+                      {/* Declarações que o portal exige junto das partes. */}
+                      {camposParaDigitar
+                        .filter((c) => c.tipo === 'checkbox')
+                        .map((c) => (
+                          <label
+                            key={c.id}
+                            className="col-span-2 flex items-center gap-2 text-[10px] text-slate-300 cursor-pointer select-none"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={camposExtras[c.id] === 'sim'}
+                              onChange={(e) => {
+                                const marcado = e.target.checked;
+                                setCamposExtras((d) => {
+                                  const proximo = { ...d, [c.id]: marcado ? 'sim' : '' };
+                                  // Marcar anula o campo que a declaração
+                                  // substitui: deixar o texto ali guardado
+                                  // faria ele voltar sozinho ao desmarcar, com
+                                  // um valor que o usuário já tinha descartado.
+                                  if (marcado) {
+                                    camposDoServicoAtual
+                                      .filter((f) => f.desabilitadoPor === c.id)
+                                      .forEach((f) => {
+                                        proximo[f.id] = '';
+                                      });
+                                  }
+                                  return proximo;
+                                });
+                              }}
+                              className="accent-cyan-400"
+                            />
+                            {c.label}
+                          </label>
+                        ))}
+
                       {/* Campos que só este serviço pede e que o app não
                           calcula. Antes o usuário descobria a existência deles
                           lá no portal, com a guia meio preenchida. */}
-                      {camposParaDigitar.map((c) => {
+                      {camposParaDigitar
+                        .filter((c) => c.tipo !== 'checkbox')
+                        .map((c) => {
                         const valor = camposExtras[c.id] || '';
                         const faltando = c.obrigatorio && valor.trim() === '';
+                        // Anulado por uma declaração marcada acima.
+                        const travado =
+                          !!c.desabilitadoPor && camposExtras[c.desabilitadoPor] === 'sim';
                         return (
                           <input
                             key={c.id}
-                            value={valor}
+                            value={travado ? '' : valor}
+                            disabled={travado}
                             aria-label={c.label}
                             aria-invalid={faltando}
                             inputMode={c.tipo === 'texto' ? undefined : 'decimal'}
-                            placeholder={c.tipo === 'dinheiro' ? `${c.label} (R$)` : c.label}
+                            placeholder={travado ? `${c.label} — declarado ausente` : c.tipo === 'dinheiro' ? `${c.label} (R$)` : c.label}
                             onChange={(e) =>
                               setCamposExtras((d) => ({ ...d, [c.id]: e.target.value }))
                             }
-                            className={`w-full bg-white/10 border rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none ${
+                            className={`w-full bg-white/10 border rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none disabled:opacity-40 ${
                               faltando ? 'border-red-400 focus:border-red-400' : 'border-white/10 focus:border-cyan-400/60'
                             }`}
                           />

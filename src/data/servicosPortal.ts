@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,9 @@
  */
 
 import { FOROS_TJSP } from './forosTJSP';
+import { CLASSES_TJSP } from './classesTJSP';
+import { COMARCAS_TJSP } from './comarcasTJSP';
+import { FOROS_POR_COMARCA } from './forosPorComarca';
 
 export interface ServicoPortal {
   /** `value` do <option> no portal. */
@@ -130,7 +133,7 @@ export function destinoDoDado(enquadramento: string, dado: string): string | und
 export interface CampoGuia {
   id: string;
   label: string;
-  tipo?: 'dinheiro' | 'numero' | 'texto';
+  tipo?: 'dinheiro' | 'numero' | 'texto' | 'checkbox';
   /** Trava o botão de emitir enquanto estiver vazio. */
   obrigatorio?: boolean;
   /**
@@ -160,6 +163,36 @@ export interface CampoGuia {
    * casos.
    */
   opcoes?: OpcaoSelect[];
+  /**
+   * O valor escolhido é o id de um elemento a CLICAR, não um valor a atribuir.
+   *
+   * Serve para radio: a instância do processo são dois `<input type=radio>`
+   * separados (`rd_instancia_1` e `rd_instancia_2`), e não um `<select>`. No
+   * painel continua sendo uma lista; o que muda é o que a extensão faz com a
+   * escolha.
+   */
+  clique?: boolean;
+  /**
+   * Id do campo de que este depende — o painel só oferece o que for válido
+   * para a escolha feita lá.
+   *
+   * O foro depende da comarca. Sem isto o painel listaria os 524 foros do
+   * estado para qualquer comarca, e escolher um de outra cidade não daria erro
+   * visível: a opção não existiria na página do portal e a guia sairia sem
+   * foro. Filtrando, a escolha errada deixa de ser possível.
+   */
+  dependeDe?: string;
+  /** Ids permitidos, por valor do campo pai. Usado com `dependeDe`. */
+  opcoesPorPai?: Readonly<Record<string, readonly string[]>>;
+  /**
+   * Id do checkbox que anula este campo — marcado, o campo é limpo e travado.
+   *
+   * Declarar que a parte não tem CPF e mesmo assim digitar um CPF é um estado
+   * contraditório, e o portal desabilita o campo quando a caixa é marcada. Em
+   * vez de mandar os dois e torcer para a ordem dar certo, o painel impede que
+   * a contradição exista.
+   */
+  desabilitadoPor?: string;
 }
 
 export interface OpcaoSelect {
@@ -187,6 +220,71 @@ export interface OpcaoSelect {
  * Só entra aqui o que foi observado no portal de verdade. Ver
  * store/MAPEAMENTO-PORTAL.md para o que já foi conferido e o que é suposição.
  */
+/**
+ * Bloco que os três serviços de processo novo abrem, além dos valores.
+ *
+ * Conferido na tela em 13/08/2026: instância, classe e partes. Os oito
+ * `cmb_comarca/foro/oficio/serventia` existem no DOM mas **não são exibidos**
+ * ao usuário — este projeto chegou a documentá-los como campos a preencher, por
+ * ler `oculto` no dump e supor que era o Chosen escondendo o `<select>`. Não
+ * era: o Chosen esconde o nativo em TODOS os dropdowns, inclusive nos visíveis.
+ *
+ * As partes entram uma a uma, por `bt_add_partes_processo`. O painel preenche a
+ * primeira; havendo outras, o usuário acrescenta no portal.
+ */
+const CAMPOS_PROCESSO_NOVO: CampoGuia[] = [
+  {
+    id: 'instancia',
+    label: 'Instância',
+    select: true,
+    // Radio, não select: o valor é o id do input a clicar.
+    clique: true,
+    opcoes: [
+      { valor: 'rd_instancia_1', rotulo: 'Primeira Instância' },
+      { valor: 'rd_instancia_2', rotulo: 'Segunda Instância' },
+    ],
+  },
+  {
+    id: 'cmb_comarca1_ativa_alocacao',
+    label: 'Comarca',
+    select: true,
+    opcoes: COMARCAS_TJSP as OpcaoSelect[],
+  },
+  // Encadeado à comarca, dos dois lados: no portal, porque o foro só carrega
+  // por AJAX depois da comarca; e aqui, porque o painel filtra a lista pelo
+  // mapa colhido. A maioria das comarcas tem um foro só — nesses, o painel
+  // escolhe sozinho e o usuário nem vê a decisão.
+  {
+    id: 'cmb_foro1_ativo_alocacao',
+    label: 'Foro',
+    select: true,
+    opcoes: FOROS_TJSP as OpcaoSelect[],
+    dependeDe: 'cmb_comarca1_ativa_alocacao',
+    opcoesPorPai: FOROS_POR_COMARCA,
+  },
+  { id: 'cmb_classe', label: 'Classe processual', select: true, opcoes: CLASSES_TJSP as OpcaoSelect[] },
+  // Parte do processo — não é o contribuinte. Costumam ser a mesma pessoa, mas
+  // não necessariamente: quem recolhe pode ser o advogado. Por isso perguntamos
+  // em vez de reaproveitar o CPF da emissão.
+  { id: 'parteCpfCnpj', label: 'CPF/CNPJ da parte', tipo: 'texto', desabilitadoPor: 'semParteCheck' },
+  // O portal exige o CPF OU esta declaração. Sem marcar, o formulário não passa
+  // quando a parte não tem documento.
+  { id: 'semParteCheck', label: 'A parte não possui CPF/CNPJ', tipo: 'checkbox' },
+  { id: 'parteNome', label: 'Nome da parte', tipo: 'texto' },
+  { id: 'multiplasPartesCheck', label: 'Há outras partes no mesmo pólo', tipo: 'checkbox' },
+  {
+    id: 'participacaoSelecionada',
+    label: 'Participação',
+    select: true,
+    opcoes: [
+      { valor: 'RECLAMANTE', rotulo: 'Autor' },
+      { valor: 'RECLAMADO', rotulo: 'Réu' },
+      { valor: 'RECORRENTE', rotulo: 'Recorrente' },
+      { valor: 'RECORRIDO', rotulo: 'Recorrido' },
+    ],
+  },
+];
+
 /** Ramos da Justiça oferecidos na carta precatória. Conferido em 13/08/2026. */
 const TRIBUNAIS_PRECATORIA: OpcaoSelect[] = [
   { valor: 'JUSTICA_ESTADUAL', rotulo: 'Justiça Estadual' },
@@ -394,18 +492,21 @@ export const CAMPOS_POR_SERVICO: Partial<Record<ChaveServico, CampoGuia[]>> = {
 
   // `valorCausa*`, `valorReceita*` e `valorLitisconsorcio`.
   PETICAO_INICIAL: [
+    ...CAMPOS_PROCESSO_NOVO,
     { id: 'valorCausa', label: 'Valor da causa', tipo: 'dinheiro' },
     { id: 'valorLitisconsorcio', label: 'Receita do litisconsórcio', tipo: 'dinheiro' },
   ],
 
   // `valorCausa*` e `valorReceita*`.
   EXECUCAO_TITULO_EXTRA_JUDICIAL: [
+    ...CAMPOS_PROCESSO_NOVO,
     { id: 'valorCausa', label: 'Valor da causa', tipo: 'dinheiro' },
   ],
 
   // `valorReceita*` e `valorLitisconsorcio`, sem valor da causa. O
   // `valorLitisconsorcio` não era preenchido — mesma lacuna da Reconvenção.
   ACAO_PENAL_PRIVADA_INICIAL: [
+    ...CAMPOS_PROCESSO_NOVO,
     { id: 'valorLitisconsorcio', label: 'Receita do litisconsórcio', tipo: 'dinheiro' },
   ],
   COMPRIMENTO_SENTENCA: [
@@ -487,8 +588,26 @@ export const OPCOES_SELECT: Record<string, OpcaoSelect[]> = {
  * A lista do próprio campo tem precedência sobre a global: o mesmo id pode
  * oferecer conjuntos diferentes conforme o serviço (`tribunalOrigem`).
  */
-export function opcoesDoCampo(campo: CampoGuia): OpcaoSelect[] {
-  return campo.opcoes ?? OPCOES_SELECT[campo.id] ?? [];
+export function opcoesDoCampo(
+  campo: CampoGuia,
+  escolhas: Record<string, string> = {},
+): OpcaoSelect[] {
+  const base = campo.opcoes ?? OPCOES_SELECT[campo.id] ?? [];
+  if (!campo.dependeDe || !campo.opcoesPorPai) return base;
+
+  // Sem o pai escolhido não há o que oferecer — e oferecer tudo seria pior que
+  // oferecer nada, porque a escolha pareceria válida.
+  const pai = escolhas[campo.dependeDe];
+  const permitidos = pai ? campo.opcoesPorPai[pai] : undefined;
+  if (!permitidos) return [];
+
+  const conjunto = new Set(permitidos);
+  return base.filter((o) => conjunto.has(o.valor));
+}
+
+/** O painel conhece a lista deste campo, mesmo que agora esteja filtrada a zero. */
+export function temListaConhecida(campo: CampoGuia): boolean {
+  return (campo.opcoes ?? OPCOES_SELECT[campo.id] ?? []).length > 0;
 }
 
 /** Campos extras de um serviço, pelo `value` do portal. */
