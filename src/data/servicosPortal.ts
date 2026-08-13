@@ -16,6 +16,8 @@
  * impresso na memória de cálculo, então acompanha cada entrada.
  */
 
+import { FOROS_TJSP } from './forosTJSP';
+
 export interface ServicoPortal {
   /** `value` do <option> no portal. */
   valor: string;
@@ -148,6 +150,23 @@ export interface CampoGuia {
    * separado, preenchidos pelo `opt()`, que dispara `chosen:updated`.
    */
   select?: boolean;
+  /**
+   * Opções deste dropdown quando elas dependem do serviço.
+   *
+   * Sem isto, vale a lista global de `OPCOES_SELECT` para o id. Existe porque
+   * `tribunalOrigem` muda: a carta precatória oferece cinco ramos da Justiça, a
+   * carta de ordem acrescenta STF e STJ — que são justamente quem expede carta
+   * de ordem. Chavear só pelo id ofereceria tribunal indevido em metade dos
+   * casos.
+   */
+  opcoes?: OpcaoSelect[];
+}
+
+export interface OpcaoSelect {
+  /** `value` do <option> — identificador estável, é o que vai para o portal. */
+  valor: string;
+  /** Texto exibido, na grafia do portal. */
+  rotulo: string;
 }
 
 /**
@@ -168,6 +187,44 @@ export interface CampoGuia {
  * Só entra aqui o que foi observado no portal de verdade. Ver
  * store/MAPEAMENTO-PORTAL.md para o que já foi conferido e o que é suposição.
  */
+/** Ramos da Justiça oferecidos na carta precatória. Conferido em 13/08/2026. */
+const TRIBUNAIS_PRECATORIA: OpcaoSelect[] = [
+  { valor: 'JUSTICA_ESTADUAL', rotulo: 'Justiça Estadual' },
+  { valor: 'REGIONAL_FEDERAL', rotulo: 'Regional Federal' },
+  { valor: 'REGIONAL_ELEITORAL', rotulo: 'Regional Eleitoral' },
+  { valor: 'REGIONAL_TRABALHO', rotulo: 'Regional do Trabalho' },
+  { valor: 'JUSTICA_MILITAR', rotulo: 'Justiça Militar' },
+];
+
+/**
+ * A carta de ordem acrescenta STF e STJ — são eles que a expedem. A precatória
+ * corre entre juízos de mesma hierarquia, então não os oferece.
+ * Conferido em 13/08/2026.
+ */
+const TRIBUNAIS_CARTA_ORDEM: OpcaoSelect[] = [
+  { valor: 'SUPREMO_TRIBUNAL_FEDERAL', rotulo: 'Supremo Tribunal Federal' },
+  { valor: 'SUPERIOR_TRIBUNAL_JUSTICA', rotulo: 'Superior Tribunal de Justiça' },
+  ...TRIBUNAIS_PRECATORIA,
+];
+
+/**
+ * Cartas vindas de outro tribunal. Precatória e de ordem pedem os mesmos
+ * campos; só a lista de tribunais de origem difere.
+ *
+ * Este formato não usa `txt_numeroProcesso` nem `bt_validar_processo`, e não
+ * tem `valorCausa`, `novoProcesso` nem `instancia`. Em vez do processo de
+ * destino, pede a origem da carta.
+ */
+function camposCartaDeOutroTribunal(tribunais: OpcaoSelect[]): CampoGuia[] {
+  return [
+    { id: 'numeroProcessoOrigem', label: 'Nº do processo de origem', preencherCom: 'processo' },
+    { id: 'comarcaOrigem', label: 'Comarca/Seção Judiciária de origem', tipo: 'texto' },
+    { id: 'tribunalOrigem', label: 'Tribunal de origem', select: true, opcoes: tribunais },
+    { id: 'estadoServico', label: 'Estado', select: true },
+    { id: 'forosDeprecado', label: 'Foro deprecado', select: true },
+  ];
+}
+
 export const CAMPOS_POR_SERVICO: Partial<Record<ChaveServico, CampoGuia[]>> = {
   // Conferido no portal em 13/08/2026: `valorCausa*`, `valorCondenacao` e
   // `valorReceita*`. Não existe `valorSatisfacao` na página — é entrada de
@@ -209,13 +266,9 @@ export const CAMPOS_POR_SERVICO: Partial<Record<ChaveServico, CampoGuia[]>> = {
   //
   // Faltam conferir os outros três serviços de carta -- podem ter conjunto
   // diferente, principalmente os de origem TJSP, que talvez não peçam tribunal.
-  CARTA_PRECATORIA_PROCESSO_OUTRO_TRIBUNAL: [
-    { id: 'numeroProcessoOrigem', label: 'Nº do processo de origem', preencherCom: 'processo' },
-    { id: 'comarcaOrigem', label: 'Comarca/Seção Judiciária de origem', tipo: 'texto' },
-    { id: 'tribunalOrigem', label: 'Tribunal de origem', select: true },
-    { id: 'estadoServico', label: 'Estado', select: true },
-    { id: 'forosDeprecado', label: 'Foro deprecado', select: true },
-  ],
+  CARTA_PRECATORIA_PROCESSO_OUTRO_TRIBUNAL: camposCartaDeOutroTribunal(TRIBUNAIS_PRECATORIA),
+  // Mesmos campos da precatória; muda só a lista de tribunais de origem.
+  CARTA_ORDEM_PROCESSO_OUTRO_TRIBUNAL: camposCartaDeOutroTribunal(TRIBUNAIS_CARTA_ORDEM),
   COMPRIMENTO_SENTENCA: [
     { id: 'valorCondenacao', label: 'Valor da condenação', tipo: 'dinheiro' },
   ],
@@ -244,16 +297,13 @@ export const CAMPOS_POR_SERVICO: Partial<Record<ChaveServico, CampoGuia[]>> = {
  * Um campo `select: true` sem entrada aqui continua manual: o painel avisa que
  * falta preencher no portal, em vez de fingir que resolve.
  */
-export const OPCOES_SELECT: Record<string, { valor: string; rotulo: string }[]> = {
-  // Conferido em 13/08/2026. Lista curta e estável — são os ramos da Justiça,
-  // não uma lista de unidades que muda com a organização judiciária.
-  tribunalOrigem: [
-    { valor: 'JUSTICA_ESTADUAL', rotulo: 'Justiça Estadual' },
-    { valor: 'REGIONAL_FEDERAL', rotulo: 'Regional Federal' },
-    { valor: 'REGIONAL_ELEITORAL', rotulo: 'Regional Eleitoral' },
-    { valor: 'REGIONAL_TRABALHO', rotulo: 'Regional do Trabalho' },
-    { valor: 'JUSTICA_MILITAR', rotulo: 'Justiça Militar' },
-  ],
+export const OPCOES_SELECT: Record<string, OpcaoSelect[]> = {
+  // Unidades do TJSP que recebem a carta deprecada. 524 entradas, geradas por
+  // `scripts/gen-foros.mjs` a partir do <select> do portal — nunca transcritas.
+  //
+  // `tribunalOrigem` NÃO fica aqui: a lista depende do serviço, e por isso vive
+  // no próprio campo, via `opcoes`.
+  forosDeprecado: FOROS_TJSP as OpcaoSelect[],
 
   // UF do tribunal de ORIGEM da carta -- não confundir com `cmb_estados`, que
   // é o estado do endereço do contribuinte e fica fixo em SP.
@@ -292,9 +342,14 @@ export const OPCOES_SELECT: Record<string, { valor: string; rotulo: string }[]> 
   ],
 };
 
-/** Opções de um dropdown do portal, ou vazio se ainda não colhemos. */
-export function opcoesDoSelect(id: string): { valor: string; rotulo: string }[] {
-  return OPCOES_SELECT[id] || [];
+/**
+ * Opções de um dropdown, ou vazio se ainda não colhemos.
+ *
+ * A lista do próprio campo tem precedência sobre a global: o mesmo id pode
+ * oferecer conjuntos diferentes conforme o serviço (`tribunalOrigem`).
+ */
+export function opcoesDoCampo(campo: CampoGuia): OpcaoSelect[] {
+  return campo.opcoes ?? OPCOES_SELECT[campo.id] ?? [];
 }
 
 /** Campos extras de um serviço, pelo `value` do portal. */

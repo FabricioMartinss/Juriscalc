@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { UFESP_2026, LINKS } from '../data/tabelaPratica';
 import { buscarIndiceOficial, getUltimoPeriodoDisponivel, TipoTabelaCorrecao } from '../data/tabelasOficiais';
-import { servicoPorValor, servicoPadrao, servicosDoEnquadramento, destinoDoDado, camposDoServico, opcoesDoSelect } from '../data/servicosPortal';
+import { servicoPorValor, servicoPadrao, servicosDoEnquadramento, destinoDoDado, camposDoServico, opcoesDoCampo } from '../data/servicosPortal';
 import { MUNICIPIOS_SP } from '../data/municipiosSP';
 
 // Constants
@@ -1445,7 +1445,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
 
   /** Dropdowns cujas opções já colhemos do portal — viram lista no painel. */
   const camposSelecionaveis = camposDoServicoAtual.filter(
-    (c) => c.select && opcoesDoSelect(c.id).length > 0,
+    (c) => c.select && opcoesDoCampo(c).length > 0,
   );
 
   /**
@@ -1454,7 +1454,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
    * descobrir no meio da emissão.
    */
   const camposPendentesNoPortal = camposDoServicoAtual.filter(
-    (c) => c.select && opcoesDoSelect(c.id).length === 0,
+    (c) => c.select && opcoesDoCampo(c).length === 0,
   );
 
   // Envia os dados calculados + informados para a extensão preencher o portal.
@@ -1645,7 +1645,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                             <option value="" className="text-slate-900">
                               {c.label}
                             </option>
-                            {opcoesDoSelect(c.id).map((o) => (
+                            {opcoesDoCampo(c).map((o) => (
                               <option key={o.valor} value={o.valor} className="text-slate-900">
                                 {o.rotulo}
                               </option>

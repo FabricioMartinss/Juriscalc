@@ -184,10 +184,21 @@ As opções ficam em `OPCOES_SELECT`, colhidas do próprio portal. Campo
 `select: true` **sem** lista colhida não trava nada: o painel avisa em amarelo o
 que falta completar no portal.
 
-Listas colhidas em 13/08/2026: `tribunalOrigem` (5) e `estadoServico` (27, com
-ids internos do portal que não seguem sigla nem IBGE). `forosDeprecado` tem 524
-entradas, **não é encadeado ao estado** — são todas unidades do TJSP, porque a
-carta é sempre deprecada para um foro paulista.
+Listas colhidas em 13/08/2026:
+
+- `estadoServico` — 27 UFs, com ids internos do portal que não seguem sigla nem
+  código do IBGE (PR=1, MA=2, SP=26). Transcrever exato, não dá para deduzir.
+- `forosDeprecado` — 524 unidades do TJSP, em `src/data/forosTJSP.ts`, geradas
+  por `scripts/gen-foros.mjs`. **Não é encadeada ao estado**: a carta vem de
+  fora, mas é sempre deprecada para uma unidade paulista.
+- `tribunalOrigem` — **depende do serviço**, e por isso não está em
+  `OPCOES_SELECT`. A precatória oferece 5 ramos da Justiça; a carta de ordem
+  acrescenta STF e STJ, que são quem a expede. Chavear só pelo id ofereceria
+  tribunal indevido em metade dos casos. É para isso que existe `opcoes` no
+  próprio campo, com precedência sobre a lista global.
+
+A lição vale para as próximas colheitas: **conferir o mesmo campo em cada
+serviço** antes de tratar a lista como global.
 
 ### Para adicionar um campo
 
