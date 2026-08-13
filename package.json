@@ -11,7 +11,8 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "sync:indices": "node scripts/sync-indices.mjs",
-    "sync:indices:check": "node scripts/sync-indices.mjs --check"
+    "sync:indices:check": "node scripts/sync-indices.mjs --check",
+    "check:campos": "tsx scripts/check-campos-servico.mts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

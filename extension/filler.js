@@ -157,6 +157,34 @@
               Object.keys(campos).forEach(function (idCampo) {
                 txt(idCampo, campos[idCampo]);
               });
+
+              // Dropdowns do portal, que sao <select> controlados pelo Chosen.
+              // Vao num mapa separado de propósito: `txt()` so dispara os
+              // eventos de input, e o widget do Chosen continuaria exibindo o
+              // valor antigo mesmo com o <select> ja trocado. O `opt()` dispara
+              // `chosen:updated`, que e o que redesenha o widget.
+              //
+              // Servicos como as Cartas Precatorias pedem tribunal de origem,
+              // estado e foro deprecado -- todos por aqui.
+              //
+              // Casa pelo `value` do <option> primeiro, e so cai no texto se
+              // nao achar. O `value` e identificador estavel (JUSTICA_ESTADUAL),
+              // enquanto o rotulo e texto de tela que o TJSP pode reescrever.
+              // Mesma razao pela qual o tipo de servico usa `optPorValor`.
+              var selects = dados.selects || {};
+              Object.keys(selects).forEach(function (idCampo) {
+                var e = document.getElementById(idCampo);
+                if (!e) return;
+                var alvo = selects[idCampo];
+                var porValor = [].slice.call(e.options).filter(function (x) {
+                  return x.value === alvo;
+                })[0];
+                if (porValor) {
+                  $(e).val(porValor.value).trigger('change').trigger('chosen:updated');
+                } else if (!opt(idCampo, alvo)) {
+                  console.warn('[JuriscalcSP] "' + alvo + '" nao existe em #' + idCampo + '.');
+                }
+              });
               // PARA AQUI DE PROPOSITO.
               //
               // Nao clicamos em "Adicionar" (bt_salvar_servico): quem confere e

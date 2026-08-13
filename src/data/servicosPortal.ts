@@ -118,6 +118,194 @@ export function destinoDoDado(enquadramento: string, dado: string): string | und
   return DESTINO_POR_ENQUADRAMENTO[enquadramento]?.[dado] ?? DESTINO_PADRAO[dado];
 }
 
+/**
+ * Campo que o portal pede e que o app não sabe calcular.
+ *
+ * `id` é o id do input na página do portal — o mesmo que a extensão usa para
+ * preencher. Errar o id não quebra nada: a extensão preenche o que existir e
+ * ignora o resto, então um id errado simplesmente não preenche.
+ */
+export interface CampoGuia {
+  id: string;
+  label: string;
+  tipo?: 'dinheiro' | 'numero' | 'texto';
+  /** Trava o botão de emitir enquanto estiver vazio. */
+  obrigatorio?: boolean;
+  /**
+   * Preenche sozinho, a partir de um dado que o painel já pergunta
+   * (`cpf`, `nome`, `telefone`, `endereco`, `municipio`, `processo`).
+   *
+   * Serve para o mesmo dado que o portal pede com outro id conforme o serviço.
+   * O campo não aparece no formulário: pedir duas vezes o que já foi digitado
+   * é pior que não pedir.
+   */
+  preencherCom?: 'cpf' | 'nome' | 'telefone' | 'endereco' | 'municipio' | 'processo';
+  /**
+   * O campo é um `<select>` controlado pelo Chosen.
+   *
+   * Muda o caminho na extensão: `txt()` só dispara os eventos de input, e o
+   * widget do Chosen continuaria mostrando o valor antigo. Estes vão num mapa
+   * separado, preenchidos pelo `opt()`, que dispara `chosen:updated`.
+   */
+  select?: boolean;
+}
+
+/**
+ * Campos extras por SERVIÇO do portal, não por enquadramento.
+ *
+ * A distinção importa: quatro enquadramentos cobrem mais de um serviço, e é o
+ * serviço que determina o que a página renderiza. `comum_1` sozinho vira
+ * Petição Inicial, Reconvenção ou Oposição de Embargos — e a Reconvenção tem
+ * `valorLitisconsorcio` e nem exibe `valorCondenacao`.
+ *
+ * O inverso também acontece: `comum_14` e `comum_15` caem no MESMO serviço,
+ * mas só o 15 precisa que o usuário digite `valorPagoAutor`. Por isso a lista
+ * aqui é só "o que a página pede" — quem preenche cada um é decidido na tela,
+ * escondendo o que o cálculo já cobre (ver `camposParaDigitar` no
+ * WizardCalculator). Ensinar o app a calcular um destes faz o campo sumir do
+ * formulário sozinho, sem mexer nesta lista.
+ *
+ * Só entra aqui o que foi observado no portal de verdade. Ver
+ * store/MAPEAMENTO-PORTAL.md para o que já foi conferido e o que é suposição.
+ */
+export const CAMPOS_POR_SERVICO: Partial<Record<ChaveServico, CampoGuia[]>> = {
+  // Conferido no portal em 13/08/2026: `valorCausa*`, `valorCondenacao` e
+  // `valorReceita*`. Não existe `valorSatisfacao` na página — é entrada de
+  // cálculo do comum_6, como o `valorPagoAutor` do comum_15.
+  //
+  // Três enquadramentos usam este serviço e se comportam diferente: `jec_3`
+  // declara `valorCausa` em `inputs` e o app manda; `comum_6` e `jec_4` não.
+  // O filtro da tela resolve — o campo só aparece para quem precisa digitar.
+  SATISFACAO_EXECUCAO: [
+    { id: 'valorCausa', label: 'Valor da causa', tipo: 'dinheiro' },
+    // Sem `*` no portal, ao contrário dos outros dois.
+    { id: 'valorCondenacao', label: 'Valor da condenação', tipo: 'dinheiro' },
+  ],
+  // Conferido no portal em 13/08/2026: `valorCondenacao*` e `valorReceita*`.
+  // Não há `valorCausa` aqui — este serviço quebra o padrão dos outros dois.
+  // E não existe `valorCredito` na página: é entrada de cálculo do comum_4.
+  //
+  // Os três enquadramentos que usam este serviço (comum_4, comum_5, jec_2)
+  // deixavam `valorCondenacao` em branco, porque nenhum o declara em `inputs`.
+  //
+  // Detalhe inofensivo: o comum_5 declara `valorCausa`, então o app manda esse
+  // campo — que não existe nesta página. O `txt()` não acha o elemento e ignora,
+  // que é o comportamento desenhado para id desconhecido.
+  // Conferido no portal em 13/08/2026. Este serviço não segue o formato dos
+  // outros: em vez de `txt_numeroProcesso` + `bt_validar_processo`, pede a
+  // origem da carta. Some também `valorCausa`, `novoProcesso` e `instancia`.
+  //
+  // Campos da página: tribunalOrigem (Chosen), estadoServico (Chosen),
+  // comarcaOrigem, numeroProcessoOrigem, forosDeprecado (Chosen), valorReceita.
+  //
+  // Só os dois de texto entram aqui. Os três Chosen ficam manuais: o `txt()` da
+  // extensão não atualiza widget Chosen, e resolvê-los exigiria um mapa de
+  // selects no filler mais as listas de tribunais e foros no painel -- o mesmo
+  // problema de lista enorme que deixou comarca e foro manuais.
+  //
+  // O número do processo é o mesmo que o painel já pergunta, então
+  // `numeroProcessoOrigem` se preenche sozinho. Sem isso ele ficava em branco:
+  // o filler manda o processo para `txt_numeroProcesso`, que não existe aqui.
+  //
+  // Faltam conferir os outros três serviços de carta -- podem ter conjunto
+  // diferente, principalmente os de origem TJSP, que talvez não peçam tribunal.
+  CARTA_PRECATORIA_PROCESSO_OUTRO_TRIBUNAL: [
+    { id: 'numeroProcessoOrigem', label: 'Nº do processo de origem', preencherCom: 'processo' },
+    { id: 'comarcaOrigem', label: 'Comarca/Seção Judiciária de origem', tipo: 'texto' },
+    { id: 'tribunalOrigem', label: 'Tribunal de origem', select: true },
+    { id: 'estadoServico', label: 'Estado', select: true },
+    { id: 'forosDeprecado', label: 'Foro deprecado', select: true },
+  ],
+  COMPRIMENTO_SENTENCA: [
+    { id: 'valorCondenacao', label: 'Valor da condenação', tipo: 'dinheiro' },
+  ],
+  // Conferido no portal em 13/08/2026: a página pede só `valorCausa` e
+  // `valorReceita`. O app manda o `valorReceita` (total calculado) mas nunca o
+  // `valorCausa`, porque nem comum_14 nem comum_15 declaram esse dado em
+  // `inputs` -- o 14 pergunta a quantidade de autores, o 15 o valor pago pelo
+  // autor original. Então `valorCausa` ficava em branco numa guia oficial.
+  //
+  // Não existe `valorPagoAutor` no portal. Ele é entrada de CÁLCULO do
+  // comum_15, e o destino sempre foi o `valorReceita` pelo total. O
+  // MAPEAMENTO-PORTAL.md o listava como "destino desconhecido", o que dava a
+  // entender que faltava mapear um campo que nunca existiu.
+  LITISCONSORCIO_ATIVO_VOLUNTARIO_ULTERIOR: [
+    { id: 'valorCausa', label: 'Valor da causa', tipo: 'dinheiro' },
+  ],
+};
+
+/**
+ * Opções dos dropdowns do portal, por id do campo.
+ *
+ * Colhidas do `<select>` da própria página — ver `scripts/dump-campos-portal.js`.
+ * Guardamos o `valor` (o `value` do `<option>`) porque é identificador estável;
+ * o `rotulo` existe para exibir no painel.
+ *
+ * Um campo `select: true` sem entrada aqui continua manual: o painel avisa que
+ * falta preencher no portal, em vez de fingir que resolve.
+ */
+export const OPCOES_SELECT: Record<string, { valor: string; rotulo: string }[]> = {
+  // Conferido em 13/08/2026. Lista curta e estável — são os ramos da Justiça,
+  // não uma lista de unidades que muda com a organização judiciária.
+  tribunalOrigem: [
+    { valor: 'JUSTICA_ESTADUAL', rotulo: 'Justiça Estadual' },
+    { valor: 'REGIONAL_FEDERAL', rotulo: 'Regional Federal' },
+    { valor: 'REGIONAL_ELEITORAL', rotulo: 'Regional Eleitoral' },
+    { valor: 'REGIONAL_TRABALHO', rotulo: 'Regional do Trabalho' },
+    { valor: 'JUSTICA_MILITAR', rotulo: 'Justiça Militar' },
+  ],
+
+  // UF do tribunal de ORIGEM da carta -- não confundir com `cmb_estados`, que
+  // é o estado do endereço do contribuinte e fica fixo em SP.
+  //
+  // Os `valor` são ids internos do portal, sem relação com a sigla nem com o
+  // código do IBGE (PR=1, MA=2, SP=26). Não dá para deduzir: transcrever exato.
+  // Colhido em 13/08/2026.
+  estadoServico: [
+    { valor: '27', rotulo: 'AC' },
+    { valor: '20', rotulo: 'AL' },
+    { valor: '6', rotulo: 'AM' },
+    { valor: '5', rotulo: 'AP' },
+    { valor: '24', rotulo: 'BA' },
+    { valor: '3', rotulo: 'CE' },
+    { valor: '7', rotulo: 'DF' },
+    { valor: '21', rotulo: 'ES' },
+    { valor: '16', rotulo: 'GO' },
+    { valor: '2', rotulo: 'MA' },
+    { valor: '14', rotulo: 'MG' },
+    { valor: '15', rotulo: 'MS' },
+    { valor: '18', rotulo: 'MT' },
+    { valor: '4', rotulo: 'PA' },
+    { valor: '10', rotulo: 'PB' },
+    { valor: '17', rotulo: 'PE' },
+    { valor: '19', rotulo: 'PI' },
+    { valor: '1', rotulo: 'PR' },
+    { valor: '12', rotulo: 'RJ' },
+    { valor: '8', rotulo: 'RN' },
+    { valor: '22', rotulo: 'RO' },
+    { valor: '23', rotulo: 'RR' },
+    { valor: '25', rotulo: 'RS' },
+    { valor: '13', rotulo: 'SC' },
+    { valor: '9', rotulo: 'SE' },
+    { valor: '26', rotulo: 'SP' },
+    { valor: '11', rotulo: 'TO' },
+  ],
+};
+
+/** Opções de um dropdown do portal, ou vazio se ainda não colhemos. */
+export function opcoesDoSelect(id: string): { valor: string; rotulo: string }[] {
+  return OPCOES_SELECT[id] || [];
+}
+
+/** Campos extras de um serviço, pelo `value` do portal. */
+export function camposDoServico(valorServico: string | undefined): CampoGuia[] {
+  if (!valorServico) return [];
+  const chave = (Object.keys(SERVICOS_PORTAL) as ChaveServico[]).find(
+    (k) => SERVICOS_PORTAL[k].valor === valorServico,
+  );
+  return (chave && CAMPOS_POR_SERVICO[chave]) || [];
+}
+
 /** Opções de serviço de um enquadramento (vazio se não houver mapeamento). */
 export function servicosDoEnquadramento(id: string): ServicoPortal[] {
   return (SERVICOS_POR_ENQUADRAMENTO[id] || []).map((chave) => SERVICOS_PORTAL[chave]);

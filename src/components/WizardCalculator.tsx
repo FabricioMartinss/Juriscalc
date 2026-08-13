@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { UFESP_2026, LINKS } from '../data/tabelaPratica';
 import { buscarIndiceOficial, getUltimoPeriodoDisponivel, TipoTabelaCorrecao } from '../data/tabelasOficiais';
-import { servicoPorValor, servicoPadrao, servicosDoEnquadramento, destinoDoDado } from '../data/servicosPortal';
+import { servicoPorValor, servicoPadrao, servicosDoEnquadramento, destinoDoDado, camposDoServico, opcoesDoSelect } from '../data/servicosPortal';
 import { MUNICIPIOS_SP } from '../data/municipiosSP';
 
 // Constants
@@ -958,6 +958,11 @@ export default function WizardCalculator({
     cpf: '', nome: '', telefone: '', endereco: '', municipio: '', processo: '',
   });
 
+  // Campos que variam por serviço do portal (ver CAMPOS_POR_SERVICO). Ficam
+  // separados de `dadosEmissao` porque as chaves são dinâmicas: dependem do
+  // serviço escolhido, enquanto os seis de cima valem para toda guia.
+  const [camposExtras, setCamposExtras] = useState<Record<string, string>>({});
+
   // Serviço do portal escolhido. Vazio = usar o padrão do enquadramento; só os
   // quatro enquadramentos com mais de uma opção mostram o seletor.
   const [servicoEscolhido, setServicoEscolhido] = useState<string>('');
@@ -968,6 +973,15 @@ export default function WizardCalculator({
   useEffect(() => {
     setServicoEscolhido('');
   }, [selectedSajId]);
+
+  // Campos extras são de um serviço específico. Trocar de serviço tem que
+  // limpar o que foi digitado: os ids mudam, e um valor do serviço anterior
+  // sobreviveria escondido e entraria numa guia onde ninguém o digitou — o
+  // mesmo problema que fez `dadosInformadosParaOPortal` passar a filtrar por
+  // `inputs`.
+  useEffect(() => {
+    setCamposExtras({});
+  }, [selectedSajId, servicoAtual?.valor]);
 
   // Parsing values helper
   const pVal = (s: string) => Math.max(0, parseFloat(s) || 0);
@@ -1398,6 +1412,51 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
     return saida;
   };
 
+  /**
+   * Campos que o usuário precisa digitar para este serviço.
+   *
+   * Parte do que o serviço pede (CAMPOS_POR_SERVICO) e tira o que o app já
+   * manda calculado.
+   *
+   * O Litisconsórcio é o exemplo: a página pede `valorCausa` e `valorReceita`,
+   * o app só manda o segundo, então só o primeiro aparece para digitar. Vale
+   * para `comum_14` e `comum_15`, que dividem o serviço — a lista é do serviço,
+   * o filtro é do enquadramento.
+   *
+   * O efeito colateral é bom: no dia em que `destinoDoDado` aprender a mapear
+   * um destes, o campo some do formulário sozinho. Nada para lembrar de apagar.
+   */
+  const camposDoServicoAtual = camposDoServico(servicoAtual?.valor);
+
+  /** Campos que o painel resolve sozinho, a partir do que já foi digitado. */
+  const camposAutomaticos = camposDoServicoAtual.filter((c) => c.preencherCom);
+
+  const camposParaDigitar = (() => {
+    const jaCalculados = new Set([
+      ...Object.keys(dadosInformadosParaOPortal()),
+      ...Object.keys(valoresPorCampoPortal()),
+    ]);
+    return camposDoServicoAtual.filter(
+      // `preencherCom` sai porque o dado já foi perguntado; `select` sai
+      // porque ainda não temos as listas de opções para oferecer no painel.
+      (c) => !c.preencherCom && !c.select && !jaCalculados.has(c.id),
+    );
+  })();
+
+  /** Dropdowns cujas opções já colhemos do portal — viram lista no painel. */
+  const camposSelecionaveis = camposDoServicoAtual.filter(
+    (c) => c.select && opcoesDoSelect(c.id).length > 0,
+  );
+
+  /**
+   * Dropdowns que este serviço pede e cuja lista ainda não colhemos. Ficam
+   * listados para o usuário saber o que completar no portal, em vez de
+   * descobrir no meio da emissão.
+   */
+  const camposPendentesNoPortal = camposDoServicoAtual.filter(
+    (c) => c.select && opcoesDoSelect(c.id).length === 0,
+  );
+
   // Envia os dados calculados + informados para a extensão preencher o portal.
   const handleAutofillGuia = () => {
     const fmt = (v: number) =>
@@ -1422,11 +1481,36 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
       // página e ignora o resto, então o conjunto pode variar por serviço sem
       // exigir nova versão da extensão.
       campos: {
+        // Digitados primeiro, calculados por cima. Por construção não colidem
+        // (`camposParaDigitar` remove o que o app calcula), mas se algum dia
+        // colidirem, quem vale é o número que o usuário viu somado na tela --
+        // guia divergindo do total exibido é o pior desfecho possível.
+        // Campos que o portal pede com outro id, mas cujo dado o painel já
+        // perguntou -- o processo de origem das Cartas, por exemplo.
+        ...Object.fromEntries(
+          camposAutomaticos
+            .map((c) => [c.id, dadosEmissao[c.preencherCom!]])
+            .filter(([, v]) => v !== ''),
+        ),
+        ...Object.fromEntries(
+          camposParaDigitar
+            .map((c) => [c.id, (camposExtras[c.id] || '').trim()])
+            .filter(([, v]) => v !== ''),
+        ),
         ...dadosInformadosParaOPortal(),
         ...Object.fromEntries(
           Object.entries(valoresPorCampoPortal()).map(([campo, valor]) => [campo, fmt(valor)]),
         ),
       },
+      // Mapa separado dos <select>: a extensão os preenche pelo `value` do
+      // <option> e dispara `chosen:updated`, que é o que redesenha o widget do
+      // Chosen. Passar isso junto de `campos` faria o filler tratá-los como
+      // caixa de texto, e o dropdown continuaria mostrando o valor antigo.
+      selects: Object.fromEntries(
+        camposSelecionaveis
+          .map((c) => [c.id, camposExtras[c.id] || ''])
+          .filter(([, v]) => v !== ''),
+      ),
     };
 
     // Dois caminhos para o mesmo destino. No site, a ponte `appbridge.js`
@@ -1541,7 +1625,72 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                           />
                         );
                       })}
+
+                      {/* Dropdowns do portal cuja lista de opções já colhemos.
+                          O valor enviado é o `value` do <option>, não o rótulo. */}
+                      {camposSelecionaveis.map((c) => {
+                        const valor = camposExtras[c.id] || '';
+                        return (
+                          <select
+                            key={c.id}
+                            value={valor}
+                            aria-label={c.label}
+                            onChange={(e) =>
+                              setCamposExtras((d) => ({ ...d, [c.id]: e.target.value }))
+                            }
+                            className={`w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-cyan-400/60 ${
+                              valor ? 'text-white' : 'text-slate-400'
+                            }`}
+                          >
+                            <option value="" className="text-slate-900">
+                              {c.label}
+                            </option>
+                            {opcoesDoSelect(c.id).map((o) => (
+                              <option key={o.valor} value={o.valor} className="text-slate-900">
+                                {o.rotulo}
+                              </option>
+                            ))}
+                          </select>
+                        );
+                      })}
+
+                      {/* Campos que só este serviço pede e que o app não
+                          calcula. Antes o usuário descobria a existência deles
+                          lá no portal, com a guia meio preenchida. */}
+                      {camposParaDigitar.map((c) => {
+                        const valor = camposExtras[c.id] || '';
+                        const faltando = c.obrigatorio && valor.trim() === '';
+                        return (
+                          <input
+                            key={c.id}
+                            value={valor}
+                            aria-label={c.label}
+                            aria-invalid={faltando}
+                            inputMode={c.tipo === 'texto' ? undefined : 'decimal'}
+                            placeholder={c.tipo === 'dinheiro' ? `${c.label} (R$)` : c.label}
+                            onChange={(e) =>
+                              setCamposExtras((d) => ({ ...d, [c.id]: e.target.value }))
+                            }
+                            className={`w-full bg-white/10 border rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none ${
+                              faltando ? 'border-red-400 focus:border-red-400' : 'border-white/10 focus:border-cyan-400/60'
+                            }`}
+                          />
+                        );
+                      })}
                     </div>
+                    {camposParaDigitar.length > 0 && (
+                      <p className="text-[9px] text-slate-400 leading-snug font-sans">
+                        Os campos acima são exigidos por{' '}
+                        <strong className="text-slate-300">{servicoAtual?.rotulo}</strong> e não
+                        saem do cálculo — deixe em branco para preencher no portal.
+                      </p>
+                    )}
+                    {camposPendentesNoPortal.length > 0 && (
+                      <p className="text-[9px] text-amber-300/80 leading-snug font-sans">
+                        Ainda no portal: {camposPendentesNoPortal.map((c) => c.label).join(', ')}.
+                        São listas do próprio TJSP que o painel ainda não reproduz.
+                      </p>
+                    )}
                     {/* Enquadramentos que cobrem mais de um serviço: o cálculo
                         é o mesmo, mas o ato praticado muda o nome da guia. */}
                     {opcoesServico.length > 1 && (
@@ -1570,7 +1719,12 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                     <button
                       type="button"
                       onClick={handleAutofillGuia}
-                      disabled={!CAMPOS_EMISSAO.every((c) => c.valido(dadosEmissao[c.campo]))}
+                      disabled={
+                        !CAMPOS_EMISSAO.every((c) => c.valido(dadosEmissao[c.campo])) ||
+                        !camposParaDigitar.every(
+                          (c) => !c.obrigatorio || (camposExtras[c.id] || '').trim() !== '',
+                        )
+                      }
                       className="w-full flex items-center justify-center gap-1.5 py-2 rounded bg-cyan-500 hover:bg-cyan-600 text-slate-950 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     >
                       <Chrome className="w-3.5 h-3.5" />
