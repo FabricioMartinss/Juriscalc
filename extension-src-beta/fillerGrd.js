@@ -79,26 +79,19 @@
     disparar(e);
   }
 
-  // Remove acentos por faixa de código (sem regex de combining chars, para o
-  // fonte ficar 100% ASCII) e junta espaços repetidos, igual ao norm() do
-  // filler.js do TJSP.
-  function norm(s) {
-    var d = (s || '').normalize('NFD');
-    var out = '';
-    for (var i = 0; i < d.length; i++) {
-      var code = d.charCodeAt(i);
-      if (code >= 0x0300 && code <= 0x036f) continue;
-      var c = d[i].toUpperCase();
-      if (c === ' ' || /[A-Z0-9]/.test(c)) {
-        if (c === ' ' && (out.length === 0 || out[out.length - 1] === ' ')) continue;
-        out += c;
-      }
-    }
-    return out.replace(/ $/, '');
-  }
-
-  // Combobox customizado (não é <select>): clica para abrir, digita no campo
-  // de busca do overlay e clica na primeira opção cujo texto bate.
+  // Combobox customizado (não é <select>): abre e filtra sozinho, mas NÃO
+  // clica na opção.
+  //
+  // Testado à exaustão: o clique na opção só funciona com um clique de
+  // verdade do usuário (evento "trusted"). `.click()`, e até a sequência
+  // completa pointerdown/mousedown/pointerup/mouseup/click via
+  // `dispatchEvent`, não selecionam nada aqui — o componente (um CDK/listbox
+  // Angular) parece checar `event.isTrusted`. Um content script não tem como
+  // gerar isso; só a extensão com a permissão invasiva "debugger" conseguiria,
+  // e isso não vale o alarme que causaria numa extensão de custas judiciais.
+  //
+  // Então o combo abre, digita a busca e filtra a lista pra 1 opção — falta
+  // só o clique do usuário, que já enxerga a opção certa e sozinha na tela.
   function preencherCombobox(rotulo, valor, prosseguir) {
     if (!valor) {
       prosseguir();
@@ -119,55 +112,47 @@
         return;
       }
       setterNativo.call(busca, valor);
-      disparar(busca);
-      setTimeout(function () {
-        var alvo = norm(valor);
-        var candidatos = [].slice
-          .call(document.querySelectorAll('li, [role="option"], [class*="option"]'))
-          .filter(function (el) {
-            return el.offsetParent && el.textContent && el.textContent.trim().length > 0;
-          });
-        var opcao =
-          candidatos.filter(function (el) {
-            return norm(el.textContent) === alvo;
-          })[0] ||
-          candidatos.filter(function (el) {
-            return norm(el.textContent).indexOf(alvo) >= 0;
-          })[0];
-        if (opcao) {
-          opcao.click();
-        } else {
-          console.warn('[JuriscalcSP] GRD: "' + valor + '" não achado em "' + rotulo + '". Selecione à mão.');
-          botao.click(); // fecha o overlay para não atrapalhar os campos seguintes
-        }
-        setTimeout(prosseguir, 300);
-      }, 600);
+      // A lista só filtra com `keyup` — só `input`/`change` não bastam aqui,
+      // ao contrário dos campos de texto comuns da página.
+      busca.dispatchEvent(new Event('input', { bubbles: true }));
+      busca.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+      console.log(
+        '[JuriscalcSP] GRD: "' + rotulo + '" filtrado para "' + valor + '" — clique na opção pra confirmar.'
+      );
+      setTimeout(prosseguir, 500);
     }, 300);
   }
 
   function preencher(dados) {
     var c = dados.camposPorRotulo || {};
-    preencherCombobox('Comarca / Fórum', c['Comarca / Fórum'], function () {
-      preencherTexto('Valor do depósito', c['Valor do depósito']);
-      preencherTexto('Número do processo', c['Número do processo']);
-      preencherTexto('Ano do processo', c['Ano do processo']);
-      preencherTexto('CPF ou CNPJ', c['CPF ou CNPJ']);
-      preencherTexto('Depositante / remetente', c['Depositante / remetente']);
-      preencherTexto('Nome do autor', c['Nome do autor']);
-      preencherTexto('Nome do réu', c['Nome do réu']);
-      // O CEP dispara uma busca assíncrona de endereço na própria página
-      // (preenche Endereço/Bairro/Município/UF sozinho). Preenchemos por
-      // cima só o que ela não resolver, depois de dar tempo pra responder.
-      preencherTexto('Cep', c['Cep']);
-      setTimeout(function () {
-        preencherTexto('Endereço do depositante / remetente', c['Endereço do depositante / remetente'], true);
-        preencherTexto('Bairro', c['Bairro'], true);
-        preencherTexto('Município', c['Município'], true);
-        preencherTexto('UF', c['UF'], true);
+    preencherTexto('Valor do depósito', c['Valor do depósito']);
+    preencherTexto('Número do processo', c['Número do processo']);
+    preencherTexto('Ano do processo', c['Ano do processo']);
+    preencherTexto('CPF ou CNPJ', c['CPF ou CNPJ']);
+    preencherTexto('Depositante / remetente', c['Depositante / remetente']);
+    preencherTexto('Nome do autor', c['Nome do autor']);
+    preencherTexto('Nome do réu', c['Nome do réu']);
+    // O CEP dispara uma busca assíncrona de endereço na própria página
+    // (preenche Endereço/Bairro/Município/UF sozinho). Preenchemos por cima
+    // só o que ela não resolver, depois de dar tempo pra responder.
+    preencherTexto('Cep', c['Cep']);
+    setTimeout(function () {
+      preencherTexto('Endereço do depositante / remetente', c['Endereço do depositante / remetente'], true);
+      preencherTexto('Bairro', c['Bairro'], true);
+      preencherTexto('Município', c['Município'], true);
+      preencherTexto('UF', c['UF'], true);
+      // Comarca/Fórum vai por último de propósito: abrir e digitar no
+      // combobox dispara um `blur` sintético (via `disparar`) que o
+      // FocusMonitor do Angular CDK enxerga em qualquer input da página, e
+      // ele fecha o overlay como se o foco tivesse saído dele. Preenchendo
+      // tudo antes, nada mexe mais nos outros campos depois de abrir o combo,
+      // e ele fica aberto e filtrado esperando o clique do usuário.
+      preencherCombobox('Comarca / Fórum', c['Comarca / Fórum'], function () {
         console.log(
-          '[JuriscalcSP] GRD: campos preenchidos. Confira Vara Judicial (não automatizado) e o restante antes de clicar em Avançar.'
+          '[JuriscalcSP] GRD: campos preenchidos. Falta confirmar Comarca/Fórum (lista já filtrada, só clicar) ' +
+            'e escolher Vara Judicial (não automatizado) antes de Avançar.'
         );
-      }, 1500);
-    });
+      });
+    }, 1500);
   }
 })();

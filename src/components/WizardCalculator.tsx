@@ -1599,6 +1599,11 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
    *
    * Vara Judicial fica de fora de propósito: depende da Comarca escolhida e o
    * painel não tem a lista de varas de cada comarca para escolher sozinho.
+   *
+   * Comarca/Fórum é preenchida só até a metade: o combobox do portal exige um
+   * clique de verdade do usuário para selecionar a opção (evento "trusted"),
+   * que um content script não consegue simular — ver `fillerGrd.js`. A
+   * extensão abre o campo e filtra a lista pelo nome; falta o clique.
    */
   const handleAutofillGrd = () => {
     const fmt = (v: number) =>
