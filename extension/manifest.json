@@ -1,0 +1,68 @@
+﻿{
+  "manifest_version": 3,
+  "name": "JuriscalcSP — Custas TJSP",
+  "version": "2.6.0",
+  "description": "Calculadora e auditoria de custas processuais do TJSP (e-SAJ e E-PROC) em painel lateral de altura total.",
+  "permissions": ["sidePanel", "storage"],
+  "host_permissions": [
+    "https://portaldecustas.tjsp.jus.br/*",
+    "https://juriscalcsp.com/*",
+    "https://www.juriscalcsp.com/*",
+    "https://juriscalc2.netlify.app/*"
+  ],
+  "externally_connectable": {
+    "matches": [
+      "https://juriscalcsp.com/*",
+      "https://www.juriscalcsp.com/*",
+      "https://juriscalc2.netlify.app/*",
+      "http://localhost:3000/*"
+    ]
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Abrir JuriscalcSP (painel lateral)",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://juriscalcsp.com/*",
+        "https://www.juriscalcsp.com/*",
+        "https://juriscalc2.netlify.app/*",
+        "http://localhost:3000/*"
+      ],
+      "js": ["appbridge.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://portaldecustas.tjsp.jus.br/portaltjsp/pages/custas/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://portaldecustas.tjsp.jus.br/portaltjsp/pages/custas/*"],
+      "js": ["filler.js"],
+      "world": "MAIN",
+      "run_at": "document_idle"
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:;"
+  }
+}

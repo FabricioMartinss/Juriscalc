@@ -1,0 +1,129 @@
+name: Sincronizar índices do TJSP
+
+# O GitHub só dispara `schedule` a partir do arquivo de workflow que estiver na
+# branch PADRÃO do repositório. Hoje a padrão é `New-UI` (a mesma de onde o
+# Netlify publica), então o agendamento roda. Se a branch padrão mudar, o cron
+# para de disparar até este arquivo chegar na nova padrão.
+#
+# Requer, em Settings > Actions > General, a opção "Read and write permissions"
+# em Workflow permissions — sem ela o `git push` do job falha com 403.
+
+on:
+  schedule:
+    # 14:47 UTC = 11:47 em Brasília. O TJSP costuma republicar as tabelas no
+    # começo do mês (IPCA-15) e por volta do dia 10 (INPC), mas a data varia —
+    # por isso conferimos todo dia e só commitamos quando há mês novo.
+    #
+    # O minuto quebrado é de propósito. O agendador do GitHub congestiona no
+    # topo da hora, onde todo mundo agenda: as execuções atrasam muito e podem
+    # ser descartadas. Era o que acontecia com o horário anterior ('0 11 * * *').
+    - cron: '47 14 * * *'
+    # TEMPORÁRIO — segunda tentativa no mesmo dia, só para confirmar que o
+    # agendamento dispara de fato. Remover depois da confirmação.
+    - cron: '23 16 * * *'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch que recebe o commit'
+        required: false
+        default: 'New-UI'
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: sync-indices
+  cancel-in-progress: false
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch || 'New-UI' }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      # Falha se algum fator já conhecido divergir do PDF ou se a variação
+      # mês a mês sair da faixa plausível. Nesses casos nada é commitado.
+      - name: Buscar e validar as tabelas do TJSP
+        run: npm run sync:indices
+
+      - name: Detectar mudança
+        id: diff
+        run: |
+          if git diff --quiet -- src/data/indices.generated.ts public/indices.json; then
+            echo "mudou=false" >> "$GITHUB_OUTPUT"
+            echo "Nenhum índice novo."
+          else
+            echo "mudou=true" >> "$GITHUB_OUTPUT"
+            git --no-pager diff -- src/data/indices.generated.ts public/indices.json
+          fi
+
+      # Só faz sentido validar o build se os dados mudaram.
+      - name: Typecheck e build
+        if: steps.diff.outputs.mudou == 'true'
+        run: |
+          npm run lint
+          npm run build
+
+      - name: Commitar
+        if: steps.diff.outputs.mudou == 'true'
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add src/data/indices.generated.ts public/indices.json
+          git commit -m 'chore(indices): sincroniza tabelas praticas do TJSP'
+          git push
+
+      - name: Aviso
+        if: steps.diff.outputs.mudou == 'true'
+        run: |
+          echo '::notice::Indices atualizados. A extensao publicada pega os fatores novos'\
+               'sozinha via public/indices.json assim que o deploy do site subir -- nao e'\
+               'preciso republicar na Chrome Web Store. O bundle em extension/ so precisa'\
+               'ser regerado (npm run build:ext) quando o CODIGO da extensao mudar.'
+
+      # Uma falha aqui é silenciosa por natureza: o job roda sozinho, de madrugada,
+      # e ninguém fica olhando a aba Actions. A issue torna o problema visível sem
+      # depender de configuração de notificação de cada pessoa.
+      - name: Abrir issue se a sincronizacao falhar
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITULO: Falha na sincronizacao dos indices do TJSP
+        run: |
+          URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          cat > corpo.md <<EOF
+          A sincronização automática das Tabelas Práticas do TJSP falhou.
+
+          **Execução:** $URL
+
+          O script aborta de propósito em vez de gravar um número errado. Causas típicas:
+
+          - um fator já conhecido divergiu do PDF — ou o TJSP revisou a tabela, ou o parser leu a coluna errada;
+          - a série ficou com buraco, ou a variação mês a mês saiu da faixa de -2% a +4%;
+          - o layout do PDF mudou e o parser precisa de ajuste;
+          - a página do comunicado saiu do ar ou trocou os links dos arquivos.
+
+          A mensagem exata está no log, no passo **Buscar e validar as tabelas do TJSP** — ela diz qual período divergiu e de quanto para quanto.
+
+          Enquanto isso o app e a extensão seguem com os últimos índices validados. Nenhum valor incorreto entrou.
+          EOF
+
+          # Uma issue aberta por incidente, não uma por dia de cron falhando.
+          NUM=$(gh issue list --state open --search "$TITULO in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$NUM" ]; then
+            gh issue comment "$NUM" --body-file corpo.md
+            echo "Falha registrada na issue #$NUM"
+          else
+            gh issue create --title "$TITULO" --body-file corpo.md
+          fi
