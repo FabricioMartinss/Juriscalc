@@ -20,7 +20,7 @@ import {
   Chrome,
   Zap
 } from 'lucide-react';
-import { UFESP_2026, LINKS } from '../data/tabelaPratica';
+import { UFESP_2026, LINKS, CODES } from '../data/tabelaPratica';
 import { buscarIndiceOficial, getUltimoPeriodoDisponivel, TipoTabelaCorrecao } from '../data/tabelasOficiais';
 import { servicoPorValor, servicoPadrao, servicosDoEnquadramento, destinoDoDado, camposDoServico, opcoesDoCampo, temListaConhecida } from '../data/servicosPortal';
 import { MUNICIPIOS_SP } from '../data/municipiosSP';
@@ -53,6 +53,29 @@ function apiExtensao(): ApiExtensao | undefined {
  */
 function noPainelDaExtensao(): boolean {
   return !!apiExtensao()?.runtime?.id;
+}
+
+/**
+ * Manda os dados de uma guia (DARE, FEDTJ ou GRD) para a extensão preencher.
+ *
+ * Dois caminhos para o mesmo destino. No site, a ponte `appbridge.js` escuta
+ * o postMessage e repassa. No painel lateral não há content script ouvindo,
+ * mas há acesso direto às APIs da extensão — mais curto e sem depender de a
+ * página estar num domínio autorizado.
+ */
+function enviarParaExtensao(dados: Record<string, unknown>) {
+  const api = apiExtensao();
+  if (noPainelDaExtensao() && api?.storage?.local && api.runtime) {
+    const runtime = api.runtime;
+    void api.storage.local
+      .set({ guiaDados: dados })
+      .then(() => runtime.sendMessage({ type: 'ABRIR_PORTAL' }))
+      .catch(() => {
+        // Sem contexto de extensão (recarregada, por exemplo): silencioso.
+      });
+  } else {
+    window.postMessage({ type: 'JUDS_EMITIR_GUIA', dados }, '*');
+  }
 }
 
 // ---- Máscaras e validação dos campos de emissão automática ----
@@ -958,6 +981,10 @@ export default function WizardCalculator({
     cpf: '', nome: '', telefone: '', endereco: '', municipio: '', processo: '',
   });
 
+  // Dados extras só usados na emissão automática da GRD (BETA) — não fazem
+  // parte do cálculo, e o Portal de Custas do TJSP nem os pede.
+  const [dadosGrd, setDadosGrd] = useState({ cep: '', nomeAutor: '', nomeReu: '' });
+
   // Campos que variam por serviço do portal (ver CAMPOS_POR_SERVICO). Ficam
   // separados de `dadosEmissao` porque as chaves são dinâmicas: dependem do
   // serviço escolhido, enquanto os seis de cima valem para toda guia.
@@ -1466,6 +1493,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
     const fmt = (v: number) =>
       v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const dados = {
+      guia: 'dare' as const,
       cpf: dadosEmissao.cpf,
       nome: dadosEmissao.nome,
       telefone: dadosEmissao.telefone,
@@ -1533,23 +1561,70 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
       ),
     };
 
-    // Dois caminhos para o mesmo destino. No site, a ponte `appbridge.js`
-    // escuta o postMessage e repassa. No painel lateral não há content script
-    // ouvindo, mas há acesso direto às APIs da extensão — mais curto e sem
-    // depender de a página estar num domínio autorizado.
-    const api = apiExtensao();
-    if (noPainelDaExtensao() && api?.storage?.local && api.runtime) {
-      const runtime = api.runtime;
-      void api.storage.local
-        .set({ guiaDados: dados })
-        .then(() => runtime.sendMessage({ type: 'ABRIR_PORTAL' }))
-        .catch(() => {
-          // Sem contexto de extensão (recarregada, por exemplo): silencioso.
-        });
-    } else {
-      window.postMessage({ type: 'JUDS_EMITIR_GUIA', dados }, '*');
-    }
+    enviarParaExtensao(dados);
+    setAutofillEnviado(true);
+    setTimeout(() => setAutofillEnviado(false), 4000);
+  };
 
+  /**
+   * Emissão automática da guia FEDTJ (despesas postais — cartas AR, código
+   * 120-1) no site do Banco do Brasil. BETA: diferente da DARE, este portal
+   * não tem "Histórico" calculável — o usuário descreve manualmente o que a
+   * despesa cobre, como já fazia antes desta automação existir.
+   */
+  const handleAutofillFedtj = () => {
+    const fmt = (v: number) =>
+      v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    enviarParaExtensao({
+      guia: 'fedtj' as const,
+      campos: {
+        nome: dadosEmissao.nome,
+        cpf: dadosEmissao.cpf,
+        endereco: dadosEmissao.endereco,
+        num_processo: dadosEmissao.processo,
+        cod: CODES.FEDTJ_DESPESAS, // 120-1: despesas postais com citações/intimações
+        valorDespesa07: fmt(postalSum),
+        valorTotal: fmt(postalSum),
+      },
+    });
+    setAutofillEnviado(true);
+    setTimeout(() => setAutofillEnviado(false), 4000);
+  };
+
+  /**
+   * Emissão automática da guia GRD (condução de Oficiais de Justiça) no site
+   * do Banco do Brasil. BETA: o formulário é um app Angular com a maioria dos
+   * ids sorteados a cada carregamento, então a extensão casa os campos pelo
+   * rótulo visível (`camposPorRotulo`), não por id — ver `fillerGrd.js`.
+   *
+   * Vara Judicial fica de fora de propósito: depende da Comarca escolhida e o
+   * painel não tem a lista de varas de cada comarca para escolher sozinho.
+   */
+  const handleAutofillGrd = () => {
+    const fmt = (v: number) =>
+      v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const digitosProcesso = soDigitos(dadosEmissao.processo);
+    // CNJ: NNNNNNN-DD.AAAA.J.TR.OOOO — o ano ocupa as posições 10 a 13.
+    const anoProcesso = digitosProcesso.slice(9, 13);
+    const municipioOficial =
+      MUNICIPIO_POR_CHAVE.get(chaveMunicipio(dadosEmissao.municipio)) ?? dadosEmissao.municipio;
+    enviarParaExtensao({
+      guia: 'grd' as const,
+      camposPorRotulo: {
+        'Valor do depósito': fmt(grdSum),
+        'Comarca / Fórum': municipioOficial,
+        'Número do processo': digitosProcesso,
+        'Ano do processo': anoProcesso,
+        'CPF ou CNPJ': dadosEmissao.cpf,
+        'Depositante / remetente': dadosEmissao.nome,
+        'Cep': dadosGrd.cep,
+        'Endereço do depositante / remetente': dadosEmissao.endereco,
+        'Município': municipioOficial,
+        'UF': 'SP',
+        'Nome do autor': dadosGrd.nomeAutor,
+        'Nome do réu': dadosGrd.nomeReu,
+      },
+    });
     setAutofillEnviado(true);
     setTimeout(() => setAutofillEnviado(false), 4000);
   };
@@ -1855,6 +1930,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       de que o produto só emite a DARE. Apagadas, elas informam
                       que existem e o que preencher para ativá-las. */}
                   {postageAddresses > 0 ? (
+                    <>
                     <a
                       href={LINKS.FEDTJ_BB}
                       target="_blank"
@@ -1870,6 +1946,19 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       </span>
                       <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                     </a>
+                    {/* BETA: preenchimento automático no site do Banco do Brasil,
+                        só dentro da extensão (precisa do host_permission da beta). */}
+                    {noPainelDaExtensao() && (
+                      <button
+                        type="button"
+                        onClick={handleAutofillFedtj}
+                        className="flex items-center justify-center gap-1.5 -mt-1 py-2 rounded bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-400/30 text-cyan-200 text-[10px] font-bold uppercase tracking-wide transition-colors"
+                      >
+                        <Zap className="w-3 h-3" />
+                        {autofillEnviado ? 'Abrindo o site do BB…' : 'Preencher FEDTJ automaticamente (beta)'}
+                      </button>
+                    )}
+                    </>
                   ) : (
                     <div className="flex items-center justify-between p-2.5 rounded bg-white/5 border border-white/5 text-slate-500 cursor-default">
                       <span className="flex items-center gap-1.5">
@@ -1882,6 +1971,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                     </div>
                   )}
                   {totalDiligencias > 0 ? (
+                    <>
                     <a
                       href={LINKS.GRD_BB}
                       target="_blank"
@@ -1897,6 +1987,43 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       </span>
                       <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                     </a>
+                    {/* BETA: a GRD pede Nome do Autor/Réu e CEP, que a DARE não
+                        pede — por isso ficam aqui, e não em `dadosEmissao`. Vara
+                        Judicial não tem como o painel resolver sozinho, então
+                        fica de fora e o usuário escolhe no site do BB. */}
+                    {noPainelDaExtensao() && (
+                      <div className="-mt-1 p-2 rounded bg-white/5 border border-white/10 space-y-1.5">
+                        <div className="grid grid-cols-3 gap-1.5">
+                          <input
+                            value={dadosGrd.cep}
+                            onChange={(e) => setDadosGrd((d) => ({ ...d, cep: e.target.value }))}
+                            placeholder="CEP"
+                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-[11px] text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
+                          />
+                          <input
+                            value={dadosGrd.nomeAutor}
+                            onChange={(e) => setDadosGrd((d) => ({ ...d, nomeAutor: e.target.value }))}
+                            placeholder="Nome do autor"
+                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-[11px] text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
+                          />
+                          <input
+                            value={dadosGrd.nomeReu}
+                            onChange={(e) => setDadosGrd((d) => ({ ...d, nomeReu: e.target.value }))}
+                            placeholder="Nome do réu"
+                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-[11px] text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleAutofillGrd}
+                          className="w-full flex items-center justify-center gap-1.5 py-2 rounded bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-400/30 text-cyan-200 text-[10px] font-bold uppercase tracking-wide transition-colors"
+                        >
+                          <Zap className="w-3 h-3" />
+                          {autofillEnviado ? 'Abrindo o site do BB…' : 'Preencher GRD automaticamente (beta)'}
+                        </button>
+                      </div>
+                    )}
+                    </>
                   ) : (
                     <div className="flex items-center justify-between p-2.5 rounded bg-white/5 border border-white/5 text-slate-500 cursor-default">
                       <span className="flex items-center gap-1.5">
