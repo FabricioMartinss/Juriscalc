@@ -985,6 +985,31 @@ export default function WizardCalculator({
   // parte do cálculo, e o Portal de Custas do TJSP nem os pede.
   const [dadosGrd, setDadosGrd] = useState({ cep: '', nomeAutor: '', nomeReu: '' });
 
+  // Qual das três guias o bloco de emissão automática está preenchendo.
+  // Escolher aqui troca os campos mostrados embaixo — cada guia pede um
+  // subconjunto diferente do que o painel sabe preencher.
+  const [guiaSelecionada, setGuiaSelecionada] = useState<'dare' | 'fedtj' | 'grd'>('dare');
+
+  // Volta pra DARE se a guia escolhida deixar de existir (ex.: usuário zerou
+  // a quantidade de cartas AR com FEDTJ selecionado) — select preso numa
+  // opção que sumiu é pior que voltar ao padrão.
+  useEffect(() => {
+    if (guiaSelecionada === 'fedtj' && postageAddresses <= 0) setGuiaSelecionada('dare');
+    if (guiaSelecionada === 'grd' && totalDiligencias <= 0) setGuiaSelecionada('dare');
+  }, [guiaSelecionada, postageAddresses, totalDiligencias]);
+
+  // Dos seis campos comuns (CAMPOS_EMISSAO), cada guia só usa um
+  // subconjunto — telefone não vai para nenhuma guia do BB, e a FEDTJ deste
+  // painel não manda município (só endereço em texto livre).
+  const CAMPOS_POR_GUIA: Record<'dare' | 'fedtj' | 'grd', CampoEmissaoKey[]> = {
+    dare: ['cpf', 'nome', 'telefone', 'endereco', 'municipio', 'processo'],
+    fedtj: ['cpf', 'nome', 'endereco', 'processo'],
+    grd: ['cpf', 'nome', 'endereco', 'municipio', 'processo'],
+  };
+  const camposEmissaoAtivos = CAMPOS_EMISSAO.filter((c) =>
+    CAMPOS_POR_GUIA[guiaSelecionada].includes(c.campo),
+  );
+
   // Campos que variam por serviço do portal (ver CAMPOS_POR_SERVICO). Ficam
   // separados de `dadosEmissao` porque as chaves são dinâmicas: dependem do
   // serviço escolhido, enquanto os seis de cima valem para toda guia.
@@ -1650,10 +1675,37 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       <Zap className="w-3.5 h-3.5 text-cyan-300" /> Emissão automática
                     </div>
                     <p className="text-[10px] text-slate-400 leading-snug font-sans">
-                      Preencha os dados abaixo e clique — a extensão abre o portal e preenche tudo. Você só confere e clica em Emitir.
+                      Escolha a guia, preencha os dados abaixo e clique — a extensão abre o site certo e preenche tudo. Você só confere e clica em Emitir.
                     </p>
+                    {/* Seletor de guia. FEDTJ e GRD só aparecem quando o
+                        cálculo já tem AR ou diligência de oficial — antes
+                        disso não há valor a mandar. */}
+                    <div className="flex rounded-lg border border-white/10 bg-white/5 p-0.5 text-[10px] font-bold uppercase tracking-wide">
+                      {(
+                        [
+                          { id: 'dare' as const, label: 'DARE', ativo: true },
+                          { id: 'fedtj' as const, label: 'FEDTJ', ativo: postageAddresses > 0 },
+                          { id: 'grd' as const, label: 'GRD', ativo: totalDiligencias > 0 },
+                        ] as const
+                      )
+                        .filter((g) => g.ativo)
+                        .map((g) => (
+                          <button
+                            key={g.id}
+                            type="button"
+                            onClick={() => setGuiaSelecionada(g.id)}
+                            className={`flex-1 py-1.5 rounded-md transition-colors cursor-pointer ${
+                              guiaSelecionada === g.id
+                                ? 'bg-cyan-500 text-slate-950'
+                                : 'text-cyan-200/70 hover:text-cyan-100'
+                            }`}
+                          >
+                            {g.label}
+                          </button>
+                        ))}
+                    </div>
                     <div className="grid grid-cols-2 gap-2">
-                      {CAMPOS_EMISSAO.map((c) => {
+                      {camposEmissaoAtivos.map((c) => {
                         const valor = dadosEmissao[c.campo];
 
                         // Num campo de lista, o texto parcial de quem está
@@ -1728,7 +1780,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
 
                       {/* Dropdowns do portal cuja lista de opções já colhemos.
                           O valor enviado é o `value` do <option>, não o rótulo. */}
-                      {camposSelecionaveis.map((c) => {
+                      {guiaSelecionada === 'dare' && camposSelecionaveis.map((c) => {
                         const valor = camposExtras[c.id] || '';
                         const opcoes = opcoesDoCampo(c, camposExtras);
                         // Campo dependente antes de o pai ser escolhido: fica
@@ -1776,7 +1828,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       })}
 
                       {/* Declarações que o portal exige junto das partes. */}
-                      {camposParaDigitar
+                      {guiaSelecionada === 'dare' && camposParaDigitar
                         .filter((c) => c.tipo === 'checkbox')
                         .map((c) => (
                           <label
@@ -1813,7 +1865,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       {/* Campos que só este serviço pede e que o app não
                           calcula. Antes o usuário descobria a existência deles
                           lá no portal, com a guia meio preenchida. */}
-                      {camposParaDigitar
+                      {guiaSelecionada === 'dare' && camposParaDigitar
                         .filter((c) => c.tipo !== 'checkbox')
                         .map((c) => {
                         const valor = camposExtras[c.id] || '';
@@ -1840,14 +1892,14 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                         );
                       })}
                     </div>
-                    {camposParaDigitar.length > 0 && (
+                    {guiaSelecionada === 'dare' && camposParaDigitar.length > 0 && (
                       <p className="text-[9px] text-slate-400 leading-snug font-sans">
                         Os campos acima são exigidos por{' '}
                         <strong className="text-slate-300">{servicoAtual?.rotulo}</strong> e não
                         saem do cálculo — deixe em branco para preencher no portal.
                       </p>
                     )}
-                    {camposPendentesNoPortal.length > 0 && (
+                    {guiaSelecionada === 'dare' && camposPendentesNoPortal.length > 0 && (
                       <p className="text-[9px] text-amber-300/80 leading-snug font-sans">
                         Ainda no portal: {camposPendentesNoPortal.map((c) => c.label).join(', ')}.
                         São listas do próprio TJSP que o painel ainda não reproduz.
@@ -1855,7 +1907,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                     )}
                     {/* Enquadramentos que cobrem mais de um serviço: o cálculo
                         é o mesmo, mas o ato praticado muda o nome da guia. */}
-                    {opcoesServico.length > 1 && (
+                    {guiaSelecionada === 'dare' && opcoesServico.length > 1 && (
                       <div className="space-y-1">
                         <label
                           htmlFor="select-servico-portal"
@@ -1878,29 +1930,97 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       </div>
                     )}
 
-                    <button
-                      type="button"
-                      onClick={handleAutofillGuia}
-                      disabled={
-                        !CAMPOS_EMISSAO.every((c) => c.valido(dadosEmissao[c.campo])) ||
-                        !camposParaDigitar.every(
-                          (c) => !c.obrigatorio || (camposExtras[c.id] || '').trim() !== '',
-                        )
-                      }
-                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded bg-cyan-500 hover:bg-cyan-600 text-slate-950 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <Chrome className="w-3.5 h-3.5" />
-                      {autofillEnviado ? 'Abrindo o portal…' : 'Emitir Guia automaticamente'}
-                    </button>
-                    {servicoAtual ? (
-                      <p className="text-[9px] text-slate-400 leading-snug font-sans">
-                        Guia: <strong className="text-slate-300">{servicoAtual.rotulo}</strong> — receita{' '}
-                        <span className="font-mono">{servicoAtual.codigo}</span>.
-                      </p>
-                    ) : (
-                      <p className="text-[9px] text-amber-300/80 leading-snug font-sans">
-                        Obs.: esta categoria ainda não tem o "Tipo de Serviço" mapeado no portal — selecione-o lá manualmente (o restante dos dados é preenchido).
-                      </p>
+                    {guiaSelecionada === 'dare' && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleAutofillGuia}
+                          disabled={
+                            !camposEmissaoAtivos.every((c) => c.valido(dadosEmissao[c.campo])) ||
+                            !camposParaDigitar.every(
+                              (c) => !c.obrigatorio || (camposExtras[c.id] || '').trim() !== '',
+                            )
+                          }
+                          className="w-full flex items-center justify-center gap-1.5 py-2 rounded bg-cyan-500 hover:bg-cyan-600 text-slate-950 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <Chrome className="w-3.5 h-3.5" />
+                          {autofillEnviado ? 'Abrindo o portal…' : 'Emitir Guia automaticamente'}
+                        </button>
+                        {servicoAtual ? (
+                          <p className="text-[9px] text-slate-400 leading-snug font-sans">
+                            Guia: <strong className="text-slate-300">{servicoAtual.rotulo}</strong> — receita{' '}
+                            <span className="font-mono">{servicoAtual.codigo}</span>.
+                          </p>
+                        ) : (
+                          <p className="text-[9px] text-amber-300/80 leading-snug font-sans">
+                            Obs.: esta categoria ainda não tem o "Tipo de Serviço" mapeado no portal — selecione-o lá manualmente (o restante dos dados é preenchido).
+                          </p>
+                        )}
+                      </>
+                    )}
+
+                    {/* FEDTJ (BETA): só os seis campos comuns + código fixo
+                        120-1 (despesas postais). "Histórico" fica sempre
+                        manual no site do BB — é texto livre descrevendo a
+                        despesa, e ninguém calcula isso. */}
+                    {guiaSelecionada === 'fedtj' && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleAutofillFedtj}
+                          disabled={!camposEmissaoAtivos.every((c) => c.valido(dadosEmissao[c.campo]))}
+                          className="w-full flex items-center justify-center gap-1.5 py-2 rounded bg-cyan-500 hover:bg-cyan-600 text-slate-950 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <Chrome className="w-3.5 h-3.5" />
+                          {autofillEnviado ? 'Abrindo o site do BB…' : 'Emitir Guia FEDTJ automaticamente'}
+                        </button>
+                        <p className="text-[9px] text-slate-400 leading-snug font-sans">
+                          Guia: <strong className="text-slate-300">FEDTJ</strong> — receita{' '}
+                          <span className="font-mono">{CODES.FEDTJ_DESPESAS}</span>. No site do BB, escreva o
+                          "Histórico" (ex.: "3 cartas AR") antes de gerar a guia.
+                        </p>
+                      </>
+                    )}
+
+                    {/* GRD (BETA): pede Nome do Autor/Réu e CEP, que a DARE
+                        não pede — ficam em `dadosGrd`, não em `dadosEmissao`.
+                        Vara Judicial não tem como o painel resolver sozinho. */}
+                    {guiaSelecionada === 'grd' && (
+                      <>
+                        <div className="grid grid-cols-3 gap-2">
+                          <input
+                            value={dadosGrd.cep}
+                            onChange={(e) => setDadosGrd((d) => ({ ...d, cep: e.target.value }))}
+                            placeholder="CEP"
+                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
+                          />
+                          <input
+                            value={dadosGrd.nomeAutor}
+                            onChange={(e) => setDadosGrd((d) => ({ ...d, nomeAutor: e.target.value }))}
+                            placeholder="Nome do autor"
+                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
+                          />
+                          <input
+                            value={dadosGrd.nomeReu}
+                            onChange={(e) => setDadosGrd((d) => ({ ...d, nomeReu: e.target.value }))}
+                            placeholder="Nome do réu"
+                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleAutofillGrd}
+                          disabled={!camposEmissaoAtivos.every((c) => c.valido(dadosEmissao[c.campo]))}
+                          className="w-full flex items-center justify-center gap-1.5 py-2 rounded bg-cyan-500 hover:bg-cyan-600 text-slate-950 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <Chrome className="w-3.5 h-3.5" />
+                          {autofillEnviado ? 'Abrindo o site do BB…' : 'Emitir Guia GRD automaticamente'}
+                        </button>
+                        <p className="text-[9px] text-amber-300/80 leading-snug font-sans">
+                          Comarca/Fórum é preenchida e filtrada, mas o clique final é seu — o site exige um
+                          clique de verdade para confirmar. Vara Judicial não é automatizada.
+                        </p>
+                      </>
                     )}
                   </div>
   );
@@ -1935,7 +2055,6 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       de que o produto só emite a DARE. Apagadas, elas informam
                       que existem e o que preencher para ativá-las. */}
                   {postageAddresses > 0 ? (
-                    <>
                     <a
                       href={LINKS.FEDTJ_BB}
                       target="_blank"
@@ -1951,19 +2070,6 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       </span>
                       <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                     </a>
-                    {/* BETA: preenchimento automático no site do Banco do Brasil,
-                        só dentro da extensão (precisa do host_permission da beta). */}
-                    {noPainelDaExtensao() && (
-                      <button
-                        type="button"
-                        onClick={handleAutofillFedtj}
-                        className="flex items-center justify-center gap-1.5 -mt-1 py-2 rounded bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-400/30 text-cyan-200 text-[10px] font-bold uppercase tracking-wide transition-colors"
-                      >
-                        <Zap className="w-3 h-3" />
-                        {autofillEnviado ? 'Abrindo o site do BB…' : 'Preencher FEDTJ automaticamente (beta)'}
-                      </button>
-                    )}
-                    </>
                   ) : (
                     <div className="flex items-center justify-between p-2.5 rounded bg-white/5 border border-white/5 text-slate-500 cursor-default">
                       <span className="flex items-center gap-1.5">
@@ -1976,7 +2082,6 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                     </div>
                   )}
                   {totalDiligencias > 0 ? (
-                    <>
                     <a
                       href={LINKS.GRD_BB}
                       target="_blank"
@@ -1992,43 +2097,6 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       </span>
                       <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                     </a>
-                    {/* BETA: a GRD pede Nome do Autor/Réu e CEP, que a DARE não
-                        pede — por isso ficam aqui, e não em `dadosEmissao`. Vara
-                        Judicial não tem como o painel resolver sozinho, então
-                        fica de fora e o usuário escolhe no site do BB. */}
-                    {noPainelDaExtensao() && (
-                      <div className="-mt-1 p-2 rounded bg-white/5 border border-white/10 space-y-1.5">
-                        <div className="grid grid-cols-3 gap-1.5">
-                          <input
-                            value={dadosGrd.cep}
-                            onChange={(e) => setDadosGrd((d) => ({ ...d, cep: e.target.value }))}
-                            placeholder="CEP"
-                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-[11px] text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
-                          />
-                          <input
-                            value={dadosGrd.nomeAutor}
-                            onChange={(e) => setDadosGrd((d) => ({ ...d, nomeAutor: e.target.value }))}
-                            placeholder="Nome do autor"
-                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-[11px] text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
-                          />
-                          <input
-                            value={dadosGrd.nomeReu}
-                            onChange={(e) => setDadosGrd((d) => ({ ...d, nomeReu: e.target.value }))}
-                            placeholder="Nome do réu"
-                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-[11px] text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={handleAutofillGrd}
-                          className="w-full flex items-center justify-center gap-1.5 py-2 rounded bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-400/30 text-cyan-200 text-[10px] font-bold uppercase tracking-wide transition-colors"
-                        >
-                          <Zap className="w-3 h-3" />
-                          {autofillEnviado ? 'Abrindo o site do BB…' : 'Preencher GRD automaticamente (beta)'}
-                        </button>
-                      </div>
-                    )}
-                    </>
                   ) : (
                     <div className="flex items-center justify-between p-2.5 rounded bg-white/5 border border-white/5 text-slate-500 cursor-default">
                       <span className="flex items-center gap-1.5">
