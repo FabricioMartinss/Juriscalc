@@ -3,7 +3,7 @@
   "name": "JuriscalcSP — Custas TJSP (Beta FEDTJ/GRD)",
   "version": "2.7.0",
   "version_name": "2.7.0-beta1",
-  "description": "BETA: calculadora e auditoria de custas processuais do TJSP (e-SAJ e E-PROC), com preenchimento automático de DARE, FEDTJ e GRD. Versão experimental — mantenha a extensão oficial instalada em paralelo.",
+  "description": "BETA: calculadora de custas do TJSP com preenchimento automático de DARE, FEDTJ e GRD. Mantenha a versão oficial instalada.",
   "permissions": ["sidePanel", "storage"],
   "host_permissions": [
     "https://portaldecustas.tjsp.jus.br/*",
