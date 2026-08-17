@@ -990,14 +990,6 @@ export default function WizardCalculator({
   // subconjunto diferente do que o painel sabe preencher.
   const [guiaSelecionada, setGuiaSelecionada] = useState<'dare' | 'fedtj' | 'grd'>('dare');
 
-  // Volta pra DARE se a guia escolhida deixar de existir (ex.: usuário zerou
-  // a quantidade de cartas AR com FEDTJ selecionado) — select preso numa
-  // opção que sumiu é pior que voltar ao padrão.
-  useEffect(() => {
-    if (guiaSelecionada === 'fedtj' && postageAddresses <= 0) setGuiaSelecionada('dare');
-    if (guiaSelecionada === 'grd' && totalDiligencias <= 0) setGuiaSelecionada('dare');
-  }, [guiaSelecionada, postageAddresses, totalDiligencias]);
-
   // Dos seis campos comuns (CAMPOS_EMISSAO), cada guia só usa um
   // subconjunto — telefone não vai para nenhuma guia do BB, e a FEDTJ deste
   // painel não manda município (só endereço em texto livre).
@@ -1683,26 +1675,24 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                     <div className="flex rounded-lg border border-white/10 bg-white/5 p-0.5 text-[10px] font-bold uppercase tracking-wide">
                       {(
                         [
-                          { id: 'dare' as const, label: 'DARE', ativo: true },
-                          { id: 'fedtj' as const, label: 'FEDTJ', ativo: postageAddresses > 0 },
-                          { id: 'grd' as const, label: 'GRD', ativo: totalDiligencias > 0 },
+                          { id: 'dare' as const, label: 'DARE' },
+                          { id: 'fedtj' as const, label: 'FEDTJ' },
+                          { id: 'grd' as const, label: 'GRD' },
                         ] as const
-                      )
-                        .filter((g) => g.ativo)
-                        .map((g) => (
-                          <button
-                            key={g.id}
-                            type="button"
-                            onClick={() => setGuiaSelecionada(g.id)}
-                            className={`flex-1 py-1.5 rounded-md transition-colors cursor-pointer ${
-                              guiaSelecionada === g.id
-                                ? 'bg-cyan-500 text-slate-950'
-                                : 'text-cyan-200/70 hover:text-cyan-100'
-                            }`}
-                          >
-                            {g.label}
-                          </button>
-                        ))}
+                      ).map((g) => (
+                        <button
+                          key={g.id}
+                          type="button"
+                          onClick={() => setGuiaSelecionada(g.id)}
+                          className={`flex-1 py-1.5 rounded-md transition-colors cursor-pointer ${
+                            guiaSelecionada === g.id
+                              ? 'bg-cyan-500 text-slate-950'
+                              : 'text-cyan-200/70 hover:text-cyan-100'
+                          }`}
+                        >
+                          {g.label}
+                        </button>
+                      ))}
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       {camposEmissaoAtivos.map((c) => {
@@ -1968,12 +1958,17 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                         <button
                           type="button"
                           onClick={handleAutofillFedtj}
-                          disabled={!camposEmissaoAtivos.every((c) => c.valido(dadosEmissao[c.campo]))}
+                          disabled={!camposEmissaoAtivos.every((c) => c.valido(dadosEmissao[c.campo])) || postalSum <= 0}
                           className="w-full flex items-center justify-center gap-1.5 py-2 rounded bg-cyan-500 hover:bg-cyan-600 text-slate-950 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                         >
                           <Chrome className="w-3.5 h-3.5" />
                           {autofillEnviado ? 'Abrindo o site do BB…' : 'Emitir Guia FEDTJ automaticamente'}
                         </button>
+                        {postalSum <= 0 && (
+                          <p className="text-[9px] text-amber-300/80 leading-snug font-sans">
+                            Informe a quantidade de cartas AR no cálculo (aba e-SAJ) para liberar o botão.
+                          </p>
+                        )}
                         <p className="text-[9px] text-slate-400 leading-snug font-sans">
                           Guia: <strong className="text-slate-300">FEDTJ</strong> — receita{' '}
                           <span className="font-mono">{CODES.FEDTJ_DESPESAS}</span>. No site do BB, escreva o
@@ -2010,12 +2005,23 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                         <button
                           type="button"
                           onClick={handleAutofillGrd}
-                          disabled={!camposEmissaoAtivos.every((c) => c.valido(dadosEmissao[c.campo]))}
+                          disabled={
+                            !camposEmissaoAtivos.every((c) => c.valido(dadosEmissao[c.campo])) ||
+                            grdSum <= 0 ||
+                            !dadosGrd.cep.trim() ||
+                            !dadosGrd.nomeAutor.trim() ||
+                            !dadosGrd.nomeReu.trim()
+                          }
                           className="w-full flex items-center justify-center gap-1.5 py-2 rounded bg-cyan-500 hover:bg-cyan-600 text-slate-950 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                         >
                           <Chrome className="w-3.5 h-3.5" />
                           {autofillEnviado ? 'Abrindo o site do BB…' : 'Emitir Guia GRD automaticamente'}
                         </button>
+                        {grdSum <= 0 && (
+                          <p className="text-[9px] text-amber-300/80 leading-snug font-sans">
+                            Informe as diligências do oficial no cálculo (aba e-SAJ) para liberar o botão.
+                          </p>
+                        )}
                         <p className="text-[9px] text-amber-300/80 leading-snug font-sans">
                           Comarca/Fórum é preenchida e filtrada, mas o clique final é seu — o site exige um
                           clique de verdade para confirmar. Vara Judicial não é automatizada.
