@@ -1592,11 +1592,18 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
   const handleAutofillFedtj = () => {
     const fmt = (v: number) =>
       v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // Diferente da DARE e da GRD, a FEDTJ tem campos SEPARADOS de CPF e CNPJ.
+    // `dadosEmissao.cpf` aceita os dois (a máscara é a mesma), então o
+    // destino tem que ser escolhido pela quantidade de dígitos — mandar
+    // sempre para `cpf` põe um CNPJ digitado na caixa errada.
+    const digitos = soDigitos(dadosEmissao.cpf);
+    const ehCnpj = digitos.length === 14;
     enviarParaExtensao({
       guia: 'fedtj' as const,
       campos: {
         nome: dadosEmissao.nome,
-        cpf: dadosEmissao.cpf,
+        cpf: ehCnpj ? '' : dadosEmissao.cpf,
+        cnpj: ehCnpj ? dadosEmissao.cpf : '',
         endereco: dadosEmissao.endereco,
         num_processo: dadosEmissao.processo,
         cod: CODES.FEDTJ_DESPESAS, // 120-1: despesas postais com citações/intimações
