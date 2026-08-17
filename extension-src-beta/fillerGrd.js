@@ -148,6 +148,12 @@
       // tudo antes, nada mexe mais nos outros campos depois de abrir o combo,
       // e ele fica aberto e filtrado esperando o clique do usuário.
       preencherCombobox('Comarca / Fórum', c['Comarca / Fórum'], function () {
+        // Vara Judicial não dá pra preencher (ver o comentário no
+        // WizardCalculator) — só ecoamos o que foi digitado no painel, pra
+        // não sumir da vista de quem vai escolher no site.
+        if (dados.varaJudicialLembrete) {
+          console.log('[JuriscalcSP] GRD: Vara Judicial a escolher no site: "' + dados.varaJudicialLembrete + '".');
+        }
         console.log(
           '[JuriscalcSP] GRD: campos preenchidos. Falta confirmar Comarca/Fórum (lista já filtrada, só clicar) ' +
             'e escolher Vara Judicial (não automatizado) antes de Avançar.'

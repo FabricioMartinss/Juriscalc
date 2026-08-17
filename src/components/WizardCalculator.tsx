@@ -983,7 +983,18 @@ export default function WizardCalculator({
 
   // Dados extras só usados na emissão automática da GRD (BETA) — não fazem
   // parte do cálculo, e o Portal de Custas do TJSP nem os pede.
-  const [dadosGrd, setDadosGrd] = useState({ cep: '', nomeAutor: '', nomeReu: '' });
+  //
+  // `comarca` é separado de `municipio`: nem sempre são o mesmo nome, e
+  // adivinhar um pelo outro já foi decisão errada em outro canto do app (ver
+  // servicosPortal.ts). `varaJudicial` não dá pra automatizar de jeito
+  // nenhum — a lista só carrega depois que a Comarca é confirmada com um
+  // clique de verdade no site, então fica só de lembrete na tela.
+  const [dadosGrd, setDadosGrd] = useState({
+    cep: '', nomeAutor: '', nomeReu: '', comarca: '', varaJudicial: '',
+  });
+
+  // Dados extras só usados na emissão automática da FEDTJ (BETA).
+  const [dadosFedtj, setDadosFedtj] = useState({ rg: '', unidade: '', cep: '' });
 
   // Qual das três guias o bloco de emissão automática está preenchendo.
   // Escolher aqui troca os campos mostrados embaixo — cada guia pede um
@@ -1604,6 +1615,9 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
         nome: dadosEmissao.nome,
         cpf: ehCnpj ? '' : dadosEmissao.cpf,
         cnpj: ehCnpj ? dadosEmissao.cpf : '',
+        rg: dadosFedtj.rg,
+        unidade: dadosFedtj.unidade,
+        cep: dadosFedtj.cep,
         endereco: dadosEmissao.endereco,
         num_processo: dadosEmissao.processo,
         cod: CODES.FEDTJ_DESPESAS, // 120-1: despesas postais com citações/intimações
@@ -1621,13 +1635,17 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
    * ids sorteados a cada carregamento, então a extensão casa os campos pelo
    * rótulo visível (`camposPorRotulo`), não por id — ver `fillerGrd.js`.
    *
-   * Vara Judicial fica de fora de propósito: depende da Comarca escolhida e o
-   * painel não tem a lista de varas de cada comarca para escolher sozinho.
-   *
    * Comarca/Fórum é preenchida só até a metade: o combobox do portal exige um
    * clique de verdade do usuário para selecionar a opção (evento "trusted"),
    * que um content script não consegue simular — ver `fillerGrd.js`. A
    * extensão abre o campo e filtra a lista pelo nome; falta o clique.
+   *
+   * Vara Judicial não é preenchida de jeito nenhum: além do mesmo problema de
+   * clique, a lista de varas só carrega (via AJAX, no próprio site) depois
+   * que a Comarca é confirmada com aquele clique manual — tentar abrir o
+   * combobox da Vara agora só arriscaria fechar o da Comarca sem necessidade.
+   * O valor digitado aqui só aparece de volta como lembrete no console da
+   * página, pra não precisar guardar de cabeça.
    */
   const handleAutofillGrd = () => {
     const fmt = (v: number) =>
@@ -1641,7 +1659,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
       guia: 'grd' as const,
       camposPorRotulo: {
         'Valor do depósito': fmt(grdSum),
-        'Comarca / Fórum': municipioOficial,
+        'Comarca / Fórum': dadosGrd.comarca,
         'Número do processo': digitosProcesso,
         'Ano do processo': anoProcesso,
         'CPF ou CNPJ': dadosEmissao.cpf,
@@ -1653,6 +1671,8 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
         'Nome do autor': dadosGrd.nomeAutor,
         'Nome do réu': dadosGrd.nomeReu,
       },
+      // Só um lembrete no console — ver o comentário desta função.
+      varaJudicialLembrete: dadosGrd.varaJudicial,
     });
     setAutofillEnviado(true);
     setTimeout(() => setAutofillEnviado(false), 4000);
@@ -1956,12 +1976,35 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       </>
                     )}
 
-                    {/* FEDTJ (BETA): só os seis campos comuns + código fixo
-                        120-1 (despesas postais). "Histórico" fica sempre
-                        manual no site do BB — é texto livre descrevendo a
-                        despesa, e ninguém calcula isso. */}
+                    {/* FEDTJ (BETA): os seis campos comuns + RG/Unidade/CEP
+                        (que só esta guia pede) + código fixo 120-1 (despesas
+                        postais). "Histórico" fica sempre manual no site do
+                        BB — é texto livre descrevendo a despesa, e ninguém
+                        calcula isso. RG/Unidade ficam opcionais mesmo: o
+                        formulário do BB não marca nenhum campo como
+                        obrigatório com asterisco. */}
                     {guiaSelecionada === 'fedtj' && (
                       <>
+                        <div className="grid grid-cols-3 gap-2">
+                          <input
+                            value={dadosFedtj.rg}
+                            onChange={(e) => setDadosFedtj((d) => ({ ...d, rg: e.target.value }))}
+                            placeholder="RG"
+                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
+                          />
+                          <input
+                            value={dadosFedtj.unidade}
+                            onChange={(e) => setDadosFedtj((d) => ({ ...d, unidade: e.target.value }))}
+                            placeholder="Unidade"
+                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
+                          />
+                          <input
+                            value={dadosFedtj.cep}
+                            onChange={(e) => setDadosFedtj((d) => ({ ...d, cep: e.target.value }))}
+                            placeholder="CEP"
+                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
+                          />
+                        </div>
                         <button
                           type="button"
                           onClick={handleAutofillFedtj}
@@ -1984,18 +2027,36 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                       </>
                     )}
 
-                    {/* GRD (BETA): pede Nome do Autor/Réu e CEP, que a DARE
-                        não pede — ficam em `dadosGrd`, não em `dadosEmissao`.
-                        Vara Judicial não tem como o painel resolver sozinho. */}
+                    {/* GRD (BETA): pede Comarca, Vara Judicial, Nome do
+                        Autor/Réu e CEP, que a DARE não pede — ficam em
+                        `dadosGrd`, não em `dadosEmissao`. Comarca é separada
+                        de Município de propósito: nem sempre são o mesmo
+                        nome. Vara Judicial não é preenchida no site (ver o
+                        comentário de `handleAutofillGrd`), mas ainda exigimos
+                        aqui — o usuário digita uma vez, no painel, em vez de
+                        ter que lembrar na hora de escolher no site do BB. */}
                     {guiaSelecionada === 'grd' && (
                       <>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            value={dadosGrd.comarca}
+                            onChange={(e) => setDadosGrd((d) => ({ ...d, comarca: e.target.value }))}
+                            placeholder="Comarca / Fórum"
+                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
+                          />
+                          <input
+                            value={dadosGrd.varaJudicial}
+                            onChange={(e) => setDadosGrd((d) => ({ ...d, varaJudicial: e.target.value }))}
+                            placeholder="Vara Judicial"
+                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
+                          />
                           <input
                             value={dadosGrd.cep}
                             onChange={(e) => setDadosGrd((d) => ({ ...d, cep: e.target.value }))}
                             placeholder="CEP"
                             className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
                           />
+                          <div />
                           <input
                             value={dadosGrd.nomeAutor}
                             onChange={(e) => setDadosGrd((d) => ({ ...d, nomeAutor: e.target.value }))}
@@ -2015,6 +2076,8 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                           disabled={
                             !camposEmissaoAtivos.every((c) => c.valido(dadosEmissao[c.campo])) ||
                             grdSum <= 0 ||
+                            !dadosGrd.comarca.trim() ||
+                            !dadosGrd.varaJudicial.trim() ||
                             !dadosGrd.cep.trim() ||
                             !dadosGrd.nomeAutor.trim() ||
                             !dadosGrd.nomeReu.trim()
@@ -2031,7 +2094,8 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                         )}
                         <p className="text-[9px] text-amber-300/80 leading-snug font-sans">
                           Comarca/Fórum é preenchida e filtrada, mas o clique final é seu — o site exige um
-                          clique de verdade para confirmar. Vara Judicial não é automatizada.
+                          clique de verdade para confirmar. Vara Judicial não é automatizada — o nome digitado
+                          acima só aparece de lembrete no console da página (F12).
                         </p>
                       </>
                     )}
