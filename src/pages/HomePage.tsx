@@ -23,6 +23,7 @@ import {
   Zap,
   Check,
   Clock,
+  MessageSquareQuote,
 } from 'lucide-react';
 import { conteudo, ROTA_PLATAFORMA } from '../content/homepage';
 import { useRevelarAoRolar } from '../hooks/useRevelarAoRolar';
@@ -264,6 +265,30 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* ===== Avaliações (balões) ===== */}
+        <section className="max-w-7xl mx-auto px-5 sm:px-6 py-20 md:py-24" aria-labelledby="avaliacoes-titulo">
+          <Revelar className="text-center">
+            <h2 id="avaliacoes-titulo" className="font-sans font-black tracking-tight text-3xl md:text-4xl text-[#0b2545]">
+              {conteudo.avaliacoes.titulo}
+            </h2>
+            <p className="mt-3 font-sans text-slate-600 max-w-2xl mx-auto">
+              {conteudo.avaliacoes.subtitulo}
+            </p>
+          </Revelar>
+
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {conteudo.avaliacoes.itens.map((depoimento) => (
+              <Revelar key={depoimento}>
+                {/* Balão de depoimento: cauda no canto inferior esquerdo, como um chat. */}
+                <div className="relative h-full bg-cyan-50/60 border border-cyan-100 rounded-3xl rounded-bl-md p-6 md:p-7 shadow-xs">
+                  <MessageSquareQuote className="w-6 h-6 text-cyan-600" aria-hidden="true" />
+                  <p className="mt-4 font-sans text-slate-700 leading-relaxed">{depoimento}</p>
+                </div>
+              </Revelar>
+            ))}
+          </div>
+        </section>
+
         {/* ===== Demonstração ===== */}
         <section className="bg-white border-y border-slate-200" aria-labelledby="demo-titulo">
           <div className="max-w-7xl mx-auto px-5 sm:px-6 py-20 md:py-24 grid gap-12 md:grid-cols-2 md:items-center">
@@ -345,6 +370,14 @@ export default function HomePage() {
                 <li key={m} className="flex items-center gap-3">
                   {i > 0 && <span aria-hidden="true" className="text-cyan-400/60">·</span>}
                   <span>{m}</span>
+                </li>
+              ))}
+            </ul>
+            <ul className="flex items-center gap-3 font-sans text-xs text-blue-200/70">
+              {conteudo.rodape.links.map((link, i) => (
+                <li key={link.href} className="flex items-center gap-3">
+                  {i > 0 && <span aria-hidden="true" className="text-cyan-400/60">·</span>}
+                  <a href={link.href} className="hover:text-cyan-400">{link.rotulo}</a>
                 </li>
               ))}
             </ul>

@@ -35,6 +35,16 @@ export const LINKS = {
   // passar pelo índice. Trocar só quando parar de funcionar.
   FEDTJ_BB: 'https://www45.bb.com.br/fmc/frm/fw0707314_1.jsp',
   GRD_BB: 'https://boleto.apps.bb.com.br/emissao-guia',
+  // Login SSO do Eproc — são 3 sistemas distintos do TJSP, cada um com o
+  // próprio client_id (eproc1g/eproc2g). Colégio Recursal roda sobre o mesmo
+  // sistema do 1º grau (eproc1g), só muda o nonce/state gerados pelo TJSP a
+  // cada sessão — por isso os dois links abaixo têm o mesmo client_id.
+  EPROC_1_GRAU:
+    'https://sso.tjsp.jus.br/realms/eproc/protocol/openid-connect/auth?kc_idp_hint=tjsp&eproc_client_id=eproc1g.tjsp.jus.br&response_type=code&redirect_uri=https%3A%2F%2Feproc1g.tjsp.jus.br%2Feproc%2Fexterno_controlador.php%3Facao%3DSSO%2Fcallback&client_id=eproc1g.tjsp.jus.br&scope=profile+openid',
+  EPROC_2_GRAU:
+    'https://sso.tjsp.jus.br/realms/eproc/protocol/openid-connect/auth?kc_idp_hint=tjsp&eproc_client_id=eproc2g.tjsp.jus.br&response_type=code&redirect_uri=https%3A%2F%2Feproc2g.tjsp.jus.br%2Feproc%2Fexterno_controlador.php%3Facao%3DSSO%2Fcallback&client_id=eproc2g.tjsp.jus.br&scope=profile+openid',
+  EPROC_COLEGIO_RECURSAL:
+    'https://sso.tjsp.jus.br/realms/eproc/protocol/openid-connect/auth?kc_idp_hint=tjsp&eproc_client_id=eproc1g.tjsp.jus.br&response_type=code&redirect_uri=https%3A%2F%2Feproc1g.tjsp.jus.br%2Feproc%2Fexterno_controlador.php%3Facao%3DSSO%2Fcallback&client_id=eproc1g.tjsp.jus.br&scope=profile+openid',
 };
 
 // Histórico de valores da UFESP para referência

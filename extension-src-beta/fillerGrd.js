@@ -130,6 +130,8 @@
     preencherTexto('Ano do processo', c['Ano do processo']);
     preencherTexto('CPF ou CNPJ', c['CPF ou CNPJ']);
     preencherTexto('Depositante / remetente', c['Depositante / remetente']);
+    preencherTexto('Número', c['Número']);
+    preencherTexto('Complemento', c['Complemento']);
     preencherTexto('Nome do autor', c['Nome do autor']);
     preencherTexto('Nome do réu', c['Nome do réu']);
     // O CEP dispara uma busca assíncrona de endereço na própria página

@@ -29,7 +29,7 @@ export const conteudo = {
   },
 
   problema: {
-    destaque: 'Recurso deserto não tem apelação.',
+    destaque: 'Nunca mais utilize planilhas.',
     texto:
       'Uma guia de custas errada pode custar o processo inteiro. O JuriscalcSP elimina o risco de guias erradas e recursos desertos.',
   },
@@ -108,6 +108,21 @@ export const conteudo = {
     ],
   },
 
+  /**
+   * Depoimentos — PLACEHOLDER. Falas fictícias, no mesmo espírito do resto da
+   * copy provisória: o cliente substitui pelo texto real. Sem nome nem
+   * procedência de propósito — só o comentário.
+   */
+  avaliacoes: {
+    titulo: 'Quem usa, recomenda',
+    subtitulo: 'Advogados e escritórios que trocaram a planilha pelo JuriscalcSP.',
+    itens: [
+      '"Parei de recalcular tudo na mão antes de protocolar. O JuriscalcSP já entrega a guia certa."',
+      '"A correção monetária automática sozinha já paga a ferramenta. Sem planilha, sem índice defasado."',
+      '"Uso direto do painel lateral, ao lado do e-SAJ. Não perco mais tempo alternando de aba."',
+    ],
+  },
+
   /** Demonstração visual — números ilustrativos, não é cálculo real. */
   demonstracao: {
     titulo: 'Cada custa, discriminada',
@@ -132,5 +147,9 @@ export const conteudo = {
   rodape: {
     mencoes: ['TJSP', 'e-SAJ', 'EPROC'],
     direitos: '© 2026 JuriscalcSP. Todos os direitos reservados.',
+    links: [
+      { rotulo: 'Termos de Uso', href: '/termos/' },
+      { rotulo: 'Política de Privacidade', href: '/privacidade/' },
+    ],
   },
 } as const;

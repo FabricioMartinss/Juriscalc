@@ -905,7 +905,7 @@ export default function WizardCalculator({
   const [peticionamentoAno, setPeticionamentoAno] = useState<'24' | '23'>('24'); // '24' = A partir de 03/01/2024
   
   // Dynamic Option inputs values
-  const [vCausaStr, setVCausaStr] = useState<string>('150000.00');
+  const [vCausaStr, setVCausaStr] = useState<string>('0.00');
   const [vSatisfacaoStr, setVSatisfacaoStr] = useState<string>('0.00');
   const [vCreditoStr, setVCreditoStr] = useState<string>('0.00');
   const [vCondenacaoStr, setVCondenacaoStr] = useState<string>('0.00');
@@ -942,13 +942,18 @@ export default function WizardCalculator({
   const epASimulated = eprocCorrectionMode === 'estimated';
 
   // Dedicated states for Inline Cause Correction (e-SAJ)
-  const [causaDataInicial, setCausaDataInicial] = useState<string>('01/2024');
-  const [causaDataFinal, setCausaDataFinal] = useState<string>('05/2026');
+  //
+  // Datas ficam em branco de propósito: um valor pré-preenchido aqui passava
+  // despercebido e saía errado na guia. O cálculo tem um fallback interno
+  // (ver `parseMesAno`) para não quebrar enquanto o campo estiver vazio.
+  const [causaDataInicial, setCausaDataInicial] = useState<string>('');
+  const [causaDataFinal, setCausaDataFinal] = useState<string>('');
   const [causaTabela, setCausaTabela] = useState<string>('padrao');
 
-  // Dedicated states for Inline Condemn Correction (e-SAJ)
-  const [condenacaoDataInicial, setCondenacaoDataInicial] = useState<string>('01/2024');
-  const [condenacaoDataFinal, setCondenacaoDataFinal] = useState<string>('05/2026');
+  // Dedicated states for Inline Condemn Correction (e-SAJ) — mesmo motivo do
+  // bloco de cima.
+  const [condenacaoDataInicial, setCondenacaoDataInicial] = useState<string>('');
+  const [condenacaoDataFinal, setCondenacaoDataFinal] = useState<string>('');
   const [condenacaoTabela, setCondenacaoTabela] = useState<string>('padrao');
 
   // Eproc B states
@@ -990,7 +995,7 @@ export default function WizardCalculator({
   // nenhum — a lista só carrega depois que a Comarca é confirmada com um
   // clique de verdade no site, então fica só de lembrete na tela.
   const [dadosGrd, setDadosGrd] = useState({
-    cep: '', nomeAutor: '', nomeReu: '', comarca: '', varaJudicial: '',
+    cep: '', nomeAutor: '', nomeReu: '', comarca: '', varaJudicial: '', numero: '', complemento: '',
   });
 
   // Dados extras só usados na emissão automática da FEDTJ (BETA).
@@ -1666,6 +1671,8 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
         'Depositante / remetente': dadosEmissao.nome,
         'Cep': dadosGrd.cep,
         'Endereço do depositante / remetente': dadosEmissao.endereco,
+        'Número': dadosGrd.numero,
+        'Complemento': dadosGrd.complemento,
         'Município': municipioOficial,
         'UF': 'SP',
         'Nome do autor': dadosGrd.nomeAutor,
@@ -2054,6 +2061,18 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                             value={dadosGrd.cep}
                             onChange={(e) => setDadosGrd((d) => ({ ...d, cep: e.target.value }))}
                             placeholder="CEP"
+                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
+                          />
+                          <input
+                            value={dadosGrd.numero}
+                            onChange={(e) => setDadosGrd((d) => ({ ...d, numero: e.target.value }))}
+                            placeholder="Número"
+                            className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
+                          />
+                          <input
+                            value={dadosGrd.complemento}
+                            onChange={(e) => setDadosGrd((d) => ({ ...d, complemento: e.target.value }))}
+                            placeholder="Complemento (opcional)"
                             className="w-full bg-white/10 border border-white/10 rounded px-2 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400/60"
                           />
                           <div />
@@ -2863,6 +2882,45 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                     >
                       C) Fração Cliente
                     </button>
+                  </div>
+                </div>
+
+                {/* Acesso direto ao Eproc — são 3 sistemas distintos do TJSP (1º grau,
+                    2º grau e Colégio Recursal), cada um com seu próprio login. Facilita
+                    o acesso do advogado para emitir a guia complementar direto no
+                    tribunal, sem precisar procurar o endereço certo. */}
+                <div className="space-y-1.5 text-left border-t border-slate-100 pt-4">
+                  <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-0.5">
+                    Acessar o Eproc para emitir a guia complementar
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs font-bold font-sans">
+                    <a
+                      href={LINKS.EPROC_1_GRAU}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-between gap-1.5 p-2.5 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 transition-colors"
+                    >
+                      <span>1º Grau</span>
+                      <ExternalLink className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                    </a>
+                    <a
+                      href={LINKS.EPROC_2_GRAU}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-between gap-1.5 p-2.5 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 transition-colors"
+                    >
+                      <span>2º Grau</span>
+                      <ExternalLink className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                    </a>
+                    <a
+                      href={LINKS.EPROC_COLEGIO_RECURSAL}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-between gap-1.5 p-2.5 rounded bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 transition-colors"
+                    >
+                      <span>Colégio Recursal</span>
+                      <ExternalLink className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                    </a>
                   </div>
                 </div>
 

@@ -19,7 +19,7 @@ páginas que você visita nem seu histórico de navegação.
 A extensão não utiliza serviços de análise, rastreamento ou publicidade.
 
 ## Contato
-Dúvidas sobre esta política: (preencher com e-mail de contato da Camelsec).
+Dúvidas sobre esta política: juriscalcsp@gmail.com
 
 ---
 > Hospede este texto em uma URL pública (ex.: uma página no seu site ou um Gist do
