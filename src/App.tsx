@@ -4,12 +4,13 @@
  */
 
 import { useState } from 'react';
-import { Scale, HelpCircle, Chrome, Calculator, BookMarked, RefreshCw } from 'lucide-react';
+import { Scale, HelpCircle, Chrome, Calculator, BookMarked, RefreshCw, LogOut } from 'lucide-react';
 import WizardCalculator from './components/WizardCalculator';
 import IndexTableConsultant from './components/IndexTableConsultant';
 import CourtCostsReference from './components/CourtCostsReference';
 import ChromeExtensionTab from './components/ChromeExtensionTab';
 import { UFESP_2026 } from './data/tabelaPratica';
+import { useAuth } from './contexts/AuthContext';
 
 type Section = 'calculadora' | 'extensao' | 'referencias' | 'atualizador';
 
@@ -22,6 +23,7 @@ const NAV_ITEMS: { id: Section; label: string; icon: typeof Calculator; hint: st
 
 export default function App() {
   const [section, setSection] = useState<Section>('calculadora');
+  const { usuario, sair } = useAuth();
 
   return (
     <div
@@ -57,6 +59,22 @@ export default function App() {
               <span className="text-[10px] font-mono text-blue-200/70 uppercase tracking-wider">Reforma</span>
               <span className="font-semibold text-blue-100 text-xs">Lei nº 17.785/23</span>
             </div>
+            {usuario && (
+              <div className="flex items-center gap-2">
+                <span className="hidden sm:inline text-xs font-semibold text-blue-100 font-sans">
+                  {usuario.nome.split(' ')[0]}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void sair()}
+                  title="Sair da conta"
+                  className="flex items-center gap-1.5 py-1.5 px-3 bg-white/5 border border-white/10 rounded-2xl text-[11px] font-bold text-blue-200/70 hover:text-cyan-200 hover:border-cyan-400/30 cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  Sair
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
