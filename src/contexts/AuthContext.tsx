@@ -10,16 +10,16 @@ export interface Usuario {
   nome: string;
   email: string;
   telefone: string;
-  oabNumero: string;
-  oabUf: string;
+  oabNumero: string | null;
+  oabUf: string | null;
 }
 
 export interface CadastroInput {
   nome: string;
   email: string;
   telefone: string;
-  oabNumero: string;
-  oabUf: string;
+  oabNumero?: string;
+  oabUf?: string;
   senha: string;
 }
 

@@ -22,8 +22,8 @@ interface LinhaUsuario {
   nome: string;
   email: string;
   telefone: string;
-  oab_numero: string;
-  oab_uf: string;
+  oab_numero: string | null;
+  oab_uf: string | null;
 }
 
 function paraUsuarioPublico(linha: LinhaUsuario) {
@@ -47,10 +47,12 @@ authRouter.post(
       return;
     }
     const { nome, email, telefone, oabNumero, oabUf, senha } = corpo.data;
+    const oabNumeroValor = oabNumero ?? null;
+    const oabUfValor = oabUf ?? null;
 
     const existente = await pool.query(
       'SELECT 1 FROM usuarios WHERE email = $1 OR (oab_numero = $2 AND oab_uf = $3)',
-      [email, oabNumero, oabUf],
+      [email, oabNumeroValor, oabUfValor],
     );
     if (existente.rowCount) {
       res.status(409).json({ erro: 'Já existe uma conta com este email ou OAB.' });
@@ -63,7 +65,7 @@ authRouter.post(
       `INSERT INTO usuarios (nome, email, telefone, oab_numero, oab_uf, senha_hash)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, nome, email, telefone, oab_numero, oab_uf`,
-      [nome, email, telefone, oabNumero, oabUf, senhaHash],
+      [nome, email, telefone, oabNumeroValor, oabUfValor, senhaHash],
     );
     const usuario = resultado.rows[0];
     res.cookie(NOME_COOKIE, assinarSessao(usuario.id), opcoesCookie());

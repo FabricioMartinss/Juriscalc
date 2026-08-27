@@ -16,6 +16,7 @@ export default function CadastroPage() {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
+  const [temOab, setTemOab] = useState(true);
   const [oabNumero, setOabNumero] = useState('');
   const [oabUf, setOabUf] = useState('SP');
   const [senha, setSenha] = useState('');
@@ -34,7 +35,14 @@ export default function CadastroPage() {
 
     setEnviando(true);
     try {
-      await cadastrar({ nome, email, telefone, oabNumero, oabUf, senha });
+      await cadastrar({
+        nome,
+        email,
+        telefone,
+        oabNumero: temOab ? oabNumero : undefined,
+        oabUf: temOab ? oabUf : undefined,
+        senha,
+      });
       navigate('/app', { replace: true });
     } catch (err) {
       setErro(err instanceof Error ? err.message : 'Não foi possível concluir o cadastro.');
@@ -98,32 +106,46 @@ export default function CadastroPage() {
           />
         </label>
 
-        <div className="grid grid-cols-3 gap-2">
-          <label className="block text-sm col-span-2">
-            <span className="text-slate-600 font-semibold">Número da OAB</span>
+        <div className="text-sm">
+          <label className="flex items-center gap-2 text-slate-600 font-semibold cursor-pointer">
             <input
-              type="text"
-              required
-              value={oabNumero}
-              onChange={(e) => setOabNumero(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
+              type="checkbox"
+              checked={temOab}
+              onChange={(e) => setTemOab(e.target.checked)}
+              className="rounded border-slate-300 text-cyan-600 focus:ring-cyan-400 cursor-pointer"
             />
+            Tenho número da OAB
           </label>
-          <label className="block text-sm">
-            <span className="text-slate-600 font-semibold">UF</span>
-            <select
-              required
-              value={oabUf}
-              onChange={(e) => setOabUf(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
-            >
-              {ESTADOS_BR.map((estado) => (
-                <option key={estado.uf} value={estado.uf}>
-                  {estado.uf}
-                </option>
-              ))}
-            </select>
-          </label>
+
+          {temOab && (
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              <label className="block col-span-2">
+                <span className="text-slate-600 font-semibold">Número da OAB</span>
+                <input
+                  type="text"
+                  required={temOab}
+                  value={oabNumero}
+                  onChange={(e) => setOabNumero(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                />
+              </label>
+              <label className="block">
+                <span className="text-slate-600 font-semibold">UF</span>
+                <select
+                  required={temOab}
+                  value={oabUf}
+                  onChange={(e) => setOabUf(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                >
+                  {ESTADOS_BR.map((estado) => (
+                    <option key={estado.uf} value={estado.uf}>
+                      {estado.uf}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          )}
         </div>
 
         <label className="block text-sm">
