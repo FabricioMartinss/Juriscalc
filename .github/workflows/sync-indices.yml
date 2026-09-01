@@ -2,8 +2,8 @@ name: Sincronizar índices do TJSP
 
 # O GitHub só dispara `schedule` a partir do arquivo de workflow que estiver na
 # branch PADRÃO do repositório. Hoje a padrão é `New-UI` (a mesma de onde o
-# Netlify publica), então o agendamento roda. Se a branch padrão mudar, o cron
-# para de disparar até este arquivo chegar na nova padrão.
+# Cloudflare Pages publica), então o agendamento roda. Se a branch padrão
+# mudar, o cron para de disparar até este arquivo chegar na nova padrão.
 #
 # Requer, em Settings > Actions > General, a opção "Read and write permissions"
 # em Workflow permissions — sem ela o `git push` do job falha com 403.
@@ -18,9 +18,6 @@ on:
     # topo da hora, onde todo mundo agenda: as execuções atrasam muito e podem
     # ser descartadas. Era o que acontecia com o horário anterior ('0 11 * * *').
     - cron: '47 14 * * *'
-    # TEMPORÁRIO — segunda tentativa no mesmo dia, só para confirmar que o
-    # agendamento dispara de fato. Remover depois da confirmação.
-    - cron: '23 16 * * *'
   workflow_dispatch:
     inputs:
       branch:
