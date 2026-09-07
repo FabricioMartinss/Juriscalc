@@ -23,134 +23,24 @@ import {
 import { UFESP_2026, LINKS } from '../data/tabelaPratica';
 import { buscarIndiceOficial, getUltimoPeriodoDisponivel, TipoTabelaCorrecao } from '../data/tabelasOficiais';
 import { servicoPorValor, servicoPadrao, servicosDoEnquadramento, destinoDoDado, camposDoServico, opcoesDoCampo, temListaConhecida } from '../data/servicosPortal';
-import { MUNICIPIOS_SP } from '../data/municipiosSP';
+import {
+  soDigitos,
+  chaveMunicipio,
+  MUNICIPIO_POR_CHAVE,
+  CAMPOS_EMISSAO,
+  DADOS_EMISSAO_VAZIOS,
+} from '../lib/camposEmissao';
+import { apiExtensao, noPainelDaExtensao, useExtensaoPresente } from '../lib/extensaoBridge';
 
 // Constants
 const TARIFA_POSTAL_AR = 34.35; // Carta registrada unipaginada c/ AR digital — Prov. CSM nº 2.777/25 e 2.788/25 (TJSP, consulta 16/07/2026)
 
 // O mapeamento enquadramento -> serviço do portal vive em `data/servicosPortal.ts`,
 // junto dos identificadores reais do `<select>` e dos códigos de receita.
-
-/** APIs da extensão disponíveis quando o código roda dentro dela. */
-interface ApiExtensao {
-  runtime?: {
-    id?: string;
-    sendMessage(msg: unknown): void;
-  };
-  storage?: { local?: { set(itens: Record<string, unknown>): Promise<void> } };
-}
-
-function apiExtensao(): ApiExtensao | undefined {
-  return (globalThis as { chrome?: ApiExtensao }).chrome;
-}
-
-/**
- * true quando a calculadora está sendo exibida no painel lateral da extensão.
- *
- * Ali não existe a ponte `appbridge.js` — ela é content script e só roda nas
- * páginas do site. Em compensação, o painel tem acesso direto às APIs da
- * extensão, então a emissão sai sem intermediário.
- */
-function noPainelDaExtensao(): boolean {
-  return !!apiExtensao()?.runtime?.id;
-}
-
-// ---- Máscaras e validação dos campos de emissão automática ----
-function soDigitos(s: string): string {
-  return (s || '').replace(/\D/g, '');
-}
-// CPF (000.000.000-00) ou CNPJ (00.000.000/0000-00), conforme a quantidade de dígitos.
-function mascaraCpfCnpj(v: string): string {
-  const d = soDigitos(v).slice(0, 14);
-  if (d.length <= 11) {
-    let out = d.slice(0, 3);
-    if (d.length > 3) out += '.' + d.slice(3, 6);
-    if (d.length > 6) out += '.' + d.slice(6, 9);
-    if (d.length > 9) out += '-' + d.slice(9, 11);
-    return out;
-  }
-  let out = d.slice(0, 2) + '.' + d.slice(2, 5);
-  if (d.length > 5) out += '.' + d.slice(5, 8);
-  if (d.length > 8) out += '/' + d.slice(8, 12);
-  if (d.length > 12) out += '-' + d.slice(12, 14);
-  return out;
-}
-// Telefone (00) 0000-0000 ou (00) 00000-0000.
-function mascaraTelefone(v: string): string {
-  const d = soDigitos(v).slice(0, 11);
-  if (d.length === 0) return '';
-  let out = '(' + d.slice(0, 2);
-  if (d.length >= 3) {
-    const resto = d.slice(2);
-    out += ') ' + (resto.length > 4 ? resto.slice(0, resto.length - 4) + '-' + resto.slice(-4) : resto);
-  } else if (d.length === 2) {
-    out += ') ';
-  }
-  return out;
-}
-// Número do processo (CNJ): 0000000-00.0000.0.00.0000 (20 dígitos).
-function mascaraProcesso(v: string): string {
-  const d = soDigitos(v).slice(0, 20);
-  let out = d.slice(0, 7);
-  if (d.length > 7) out += '-' + d.slice(7, 9);
-  if (d.length > 9) out += '.' + d.slice(9, 13);
-  if (d.length > 13) out += '.' + d.slice(13, 14);
-  if (d.length > 14) out += '.' + d.slice(14, 16);
-  if (d.length > 16) out += '.' + d.slice(16, 20);
-  return out;
-}
-
-// Chave de comparação de município: reduz o nome a letras e números, para que
-// "sao jose do rio preto" ache "São José do Rio Preto".
 //
-// Descarta espaço e pontuação por completo, e não só os normaliza, porque oito
-// municípios têm apóstrofo no nome e ninguém digita "santa barbara d'oeste" —
-// digita "santa barbara doeste". Sem separador as duas formas viram a mesma
-// chave. Conferido: os 645 nomes continuam gerando 645 chaves distintas, então
-// nada é engolido pelo Map.
-//
-// É mais tolerante que o norm() do filler.js de propósito: aqui a entrada é
-// humana; lá os dois lados já são nomes oficiais.
-function chaveMunicipio(v: string): string {
-  return v
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .replace(/[^a-zA-Z0-9]+/g, '')
-    .toUpperCase();
-}
-const MUNICIPIO_POR_CHAVE = new Map(MUNICIPIOS_SP.map((m) => [chaveMunicipio(m), m]));
-
-type CampoEmissaoKey = 'cpf' | 'nome' | 'telefone' | 'endereco' | 'municipio' | 'processo';
-interface CampoEmissaoDef {
-  campo: CampoEmissaoKey;
-  label: string;
-  mask?: (v: string) => string;
-  valido: (v: string) => boolean;
-  numerico?: boolean;
-  maxLength?: number;
-  // Quando presente, o campo vira lista suspensa em vez de digitação. Só o
-  // município usa hoje, e é o que garante que o nome chegue à extensão exatamente
-  // como o portal escreve — ver o cabeçalho de data/municipiosSP.ts.
-  opcoes?: readonly string[];
-}
-const CAMPOS_EMISSAO: CampoEmissaoDef[] = [
-  { campo: 'cpf', label: 'CPF/CNPJ', mask: mascaraCpfCnpj, numerico: true, maxLength: 18,
-    valido: (v) => { const n = soDigitos(v).length; return n === 11 || n === 14; } },
-  { campo: 'nome', label: 'Nome', valido: (v) => v.trim().length >= 2 },
-  { campo: 'telefone', label: 'Telefone', mask: mascaraTelefone, numerico: true, maxLength: 16,
-    valido: (v) => { const n = soDigitos(v).length; return n === 10 || n === 11; } },
-  { campo: 'endereco', label: 'Endereço', valido: (v) => v.trim().length >= 3 },
-  // Aceita só nome que existe na lista: campo vazio ou meio preenchido trava o
-  // botão de emitir, em vez de mandar para o portal um município que não casa.
-  //
-  // Compara pela chave, não pelo texto: "leme" e "sao carlos" já valem, sem
-  // depender de o usuário ter clicado na sugestão. O nome oficial é resolvido
-  // na hora de montar os dados da guia.
-  { campo: 'municipio', label: 'Município', opcoes: MUNICIPIOS_SP,
-    valido: (v) => MUNICIPIO_POR_CHAVE.has(chaveMunicipio(v)) },
-  { campo: 'processo', label: 'Nº do Processo', mask: mascaraProcesso, numerico: true, maxLength: 25,
-    valido: (v) => soDigitos(v).length === 20 },
-];
+// Máscaras/validação dos campos de emissão e a ponte com a extensão vivem em
+// `lib/camposEmissao.ts` e `lib/extensaoBridge.ts` — compartilhados com o
+// formulário de revisão do upload de documento (UploadProcessoTab.tsx).
 
 // ===== Validação de campos de data (MM/AAAA) =====
 // Limite superior derivado das tabelas oficiais, para acompanhar atualizações.
@@ -952,11 +842,34 @@ export default function WizardCalculator({
   const [copiedGuia, setCopiedGuia] = useState<string | null>(null);
 
   // Emissão automática via extensão (autofill no Portal de Custas)
-  const [extPresente, setExtPresente] = useState<boolean>(false);
+  const extPresente = useExtensaoPresente();
   const [autofillEnviado, setAutofillEnviado] = useState<boolean>(false);
-  const [dadosEmissao, setDadosEmissao] = useState({
-    cpf: '', nome: '', telefone: '', endereco: '', municipio: '', processo: '',
-  });
+  const [dadosEmissao, setDadosEmissao] = useState(DADOS_EMISSAO_VAZIOS);
+  // Aviso de que os dados vieram de um documento enviado no site, não de
+  // digitação manual — some depois que o usuário interage com o formulário.
+  const [dadosImportados, setDadosImportados] = useState(false);
+
+  // Painel lateral: lê os dados que o site guardou via ponte JUDS_DADOS_PROCESSO
+  // (upload de documento + extração, ver UploadProcessoTab.tsx) e pré-preenche
+  // o formulário de emissão. Uso único — a chave é removida após a leitura,
+  // mesmo padrão do `guiaDados` em bridge.js. Não emite sozinho: só preenche,
+  // quem confere e clica em emitir continua sendo o usuário.
+  useEffect(() => {
+    if (!noPainelDaExtensao()) return;
+    const storage = apiExtensao()?.storage?.local;
+    if (!storage) return;
+    let cancelado = false;
+    void storage.get('dadosProcesso').then((r) => {
+      const dados = r?.dadosProcesso as Partial<typeof DADOS_EMISSAO_VAZIOS> | undefined;
+      if (!dados || cancelado) return;
+      setDadosEmissao((prev) => ({ ...prev, ...dados }));
+      setDadosImportados(true);
+      void storage.remove('dadosProcesso');
+    });
+    return () => {
+      cancelado = true;
+    };
+  }, []);
 
   // Campos que variam por serviço do portal (ver CAMPOS_POR_SERVICO). Ficam
   // separados de `dadosEmissao` porque as chaves são dinâmicas: dependem do
@@ -1360,24 +1273,6 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
     setTimeout(() => setCopiedGuia((cur) => (cur === id ? null : cur)), 2500);
   };
 
-  // Detecta a extensão JuriscalcSP (o content script anuncia 'JUDS_EXT_PRONTA').
-  // No painel lateral isso nunca chega: `appbridge.js` é content script e só roda
-  // nas páginas do site, não dentro da própria extensão. Lá a presença é certa.
-  useEffect(() => {
-    if (noPainelDaExtensao()) {
-      setExtPresente(true);
-      return;
-    }
-    const onMsg = (ev: MessageEvent) => {
-      if (ev.source === window && ev.data && ev.data.type === 'JUDS_EXT_PRONTA') {
-        setExtPresente(true);
-      }
-    };
-    window.addEventListener('message', onMsg);
-    window.postMessage({ type: 'JUDS_PING' }, '*'); // caso a extensão já esteja pronta
-    return () => window.removeEventListener('message', onMsg);
-  }, []);
-
   /**
    * Dados informados pelo usuário que vão para a guia.
    *
@@ -1572,6 +1467,12 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                     <p className="text-[10px] text-slate-400 leading-snug font-sans">
                       Preencha os dados abaixo e clique — a extensão abre o portal e preenche tudo. Você só confere e clica em Emitir.
                     </p>
+                    {dadosImportados && (
+                      <p className="text-[10px] text-amber-300 leading-snug font-sans font-semibold flex items-center gap-1.5">
+                        <FileText className="w-3 h-3 shrink-0" />
+                        Dados importados do documento enviado no site — confira antes de emitir.
+                      </p>
+                    )}
                     <div className="grid grid-cols-2 gap-2">
                       {CAMPOS_EMISSAO.map((c) => {
                         const valor = dadosEmissao[c.campo];
@@ -1604,9 +1505,10 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                                 aria-label={c.label}
                                 aria-invalid={invalido}
                                 placeholder={c.label}
-                                onChange={(e) =>
-                                  setDadosEmissao((d) => ({ ...d, [c.campo]: e.target.value }))
-                                }
+                                onChange={(e) => {
+                                  setDadosEmissao((d) => ({ ...d, [c.campo]: e.target.value }));
+                                  setDadosImportados(false);
+                                }}
                                 // Ao sair do campo, troca o que foi digitado pelo
                                 // nome oficial: quem digita "sao carlos" e não
                                 // clica na sugestão sairia com um valor que a
@@ -1639,6 +1541,7 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
                             onChange={(e) => {
                               const novo = c.mask ? c.mask(e.target.value) : e.target.value;
                               setDadosEmissao((d) => ({ ...d, [c.campo]: novo }));
+                              setDadosImportados(false);
                             }}
                             placeholder={c.label}
                             className={classe}

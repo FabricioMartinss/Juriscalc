@@ -4,18 +4,20 @@
  */
 
 import { useState } from 'react';
-import { Scale, HelpCircle, Chrome, Calculator, BookMarked, RefreshCw, LogOut } from 'lucide-react';
+import { Scale, HelpCircle, Chrome, Calculator, BookMarked, RefreshCw, LogOut, UploadCloud } from 'lucide-react';
 import WizardCalculator from './components/WizardCalculator';
 import IndexTableConsultant from './components/IndexTableConsultant';
 import CourtCostsReference from './components/CourtCostsReference';
 import ChromeExtensionTab from './components/ChromeExtensionTab';
+import UploadProcessoTab from './components/UploadProcessoTab';
 import { UFESP_2026 } from './data/tabelaPratica';
 import { useAuth } from './contexts/AuthContext';
 
-type Section = 'calculadora' | 'extensao' | 'referencias' | 'atualizador';
+type Section = 'calculadora' | 'importar' | 'extensao' | 'referencias' | 'atualizador';
 
 const NAV_ITEMS: { id: Section; label: string; icon: typeof Calculator; hint: string }[] = [
   { id: 'calculadora', label: 'Calculadora', icon: Calculator, hint: 'Auditoria de custas e preparos' },
+  { id: 'importar', label: 'Importar Processo', icon: UploadCloud, hint: 'Extrai dados de um PDF/imagem' },
   { id: 'extensao', label: 'Extensão', icon: Chrome, hint: 'Extensão para o Chrome' },
   { id: 'referencias', label: 'Tabelas SP', icon: BookMarked, hint: 'Tabelas oficiais do TJSP' },
   { id: 'atualizador', label: 'Atualizador', icon: RefreshCw, hint: 'Correção monetária' },
@@ -117,6 +119,11 @@ export default function App() {
         {/* Animated section content (smooth transition between sections) */}
         <div key={section} id="section-panel" className="animate-fadeSlideUp" role="tabpanel" aria-label={NAV_ITEMS.find((i) => i.id === section)?.label}>
           {section === 'calculadora' && <WizardCalculator />}
+          {section === 'importar' && (
+            <div className="max-w-2xl mx-auto">
+              <UploadProcessoTab />
+            </div>
+          )}
           {section === 'extensao' && (
             <div className="max-w-2xl mx-auto">
               <ChromeExtensionTab />

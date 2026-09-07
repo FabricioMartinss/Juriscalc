@@ -31,9 +31,10 @@ interface AuthContextValue {
   sair: () => Promise<void>;
 }
 
-// Em produção, configurada nas variáveis de ambiente do Netlify (build-time,
-// por isso VITE_ na frente). Sem ela, cai no backend local de desenvolvimento.
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
+// Em produção, configurada nas variáveis de ambiente do Cloudflare Pages
+// (build-time, por isso VITE_ na frente). Sem ela, cai no backend local de
+// desenvolvimento.
+export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 

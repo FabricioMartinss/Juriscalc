@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { authRouter } from './routes/auth.js';
+import { documentosRouter } from './routes/documentos.js';
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.get('/', (_req, res) => {
 });
 
 app.use('/api/auth', authRouter);
+app.use('/api/documentos', documentosRouter);
 
 // Rede de segurança: qualquer erro não tratado nas rotas (banco fora do ar,
 // etc.) cai aqui em vez de virar unhandled rejection e derrubar o processo.
