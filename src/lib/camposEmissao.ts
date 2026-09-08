@@ -75,6 +75,10 @@ export function chaveMunicipio(v: string): string {
     .toUpperCase();
 }
 
+// Mesmo normalizador, nome genérico — usado também para casar comarca e
+// classe processual (ver lib/processoNovo.ts) contra as listas do portal.
+export const chaveTexto = chaveMunicipio;
+
 export const MUNICIPIO_POR_CHAVE = new Map(MUNICIPIOS_SP.map((m) => [chaveMunicipio(m), m]));
 
 export type CampoEmissaoKey = 'cpf' | 'nome' | 'telefone' | 'endereco' | 'municipio' | 'processo';

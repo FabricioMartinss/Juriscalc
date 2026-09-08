@@ -14,8 +14,8 @@ export interface ApiExtensao {
   storage?: {
     local?: {
       set(itens: Record<string, unknown>): Promise<void>;
-      get(chave: string): Promise<Record<string, unknown>>;
-      remove(chave: string): Promise<void>;
+      get(chaves: string | string[]): Promise<Record<string, unknown>>;
+      remove(chaves: string | string[]): Promise<void>;
     };
   };
 }

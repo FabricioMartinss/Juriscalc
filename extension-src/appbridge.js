@@ -36,9 +36,13 @@
     // O app manda os dados extraídos de um documento (nome, cpf, telefone,
     // endereço, município, processo). Só guarda — quem preenche o formulário
     // é o próprio painel, ao abrir ou voltar o foco.
+    //
+    // `extras`, quando vem, são campos do bloco "processo novo" (comarca,
+    // foro, classe) já resolvidos para os ids do portal — só fazem efeito se
+    // o serviço escolhido no painel usar esses ids.
     if (d.type === 'JUDS_DADOS_PROCESSO' && d.dados) {
       try {
-        chrome.storage.local.set({ dadosProcesso: d.dados });
+        chrome.storage.local.set({ dadosProcesso: d.dados, extrasProcesso: d.extras || {} });
       } catch (e) {
         // extensão sem contexto (ex.: recarregada) — ignora silenciosamente
       }

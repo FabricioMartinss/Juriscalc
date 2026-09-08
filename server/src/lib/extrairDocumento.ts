@@ -23,6 +23,8 @@ export interface DadosProcessoExtraidos {
   endereco: string | null;
   municipio: string | null;
   processo: string | null;
+  comarca: string | null;
+  classeProcessual: string | null;
 }
 
 const NOME_FERRAMENTA = 'registrar_dados_processo';
@@ -58,8 +60,18 @@ const FERRAMENTA_EXTRACAO: Anthropic.Tool = {
         type: ['string', 'null'],
         description: 'Número do processo no formato CNJ (0000000-00.0000.0.00.0000).',
       },
+      comarca: {
+        type: ['string', 'null'],
+        description:
+          'Comarca paulista onde o processo tramita ou será distribuído (ex.: "Campinas"). Geralmente aparece no cabeçalho da petição, endereçada ao juízo daquela comarca.',
+      },
+      classeProcessual: {
+        type: ['string', 'null'],
+        description:
+          'Classe processual como escrita no documento (ex.: "Procedimento Comum Cível"). Só preencha se estiver explícita — não deduza a partir do tipo de ação.',
+      },
     },
-    required: ['nome', 'cpf', 'telefone', 'endereco', 'municipio', 'processo'],
+    required: ['nome', 'cpf', 'telefone', 'endereco', 'municipio', 'processo', 'comarca', 'classeProcessual'],
   },
 };
 
@@ -114,5 +126,7 @@ export async function extrairDadosProcesso(
     endereco: entrada.endereco ?? null,
     municipio: entrada.municipio ?? null,
     processo: entrada.processo ?? null,
+    comarca: entrada.comarca ?? null,
+    classeProcessual: entrada.classeProcessual ?? null,
   };
 }

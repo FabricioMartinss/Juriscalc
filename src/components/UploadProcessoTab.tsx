@@ -8,6 +8,9 @@ import { UploadCloud, FileText, ShieldCheck, Loader2, Send, RotateCcw, AlertTria
 import { API_URL } from '../contexts/AuthContext';
 import { CAMPOS_EMISSAO, DADOS_EMISSAO_VAZIOS, chaveMunicipio, MUNICIPIO_POR_CHAVE, type DadosEmissao } from '../lib/camposEmissao';
 import { useExtensaoPresente } from '../lib/extensaoBridge';
+import { resolverCamposProcessoNovo } from '../lib/processoNovo';
+import { COMARCAS_TJSP } from '../data/comarcasTJSP';
+import { CLASSES_TJSP } from '../data/classesTJSP';
 
 const TIPOS_ACEITOS = '.pdf,.jpg,.jpeg,.png';
 
@@ -21,6 +24,11 @@ export default function UploadProcessoTab() {
   const [erro, setErro] = useState<string | null>(null);
   const [nomeArquivo, setNomeArquivo] = useState<string>('');
   const [dados, setDados] = useState<DadosEmissao>(DADOS_EMISSAO_VAZIOS);
+  // Só usados por processos que abrem "processo novo" no portal (Petição
+  // Inicial, Execução de Título Extrajudicial, Ação Penal Privada - Inicial)
+  // — nos demais serviços a extensão simplesmente ignora, sem quebrar nada.
+  const [comarca, setComarca] = useState('');
+  const [classeProcessual, setClasseProcessual] = useState('');
   const [enviadoParaExtensao, setEnviadoParaExtensao] = useState(false);
 
   async function aoSelecionarArquivo(e: ChangeEvent<HTMLInputElement>) {
@@ -56,6 +64,8 @@ export default function UploadProcessoTab() {
         municipio: extraido.municipio ?? '',
         processo: extraido.processo ?? '',
       });
+      setComarca(extraido.comarca ?? '');
+      setClasseProcessual(extraido.classeProcessual ?? '');
       setEstado('revisando');
     } catch (err) {
       setErro(err instanceof Error ? err.message : 'Não foi possível extrair os dados do documento.');
@@ -68,6 +78,8 @@ export default function UploadProcessoTab() {
     setErro(null);
     setNomeArquivo('');
     setDados(DADOS_EMISSAO_VAZIOS);
+    setComarca('');
+    setClasseProcessual('');
     setEnviadoParaExtensao(false);
   }
 
@@ -78,7 +90,11 @@ export default function UploadProcessoTab() {
       // o texto lido do documento — é contra ele que o portal casa.
       municipio: MUNICIPIO_POR_CHAVE.get(chaveMunicipio(dados.municipio)) ?? dados.municipio,
     };
-    window.postMessage({ type: 'JUDS_DADOS_PROCESSO', dados: dadosResolvidos }, '*');
+    // Comarca/classe processual só valem para quem abrir Petição Inicial,
+    // Execução de Título Extrajudicial ou Ação Penal Privada no painel — a
+    // extensão ignora sem erro se o serviço escolhido não usar esses campos.
+    const extras = resolverCamposProcessoNovo({ comarca, classeProcessual });
+    window.postMessage({ type: 'JUDS_DADOS_PROCESSO', dados: dadosResolvidos, extras }, '*');
     setEnviadoParaExtensao(true);
     setTimeout(() => setEnviadoParaExtensao(false), 5000);
   }
@@ -207,6 +223,43 @@ export default function UploadProcessoTab() {
                 </label>
               );
             })}
+          </div>
+
+          <div>
+            <p className="text-[10px] text-slate-400 mb-2">
+              Só usados se você abrir Petição Inicial, Execução de Título Extrajudicial ou Ação Penal
+              Privada no painel — nos demais serviços, ficam sem efeito.
+            </p>
+            <div className="grid grid-cols-2 gap-2.5">
+              <label className="block text-[10px] font-semibold text-slate-500">
+                Comarca
+                <input
+                  list="upload-lista-comarca"
+                  value={comarca}
+                  onChange={(e) => setComarca(e.target.value)}
+                  className="w-full border rounded-lg px-2.5 py-1.5 text-xs mt-1 border-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                />
+                <datalist id="upload-lista-comarca">
+                  {COMARCAS_TJSP.map((c) => (
+                    <option key={c.valor} value={c.rotulo} />
+                  ))}
+                </datalist>
+              </label>
+              <label className="block text-[10px] font-semibold text-slate-500">
+                Classe processual
+                <input
+                  list="upload-lista-classe"
+                  value={classeProcessual}
+                  onChange={(e) => setClasseProcessual(e.target.value)}
+                  className="w-full border rounded-lg px-2.5 py-1.5 text-xs mt-1 border-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                />
+                <datalist id="upload-lista-classe">
+                  {CLASSES_TJSP.map((c) => (
+                    <option key={c.valor} value={c.rotulo} />
+                  ))}
+                </datalist>
+              </label>
+            </div>
           </div>
 
           {!extensaoPresente && (

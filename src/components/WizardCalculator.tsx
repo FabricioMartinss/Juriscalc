@@ -848,6 +848,11 @@ export default function WizardCalculator({
   // Aviso de que os dados vieram de um documento enviado no site, não de
   // digitação manual — some depois que o usuário interage com o formulário.
   const [dadosImportados, setDadosImportados] = useState(false);
+  // Campos extras (comarca/foro/classe) já resolvidos pro id do portal, vindos
+  // junto com dadosProcesso. Ficam à parte de `camposExtras` porque este é
+  // limpo toda vez que o serviço muda (ver useEffect de `servicoEscolhido`) —
+  // reaplicados abaixo sempre que o serviço atual passar a usar esses ids.
+  const [extrasImportados, setExtrasImportados] = useState<Record<string, string>>({});
 
   // Painel lateral: lê os dados que o site guardou via ponte JUDS_DADOS_PROCESSO
   // (upload de documento + extração, ver UploadProcessoTab.tsx) e pré-preenche
@@ -859,12 +864,18 @@ export default function WizardCalculator({
     const storage = apiExtensao()?.storage?.local;
     if (!storage) return;
     let cancelado = false;
-    void storage.get('dadosProcesso').then((r) => {
+    void storage.get(['dadosProcesso', 'extrasProcesso']).then((r) => {
       const dados = r?.dadosProcesso as Partial<typeof DADOS_EMISSAO_VAZIOS> | undefined;
-      if (!dados || cancelado) return;
-      setDadosEmissao((prev) => ({ ...prev, ...dados }));
-      setDadosImportados(true);
-      void storage.remove('dadosProcesso');
+      const extras = r?.extrasProcesso as Record<string, string> | undefined;
+      if (cancelado) return;
+      if (dados) {
+        setDadosEmissao((prev) => ({ ...prev, ...dados }));
+        setDadosImportados(true);
+      }
+      if (extras && Object.keys(extras).length > 0) {
+        setExtrasImportados(extras);
+      }
+      if (dados || extras) void storage.remove(['dadosProcesso', 'extrasProcesso']);
     });
     return () => {
       cancelado = true;
@@ -1322,6 +1333,27 @@ VALOR TOTAL GUIA BOLETO ÚNICO E-PROC: R$ ${
    * um destes, o campo some do formulário sozinho. Nada para lembrar de apagar.
    */
   const camposDoServicoAtual = camposDoServico(servicoAtual?.valor);
+
+  // Reaplica os extras importados (ver efeito de `dadosProcesso` acima) sempre
+  // que o serviço escolhido passar a usar aqueles ids — por exemplo, ao
+  // trocar de Reconvenção para Petição Inicial, que usa o mesmo bloco de
+  // comarca/foro/classe. Não sobrescreve o que o usuário já tiver digitado.
+  useEffect(() => {
+    if (Object.keys(extrasImportados).length === 0) return;
+    const idsDoServico = new Set(camposDoServicoAtual.map((c) => c.id));
+    setCamposExtras((prev) => {
+      let mudou = false;
+      const proximo = { ...prev };
+      for (const [id, valor] of Object.entries(extrasImportados)) {
+        if (idsDoServico.has(id) && !prev[id]) {
+          proximo[id] = valor;
+          mudou = true;
+        }
+      }
+      return mudou ? proximo : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [servicoAtual?.valor, extrasImportados]);
 
   /** Campos que o painel resolve sozinho, a partir do que já foi digitado. */
   const camposAutomaticos = camposDoServicoAtual.filter((c) => c.preencherCom);
