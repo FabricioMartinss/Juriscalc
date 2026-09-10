@@ -16,6 +16,19 @@ const TIPOS_ACEITOS = '.pdf,.jpg,.jpeg,.png';
 
 type Estado = 'ocioso' | 'enviando' | 'revisando' | 'erro';
 
+// Espelha o retorno de server/src/lib/extrairDocumento.ts (DadosProcessoExtraidos).
+interface DadosExtraidos {
+  pareceProcessoJudicial: boolean;
+  nome: string | null;
+  cpf: string | null;
+  telefone: string | null;
+  endereco: string | null;
+  municipio: string | null;
+  processo: string | null;
+  comarca: string | null;
+  classeProcessual: string | null;
+}
+
 export default function UploadProcessoTab() {
   const inputRef = useRef<HTMLInputElement>(null);
   const extensaoPresente = useExtensaoPresente();
@@ -55,7 +68,17 @@ export default function UploadProcessoTab() {
         throw new Error(corpo?.erro ?? 'Não foi possível extrair os dados do documento.');
       }
 
-      const extraido = corpo.dados as Record<string, string | null>;
+      const extraido = corpo.dados as DadosExtraidos;
+      // Porteiro do servidor (ver extrairDocumento.ts): arquivo que não é de
+      // processo judicial vem com tudo null. Não abre a revisão em branco —
+      // diz o que aconteceu, que é quase sempre arquivo trocado.
+      if (extraido.pareceProcessoJudicial === false) {
+        setErro(
+          'Este arquivo não parece ser um documento de processo (petição, decisão, guia). Confira se enviou o arquivo certo.',
+        );
+        setEstado('erro');
+        return;
+      }
       setDados({
         cpf: extraido.cpf ?? '',
         nome: extraido.nome ?? '',

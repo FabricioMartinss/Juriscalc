@@ -17,6 +17,12 @@ function cliente(): Anthropic {
 }
 
 export interface DadosProcessoExtraidos {
+  /**
+   * Porteiro: `false` quando o arquivo não é um documento de processo judicial
+   * (anotação, rascunho, contrato, e-mail, print). Nesse caso todos os demais
+   * campos saem `null` — ver o zeramento no fim de `extrairDadosProcesso`.
+   */
+  pareceProcessoJudicial: boolean;
   nome: string | null;
   cpf: string | null;
   telefone: string | null;
@@ -27,15 +33,31 @@ export interface DadosProcessoExtraidos {
   classeProcessual: string | null;
 }
 
+const CAMPOS_VAZIOS: Omit<DadosProcessoExtraidos, 'pareceProcessoJudicial'> = {
+  nome: null,
+  cpf: null,
+  telefone: null,
+  endereco: null,
+  municipio: null,
+  processo: null,
+  comarca: null,
+  classeProcessual: null,
+};
+
 const NOME_FERRAMENTA = 'registrar_dados_processo';
 
 const FERRAMENTA_EXTRACAO: Anthropic.Tool = {
   name: NOME_FERRAMENTA,
   description:
-    'Registra os dados de identificação encontrados no documento. Use null em qualquer campo que não apareça claramente no texto — nunca invente, deduza ou complete um dado.',
+    'Registra os dados de identificação encontrados no documento. Use null em qualquer campo que não apareça claramente no texto — nunca invente, deduza, complete nem transcreva valores de exemplo/placeholder.',
   input_schema: {
     type: 'object',
     properties: {
+      pareceProcessoJudicial: {
+        type: 'boolean',
+        description:
+          'true SOMENTE se o documento for uma peça, decisão, certidão, guia ou outro documento de um processo judicial brasileiro. false para qualquer outra coisa (anotações, rascunhos, listas de tarefas, contratos, e-mails, imagens sem conteúdo jurídico). Quando false, todos os demais campos devem ser null.',
+      },
       nome: {
         type: ['string', 'null'],
         description: 'Nome completo da parte principal (autor/requerente/exequente) do processo.',
@@ -71,7 +93,17 @@ const FERRAMENTA_EXTRACAO: Anthropic.Tool = {
           'Classe processual como escrita no documento (ex.: "Procedimento Comum Cível"). Só preencha se estiver explícita — não deduza a partir do tipo de ação.',
       },
     },
-    required: ['nome', 'cpf', 'telefone', 'endereco', 'municipio', 'processo', 'comarca', 'classeProcessual'],
+    required: [
+      'pareceProcessoJudicial',
+      'nome',
+      'cpf',
+      'telefone',
+      'endereco',
+      'municipio',
+      'processo',
+      'comarca',
+      'classeProcessual',
+    ],
   },
 };
 
@@ -100,7 +132,11 @@ export async function extrairDadosProcesso(
     model: modelo,
     max_tokens: 1024,
     system:
-      'Você extrai dados de identificação de documentos jurídicos brasileiros (petições, procurações, guias de custas) para preencher um formulário. Leia com atenção e registre, pela ferramenta, apenas o que está explicitamente escrito no documento.',
+      'Você extrai dados de identificação de documentos jurídicos brasileiros (petições, procurações, guias de custas) para preencher um formulário. Regras absolutas: ' +
+      '(1) registre APENAS o que está explicitamente escrito no documento — nunca invente, deduza, complete a partir do contexto nem transcreva valores de exemplo; ' +
+      '(2) na menor dúvida sobre um campo, use null — um formulário em branco é melhor que um dado errado; ' +
+      '(3) CPF/CNPJ ou número de processo com dígitos repetidos ou sequenciais (111.111.111-11, 444.444.444-44, 000...) é placeholder: use null; ' +
+      '(4) se o documento NÃO for de um processo judicial (é uma anotação, rascunho, lista de tarefas, contrato, e-mail, print de tela), marque pareceProcessoJudicial=false e deixe TODOS os outros campos null.',
     messages: [
       {
         role: 'user',
@@ -119,7 +155,16 @@ export async function extrairDadosProcesso(
   }
 
   const entrada = blocoUso.input as Partial<DadosProcessoExtraidos>;
+
+  // Porteiro: documento que não é de processo judicial não rende campo nenhum,
+  // por mais que o modelo tenha preenchido algum. Barreira dupla — o prompt já
+  // manda deixar tudo null nesse caso, isto aqui garante mesmo que ele escorregue.
+  if (entrada.pareceProcessoJudicial !== true) {
+    return { pareceProcessoJudicial: false, ...CAMPOS_VAZIOS };
+  }
+
   return {
+    pareceProcessoJudicial: true,
     nome: entrada.nome ?? null,
     cpf: entrada.cpf ?? null,
     telefone: entrada.telefone ?? null,
