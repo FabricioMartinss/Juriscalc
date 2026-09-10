@@ -23,6 +23,29 @@ export const IDS_PROCESSO_NOVO = {
 const COMARCA_POR_CHAVE = new Map(COMARCAS_TJSP.map((c) => [chaveTexto(c.rotulo), c.valor]));
 const CLASSE_POR_CHAVE = new Map(CLASSES_TJSP.map((c) => [chaveTexto(c.rotulo), c.valor]));
 
+/**
+ * Casa a classe processual contra a lista do portal (`cmb_classe`).
+ *
+ * A tabela do CNJ e o `<select>` do portal nem sempre escrevem a classe igual.
+ * O caso que mais aparece: o cabeçalho da petição traz "Procedimento Comum
+ * Cível" (nome da tabela CNJ, e o exemplo que o próprio prompt de extração dá),
+ * enquanto o portal lista só "Procedimento Comum". Quando o texto não casa
+ * exato, tenta de novo sem o sufixo de competência ("Cível"/"Criminal") no
+ * fim — só nesse sentido, porque tirar um sufixo que o portal não usa é seguro,
+ * mas acrescentar um que ele usa escolheria "Cível" ou "Criminal" no chute.
+ */
+function resolverClasse(texto: string): string | undefined {
+  const chave = chaveTexto(texto);
+  const exato = CLASSE_POR_CHAVE.get(chave);
+  if (exato) return exato;
+
+  const semCompetencia = chave.replace(/(?:CIVEL|CRIMINAL)$/, '');
+  if (semCompetencia !== chave && semCompetencia.length >= 4) {
+    return CLASSE_POR_CHAVE.get(semCompetencia);
+  }
+  return undefined;
+}
+
 export interface DadosProcessoNovo {
   comarca?: string | null;
   classeProcessual?: string | null;
@@ -51,9 +74,7 @@ export function resolverCamposProcessoNovo(dados: DadosProcessoNovo): Record<str
     }
   }
 
-  const classeValor = dados.classeProcessual
-    ? CLASSE_POR_CHAVE.get(chaveTexto(dados.classeProcessual))
-    : undefined;
+  const classeValor = dados.classeProcessual ? resolverClasse(dados.classeProcessual) : undefined;
   if (classeValor) {
     extras[IDS_PROCESSO_NOVO.classe] = classeValor;
   }
