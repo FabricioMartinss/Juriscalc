@@ -100,7 +100,7 @@ const FERRAMENTA_EXTRACAO: Anthropic.Tool = {
       comarca: {
         type: ['string', 'null'],
         description:
-          'Comarca paulista onde o processo tramita ou será distribuído (ex.: "Campinas"). Geralmente aparece no cabeçalho da petição, endereçada ao juízo daquela comarca.',
+          'Comarca paulista onde o processo tramita ou será distribuído, pelo NOME DO MUNICÍPIO (ex.: "Campinas", "São Paulo"). Geralmente aparece no cabeçalho da petição. Se o documento disser "Comarca da Capital", registre "São Paulo".',
       },
       classeProcessual: {
         type: ['string', 'null'],

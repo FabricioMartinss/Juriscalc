@@ -30,6 +30,33 @@ export const IDS_PROCESSO_NOVO = {
 } as const;
 
 const COMARCA_POR_CHAVE = new Map(COMARCAS_TJSP.map((c) => [chaveTexto(c.rotulo), c.valor]));
+
+// Como as petições de São Paulo costumam escrever a comarca. A lista do portal
+// só tem "São Paulo"; "Capital" / "Comarca da Capital" / "Foro Central" no
+// endereçamento significam a mesma comarca.
+const SP_VALOR = COMARCA_POR_CHAVE.get(chaveTexto('São Paulo'));
+const COMARCA_ALIAS: Record<string, string | undefined> = {
+  CAPITAL: SP_VALOR,
+  COMARCADACAPITAL: SP_VALOR,
+  SAOPAULOCAPITAL: SP_VALOR,
+};
+
+function resolverComarca(texto: string): string | undefined {
+  const chave = chaveTexto(texto);
+  return COMARCA_POR_CHAVE.get(chave) ?? COMARCA_ALIAS[chave];
+}
+
+const COMARCA_ROTULO_POR_VALOR = new Map(COMARCAS_TJSP.map((c) => [c.valor, c.rotulo]));
+
+/**
+ * Nome oficial da comarca a partir do texto lido/digitado, resolvendo apelidos
+ * ("Capital" → "São Paulo"). Devolve o texto original se não reconhecer — a
+ * tela de revisão usa isto para mostrar o nome que o portal espera.
+ */
+export function canonizarComarca(texto: string): string {
+  const valor = resolverComarca(texto);
+  return valor ? COMARCA_ROTULO_POR_VALOR.get(valor) ?? texto : texto;
+}
 const CLASSE_POR_CHAVE = new Map(CLASSES_TJSP.map((c) => [chaveTexto(c.rotulo), c.valor]));
 const FORO_ROTULO_POR_VALOR = new Map(FOROS_TJSP.map((f) => [f.valor, f.rotulo]));
 
@@ -175,7 +202,7 @@ export interface DadosProcessoNovo {
 export function resolverCamposProcessoNovo(dados: DadosProcessoNovo): Record<string, string> {
   const extras: Record<string, string> = {};
 
-  const comarcaValor = dados.comarca ? COMARCA_POR_CHAVE.get(chaveTexto(dados.comarca)) : undefined;
+  const comarcaValor = dados.comarca ? resolverComarca(dados.comarca) : undefined;
   if (comarcaValor) {
     extras[IDS_PROCESSO_NOVO.comarca] = comarcaValor;
 

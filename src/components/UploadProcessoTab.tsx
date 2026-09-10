@@ -6,15 +6,27 @@
 import { useRef, useState, type ChangeEvent } from 'react';
 import { UploadCloud, FileText, ShieldCheck, Loader2, Send, RotateCcw, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { API_URL } from '../contexts/AuthContext';
-import { CAMPOS_EMISSAO, DADOS_EMISSAO_VAZIOS, chaveMunicipio, MUNICIPIO_POR_CHAVE, type DadosEmissao } from '../lib/camposEmissao';
+import {
+  CAMPOS_EMISSAO,
+  DADOS_EMISSAO_VAZIOS,
+  chaveMunicipio,
+  chaveTexto,
+  mascaraCpfCnpj,
+  MUNICIPIO_POR_CHAVE,
+  type DadosEmissao,
+} from '../lib/camposEmissao';
 import { useExtensaoPresente } from '../lib/extensaoBridge';
-import { resolverCamposProcessoNovo } from '../lib/processoNovo';
+import { canonizarComarca, resolverCamposProcessoNovo } from '../lib/processoNovo';
 import { COMARCAS_TJSP } from '../data/comarcasTJSP';
 import { CLASSES_TJSP } from '../data/classesTJSP';
+import { FOROS_TJSP } from '../data/forosTJSP';
+import { FOROS_POR_COMARCA } from '../data/forosPorComarca';
 
 const TIPOS_ACEITOS = '.pdf,.jpg,.jpeg,.png';
 
 type Estado = 'ocioso' | 'enviando' | 'revisando' | 'erro';
+type Instancia = 'primeira' | 'segunda';
+type Participacao = '' | 'autor' | 'reu';
 
 // Espelha o retorno de server/src/lib/extrairDocumento.ts (DadosProcessoExtraidos).
 interface DadosExtraidos {
@@ -27,6 +39,25 @@ interface DadosExtraidos {
   processo: string | null;
   comarca: string | null;
   classeProcessual: string | null;
+  foro: string | null;
+  instancia: Instancia | null;
+  participacaoParte: 'autor' | 'reu' | null;
+  comarcaOrigem: string | null;
+  valorCausa: string | null;
+}
+
+const campoCls =
+  'w-full border rounded-lg px-2.5 py-1.5 text-xs mt-1 border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-cyan-400';
+
+const COMARCA_VALOR_POR_CHAVE = new Map(COMARCAS_TJSP.map((c) => [chaveTexto(c.rotulo), c.valor]));
+const FORO_ROTULO_POR_VALOR = new Map(FOROS_TJSP.map((f) => [f.valor, f.rotulo]));
+
+/** Rótulos de foro da comarca digitada — só eles carregam no portal. Comarca não resolvida → lista completa. */
+function forosDaComarca(comarcaTexto: string): string[] {
+  const valor = COMARCA_VALOR_POR_CHAVE.get(chaveTexto(comarcaTexto));
+  const ids = valor ? FOROS_POR_COMARCA[valor] : undefined;
+  if (!ids) return FOROS_TJSP.map((f) => f.rotulo);
+  return ids.map((id) => FORO_ROTULO_POR_VALOR.get(id) ?? '').filter(Boolean);
 }
 
 export default function UploadProcessoTab() {
@@ -42,6 +73,17 @@ export default function UploadProcessoTab() {
   // — nos demais serviços a extensão simplesmente ignora, sem quebrar nada.
   const [comarca, setComarca] = useState('');
   const [classeProcessual, setClasseProcessual] = useState('');
+  const [foro, setForo] = useState('');
+  const [instancia, setInstancia] = useState<Instancia>('primeira');
+  const [participacao, setParticipacao] = useState<Participacao>('');
+  const [parteNome, setParteNome] = useState('');
+  const [parteCpf, setParteCpf] = useState('');
+  // Só carta precatória/de ordem de outro tribunal — só aparece se a extração
+  // detectar o caso.
+  const [comarcaOrigem, setComarcaOrigem] = useState('');
+  // Lido do documento só para conferência — não vai para a guia (o valor da
+  // guia vem da calculadora).
+  const [valorCausaDoc, setValorCausaDoc] = useState('');
   const [enviadoParaExtensao, setEnviadoParaExtensao] = useState(false);
 
   async function aoSelecionarArquivo(e: ChangeEvent<HTMLInputElement>) {
@@ -87,8 +129,17 @@ export default function UploadProcessoTab() {
         municipio: extraido.municipio ?? '',
         processo: extraido.processo ?? '',
       });
-      setComarca(extraido.comarca ?? '');
+      setComarca(extraido.comarca ? canonizarComarca(extraido.comarca) : '');
       setClasseProcessual(extraido.classeProcessual ?? '');
+      setForo(extraido.foro ?? '');
+      setInstancia(extraido.instancia ?? 'primeira');
+      setParticipacao(extraido.participacaoParte ?? '');
+      // A parte do processo costuma ser a mesma pessoa dos dados de emissão —
+      // já vem preenchida a partir do que foi extraído, editável.
+      setParteNome(extraido.nome ?? '');
+      setParteCpf(extraido.cpf ? mascaraCpfCnpj(extraido.cpf) : '');
+      setComarcaOrigem(extraido.comarcaOrigem ?? '');
+      setValorCausaDoc(extraido.valorCausa ?? '');
       setEstado('revisando');
     } catch (err) {
       setErro(err instanceof Error ? err.message : 'Não foi possível extrair os dados do documento.');
@@ -103,6 +154,13 @@ export default function UploadProcessoTab() {
     setDados(DADOS_EMISSAO_VAZIOS);
     setComarca('');
     setClasseProcessual('');
+    setForo('');
+    setInstancia('primeira');
+    setParticipacao('');
+    setParteNome('');
+    setParteCpf('');
+    setComarcaOrigem('');
+    setValorCausaDoc('');
     setEnviadoParaExtensao(false);
   }
 
@@ -113,16 +171,35 @@ export default function UploadProcessoTab() {
       // o texto lido do documento — é contra ele que o portal casa.
       municipio: MUNICIPIO_POR_CHAVE.get(chaveMunicipio(dados.municipio)) ?? dados.municipio,
     };
-    // Comarca/classe processual só valem para quem abrir Petição Inicial,
-    // Execução de Título Extrajudicial ou Ação Penal Privada no painel — a
-    // extensão ignora sem erro se o serviço escolhido não usar esses campos.
-    const extras = resolverCamposProcessoNovo({ comarca, classeProcessual });
+    // O bloco de processo novo (comarca, foro, classe, instância, partes) só
+    // vale para quem abrir Petição Inicial, Execução de Título Extrajudicial ou
+    // Ação Penal Privada no painel; comarcaOrigem, para as cartas. A extensão
+    // ignora sem erro os ids que o serviço escolhido não usa.
+    //
+    // `valorCausaDoc` fica de fora de propósito — é só conferência; o valor da
+    // guia vem da calculadora.
+    const extras = resolverCamposProcessoNovo({
+      comarca,
+      classeProcessual,
+      foro,
+      instancia,
+      participacaoParte: participacao || null,
+      parteNome,
+      parteCpf,
+      comarcaOrigem,
+    });
     window.postMessage({ type: 'JUDS_DADOS_PROCESSO', dados: dadosResolvidos, extras }, '*');
     setEnviadoParaExtensao(true);
     setTimeout(() => setEnviadoParaExtensao(false), 5000);
   }
 
-  const todosValidos = CAMPOS_EMISSAO.every((c) => c.valido(dados[c.campo]));
+  // Nº do processo é obrigatório na emissão normal, mas os três serviços de
+  // "processo novo" (Petição Inicial, Execução de Título Extrajudicial, Ação
+  // Penal Privada) começam um processo — não existe número ainda. Campo vazio
+  // aqui é válido; meio preenchido (1–19 dígitos) continua barrando.
+  const todosValidos = CAMPOS_EMISSAO.every((c) =>
+    c.campo === 'processo' && dados.processo === '' ? true : c.valido(dados[c.campo]),
+  );
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-5" id="upload-processo-tab-root">
@@ -260,7 +337,7 @@ export default function UploadProcessoTab() {
                   list="upload-lista-comarca"
                   value={comarca}
                   onChange={(e) => setComarca(e.target.value)}
-                  className="w-full border rounded-lg px-2.5 py-1.5 text-xs mt-1 border-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  className={campoCls}
                 />
                 <datalist id="upload-lista-comarca">
                   {COMARCAS_TJSP.map((c) => (
@@ -274,7 +351,7 @@ export default function UploadProcessoTab() {
                   list="upload-lista-classe"
                   value={classeProcessual}
                   onChange={(e) => setClasseProcessual(e.target.value)}
-                  className="w-full border rounded-lg px-2.5 py-1.5 text-xs mt-1 border-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  className={campoCls}
                 />
                 <datalist id="upload-lista-classe">
                   {CLASSES_TJSP.map((c) => (
@@ -282,7 +359,83 @@ export default function UploadProcessoTab() {
                   ))}
                 </datalist>
               </label>
+              <label className="block text-[10px] font-semibold text-slate-500 col-span-2">
+                Foro
+                <input
+                  list="upload-lista-foro"
+                  value={foro}
+                  onChange={(e) => setForo(e.target.value)}
+                  placeholder={comarca ? 'Foro da comarca acima' : 'Preencha a comarca primeiro'}
+                  className={campoCls}
+                />
+                <datalist id="upload-lista-foro">
+                  {forosDaComarca(comarca).map((r) => (
+                    <option key={r} value={r} />
+                  ))}
+                </datalist>
+              </label>
+              <label className="block text-[10px] font-semibold text-slate-500">
+                Instância
+                <select
+                  value={instancia}
+                  onChange={(e) => setInstancia(e.target.value as Instancia)}
+                  className={campoCls}
+                >
+                  <option value="primeira">Primeira Instância</option>
+                  <option value="segunda">Segunda Instância</option>
+                </select>
+              </label>
+              <label className="block text-[10px] font-semibold text-slate-500">
+                Participação da parte
+                <select
+                  value={participacao}
+                  onChange={(e) => setParticipacao(e.target.value as Participacao)}
+                  className={campoCls}
+                >
+                  <option value="">—</option>
+                  <option value="autor">Autor</option>
+                  <option value="reu">Réu</option>
+                </select>
+              </label>
+              <label className="block text-[10px] font-semibold text-slate-500 col-span-2">
+                Nome da parte
+                <input
+                  value={parteNome}
+                  onChange={(e) => setParteNome(e.target.value)}
+                  className={campoCls}
+                />
+              </label>
+              <label className="block text-[10px] font-semibold text-slate-500">
+                CPF/CNPJ da parte
+                <input
+                  value={parteCpf}
+                  inputMode="numeric"
+                  maxLength={18}
+                  onChange={(e) => setParteCpf(mascaraCpfCnpj(e.target.value))}
+                  className={campoCls}
+                />
+              </label>
+              {comarcaOrigem && (
+                <label className="block text-[10px] font-semibold text-slate-500">
+                  Comarca de origem (carta)
+                  <input
+                    value={comarcaOrigem}
+                    onChange={(e) => setComarcaOrigem(e.target.value)}
+                    className={campoCls}
+                  />
+                </label>
+              )}
             </div>
+
+            {valorCausaDoc && (
+              <p className="text-[10px] text-slate-500 mt-2 flex items-start gap-1.5">
+                <FileText className="w-3 h-3 shrink-0 mt-0.5 text-slate-400" />
+                <span>
+                  Valor da causa no documento: <strong className="text-slate-700">R$ {valorCausaDoc}</strong>. Só
+                  para conferência — o valor da guia sai da calculadora.
+                </span>
+              </p>
+            )}
           </div>
 
           {!extensaoPresente && (

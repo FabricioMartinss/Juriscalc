@@ -7,7 +7,7 @@
  * três serviços de processo novo do portal; (2) casos de resolução de comarca,
  * foro, classe, instância, participação e parte batem com o esperado.
  */
-import { resolverCamposProcessoNovo, IDS_PROCESSO_NOVO } from '../src/lib/processoNovo';
+import { resolverCamposProcessoNovo, canonizarComarca, IDS_PROCESSO_NOVO } from '../src/lib/processoNovo';
 import { camposDoServico } from '../src/data/servicosPortal';
 
 let erros = 0;
@@ -41,6 +41,9 @@ const casos: Caso[] = [
   ['comarca de foro único resolve o foro sozinha',
     { comarca: 'Adamantina' },
     { cmb_comarca1_ativa_alocacao: '5594', cmb_foro1_ativo_alocacao: '5595' }],
+  ['apelido "Capital" resolve para a comarca de São Paulo',
+    { comarca: 'Capital', foro: 'Foro Regional de Santo Amaro' },
+    { cmb_comarca1_ativa_alocacao: '9787', cmb_foro1_ativo_alocacao: '9853' }],
   ['foro do documento, comarca multi-foro, match por palavra distintiva',
     { comarca: 'São Paulo', foro: 'Foro Regional de Santo Amaro' },
     { cmb_comarca1_ativa_alocacao: '9787', cmb_foro1_ativo_alocacao: '9853' }],
@@ -74,6 +77,20 @@ for (const [nome, entrada, esperado] of casos) {
   for (const k of chaves) if ((esperado[k] ?? undefined) !== (obtido[k] ?? undefined)) bom = false;
   if (bom) console.log(`  ok  ${nome}`);
   else falhar(`${nome}\n    esperado ${JSON.stringify(esperado)}\n    obtido   ${JSON.stringify(obtido)}`);
+}
+
+// 3. canonizarComarca resolve apelidos, mantém o resto.
+console.log('\ncanonizarComarca:');
+for (const [entrada, esperado] of [
+  // "SÃO PAULO" é a grafia do próprio <select> do portal (comarcasTJSP.ts).
+  ['Capital', 'SÃO PAULO'],
+  ['COMARCA DA CAPITAL', 'SÃO PAULO'],
+  ['Campinas', 'Campinas'],
+  ['Xanadu', 'Xanadu'],
+] as const) {
+  const got = canonizarComarca(entrada);
+  if (got === esperado) console.log(`  ok  "${entrada}" -> "${got}"`);
+  else falhar(`canonizarComarca("${entrada}") = "${got}", esperava "${esperado}"`);
 }
 
 console.log(`\n${erros === 0 ? 'OK' : erros + ' erro(s)'}`);
