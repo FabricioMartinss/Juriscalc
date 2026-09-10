@@ -13,7 +13,8 @@
     "sync:indices": "node scripts/sync-indices.mjs",
     "sync:indices:check": "node scripts/sync-indices.mjs --check",
     "check:campos": "tsx scripts/check-campos-servico.mts",
-    "check:cobertura": "tsx scripts/check-cobertura.mts"
+    "check:cobertura": "tsx scripts/check-cobertura.mts",
+    "check:processo-novo": "tsx scripts/check-processo-novo.mts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
