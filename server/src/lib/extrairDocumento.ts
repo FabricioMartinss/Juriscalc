@@ -31,6 +31,16 @@ export interface DadosProcessoExtraidos {
   processo: string | null;
   comarca: string | null;
   classeProcessual: string | null;
+  /** Foro/vara do TJSP no cabeçalho ("Foro Central Cível", "Foro de Adamantina"). */
+  foro: string | null;
+  /** 'primeira' | 'segunda' — instância do ato. */
+  instancia: 'primeira' | 'segunda' | null;
+  /** Polo da parte principal: 'autor' | 'reu' (com sinônimos resolvidos pelo modelo). */
+  participacaoParte: 'autor' | 'reu' | null;
+  /** Só para carta precatória/de ordem vinda de outro tribunal. */
+  comarcaOrigem: string | null;
+  /** Valor da causa como escrito no documento (ex.: "150.000,00"). Só conferência — não vai para a guia. */
+  valorCausa: string | null;
 }
 
 const CAMPOS_VAZIOS: Omit<DadosProcessoExtraidos, 'pareceProcessoJudicial'> = {
@@ -42,6 +52,11 @@ const CAMPOS_VAZIOS: Omit<DadosProcessoExtraidos, 'pareceProcessoJudicial'> = {
   processo: null,
   comarca: null,
   classeProcessual: null,
+  foro: null,
+  instancia: null,
+  participacaoParte: null,
+  comarcaOrigem: null,
+  valorCausa: null,
 };
 
 const NOME_FERRAMENTA = 'registrar_dados_processo';
@@ -92,6 +107,33 @@ const FERRAMENTA_EXTRACAO: Anthropic.Tool = {
         description:
           'Classe processual como escrita no documento (ex.: "Procedimento Comum Cível"). Só preencha se estiver explícita — não deduza a partir do tipo de ação.',
       },
+      foro: {
+        type: ['string', 'null'],
+        description:
+          'O FORO do TJSP onde o processo tramita ou será distribuído, como no cabeçalho (ex.: "Foro Central Cível", "Foro Regional de Santo Amaro", "Foro de Adamantina"). NÃO é a vara/ofício ("3ª Vara Cível", "2º Ofício") — se só a vara aparecer e o foro não, deixe null.',
+      },
+      instancia: {
+        type: ['string', 'null'],
+        enum: ['primeira', 'segunda', null],
+        description:
+          'Instância do ato: "primeira" para petição inicial, execução de título extrajudicial e ação penal privada; "segunda" para recursos e preparos julgados em 2º grau. Só preencha se o documento deixar claro.',
+      },
+      participacaoParte: {
+        type: ['string', 'null'],
+        enum: ['autor', 'reu', null],
+        description:
+          'Polo da parte principal (a de `nome`) no processo. "autor" cobre autor, requerente, exequente, reclamante, querelante, recorrente, agravante, apelante, impetrante, embargante. "reu" cobre réu, requerido, executado, reclamado, querelado, recorrido, agravado, apelado. Só preencha se estiver claro no documento.',
+      },
+      comarcaOrigem: {
+        type: ['string', 'null'],
+        description:
+          'Somente quando o documento for uma carta precatória ou carta de ordem vinda de OUTRO tribunal: a comarca/seção judiciária de origem da carta. Caso contrário, null.',
+      },
+      valorCausa: {
+        type: ['string', 'null'],
+        description:
+          'Valor da causa como escrito no documento, só os números com separadores (ex.: "150.000,00"). Aparece em "dá-se à causa o valor de R$...". Só o que estiver explícito.',
+      },
     },
     required: [
       'pareceProcessoJudicial',
@@ -103,6 +145,11 @@ const FERRAMENTA_EXTRACAO: Anthropic.Tool = {
       'processo',
       'comarca',
       'classeProcessual',
+      'foro',
+      'instancia',
+      'participacaoParte',
+      'comarcaOrigem',
+      'valorCausa',
     ],
   },
 };
@@ -135,8 +182,9 @@ export async function extrairDadosProcesso(
       'Você extrai dados de identificação de documentos jurídicos brasileiros (petições, procurações, guias de custas) para preencher um formulário. Regras absolutas: ' +
       '(1) registre APENAS o que está explicitamente escrito no documento — nunca invente, deduza, complete a partir do contexto nem transcreva valores de exemplo; ' +
       '(2) na menor dúvida sobre um campo, use null — um formulário em branco é melhor que um dado errado; ' +
-      '(3) CPF/CNPJ ou número de processo com dígitos repetidos ou sequenciais (111.111.111-11, 444.444.444-44, 000...) é placeholder: use null; ' +
-      '(4) se o documento NÃO for de um processo judicial (é uma anotação, rascunho, lista de tarefas, contrato, e-mail, print de tela), marque pareceProcessoJudicial=false e deixe TODOS os outros campos null.',
+      '(3) CPF/CNPJ, número de processo ou valor da causa com dígitos repetidos ou sequenciais (111.111.111-11, 444.444.444-44, 000...) é placeholder: use null; ' +
+      '(4) se o documento NÃO for de um processo judicial (é uma anotação, rascunho, lista de tarefas, contrato, e-mail, print de tela), marque pareceProcessoJudicial=false e deixe TODOS os outros campos null; ' +
+      '(5) o cabeçalho da petição costuma trazer, além da comarca, o FORO ("Foro Central Cível", "Foro de Campinas") e a qualificação das partes (nome, CPF, polo) — registre o que estiver escrito.',
     messages: [
       {
         role: 'user',
@@ -163,6 +211,10 @@ export async function extrairDadosProcesso(
     return { pareceProcessoJudicial: false, ...CAMPOS_VAZIOS };
   }
 
+  const instancia = entrada.instancia === 'primeira' || entrada.instancia === 'segunda' ? entrada.instancia : null;
+  const participacaoParte =
+    entrada.participacaoParte === 'autor' || entrada.participacaoParte === 'reu' ? entrada.participacaoParte : null;
+
   return {
     pareceProcessoJudicial: true,
     nome: entrada.nome ?? null,
@@ -173,5 +225,10 @@ export async function extrairDadosProcesso(
     processo: entrada.processo ?? null,
     comarca: entrada.comarca ?? null,
     classeProcessual: entrada.classeProcessual ?? null,
+    foro: entrada.foro ?? null,
+    instancia,
+    participacaoParte,
+    comarcaOrigem: entrada.comarcaOrigem ?? null,
+    valorCausa: entrada.valorCausa ?? null,
   };
 }
