@@ -4,17 +4,22 @@
  */
 
 import { useState } from 'react';
-import { Scale, HelpCircle, Chrome, Calculator, BookMarked, RefreshCw, LogOut, UploadCloud } from 'lucide-react';
+import { Scale, HelpCircle, Chrome, Calculator, BookMarked, RefreshCw, LogOut, UploadCloud, User } from 'lucide-react';
 import WizardCalculator from './components/WizardCalculator';
 import IndexTableConsultant from './components/IndexTableConsultant';
 import CourtCostsReference from './components/CourtCostsReference';
 import ChromeExtensionTab from './components/ChromeExtensionTab';
 import UploadProcessoTab from './components/UploadProcessoTab';
+import PerfilTab from './components/PerfilTab';
 import { UFESP_2026 } from './data/tabelaPratica';
 import { useAuth } from './contexts/AuthContext';
 
-type Section = 'calculadora' | 'importar' | 'extensao' | 'referencias' | 'atualizador';
+type Section = 'calculadora' | 'importar' | 'extensao' | 'referencias' | 'atualizador' | 'perfil';
 
+// "Perfil" fica fora desta lista de propósito — não é uma seção de trabalho
+// como as outras, é a conta do usuário. Acesso pelo ícone no canto superior
+// direito do cabeçalho, junto do nome e do "Sair" (padrão da maioria dos
+// sites), não como mais uma aba na navegação principal.
 const NAV_ITEMS: { id: Section; label: string; icon: typeof Calculator; hint: string }[] = [
   { id: 'calculadora', label: 'Calculadora', icon: Calculator, hint: 'Auditoria de custas e preparos' },
   { id: 'importar', label: 'Importar Processo', icon: UploadCloud, hint: 'Extrai dados de um PDF/imagem' },
@@ -68,6 +73,20 @@ export default function App() {
                 </span>
                 <button
                   type="button"
+                  onClick={() => setSection('perfil')}
+                  title="Meu perfil"
+                  aria-label="Meu perfil"
+                  aria-pressed={section === 'perfil'}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center border cursor-pointer ${
+                    section === 'perfil'
+                      ? 'bg-cyan-400 border-cyan-400 text-[#0b2545]'
+                      : 'bg-white/5 border-white/10 text-blue-200/70 hover:text-cyan-200 hover:border-cyan-400/30'
+                  }`}
+                >
+                  <User className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
                   onClick={() => void sair()}
                   title="Sair da conta"
                   className="flex items-center gap-1.5 py-1.5 px-3 bg-white/5 border border-white/10 rounded-2xl text-[11px] font-bold text-blue-200/70 hover:text-cyan-200 hover:border-cyan-400/30 cursor-pointer"
@@ -117,7 +136,13 @@ export default function App() {
       {/* ===== Main Workspace ===== */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 md:p-8" id="app-main">
         {/* Animated section content (smooth transition between sections) */}
-        <div key={section} id="section-panel" className="animate-fadeSlideUp" role="tabpanel" aria-label={NAV_ITEMS.find((i) => i.id === section)?.label}>
+        <div
+          key={section}
+          id="section-panel"
+          className="animate-fadeSlideUp"
+          role="tabpanel"
+          aria-label={section === 'perfil' ? 'Perfil' : NAV_ITEMS.find((i) => i.id === section)?.label}
+        >
           {section === 'calculadora' && <WizardCalculator />}
           {section === 'importar' && (
             <div className="max-w-2xl mx-auto">
@@ -133,6 +158,11 @@ export default function App() {
           {section === 'atualizador' && (
             <div className="max-w-2xl mx-auto">
               <IndexTableConsultant />
+            </div>
+          )}
+          {section === 'perfil' && (
+            <div className="max-w-2xl mx-auto">
+              <PerfilTab />
             </div>
           )}
         </div>
