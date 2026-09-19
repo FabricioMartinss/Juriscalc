@@ -1,11 +1,11 @@
 {
   "versao": 1,
-  "geradoEm": "2026-08-18",
+  "geradoEm": "2026-09-19",
   "comunicado": "https://www.tjsp.jus.br/PrimeiraInstancia/CalculosJudiciais/Comunicado?codigoComunicado=2524&pagina=1",
   "arquivos": {
-    "SERIE_NOVA": "https://api.tjsp.jus.br/Handlers/Handler/FileFetch.ashx?codigo=196912",
-    "SERIE_ANTIGA": "https://api.tjsp.jus.br/Handlers/Handler/FileFetch.ashx?codigo=196911",
-    "SERIE_IPCA_E": "https://api.tjsp.jus.br/Handlers/Handler/FileFetch.ashx?codigo=196909"
+    "SERIE_NOVA": "https://api.tjsp.jus.br/Handlers/Handler/FileFetch.ashx?codigo=199645",
+    "SERIE_ANTIGA": "https://api.tjsp.jus.br/Handlers/Handler/FileFetch.ashx?codigo=199643",
+    "SERIE_IPCA_E": "https://api.tjsp.jus.br/Handlers/Handler/FileFetch.ashx?codigo=199644"
   },
   "series": {
     "SERIE_NOVA": {
@@ -41,7 +41,8 @@
           104.41444,
           105.061809,
           105.492562,
-          105.555857
+          105.555857,
+          105.133633
         ]
       }
     },
@@ -78,7 +79,8 @@
           104.149687,
           104.826659,
           104.973416,
-          104.962918
+          104.962918,
+          104.627036
         ]
       }
     },
@@ -123,7 +125,8 @@
           8.507909,
           8.560658,
           8.595756,
-          8.600913
+          8.600913,
+          8.566509
         ]
       }
     }
