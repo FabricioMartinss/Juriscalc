@@ -42,6 +42,14 @@ function transporteSmtp() {
     port: porta,
     secure: porta === 465,
     auth: { user, pass },
+    // Sem isto, uma porta de SMTP bloqueada/filtrada pela rede de saída do
+    // host (comum em PaaS) deixa a conexão TCP pendurada indefinidamente --
+    // a requisição HTTP nunca responde, e quem preencheu o formulário fica
+    // olhando o botão girando pra sempre. Com o timeout, vira um erro em
+    // ~10s, tratado abaixo como o mesmo 503 de "SMTP não configurado".
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 10_000,
   });
 }
 
@@ -85,19 +93,30 @@ suporteRouter.post(
 
     const destino = process.env.SUPORTE_EMAIL_DESTINO || 'suporte.juriscalcsp@gmail.com';
 
-    await transporte.sendMail({
-      from: `JuriscalcSP <${process.env.SMTP_USER}>`,
-      to: destino,
-      // Objeto {name, address}, não string interpolada: o nome do usuário é
-      // dado dele (sem restrição de caractere no cadastro) -- um nome com
-      // "<" ou "," dentro quebraria o parsing de "Nome <email>" como texto
-      // solto. O nodemailer monta e escapa o cabeçalho certo a partir do
-      // objeto. Responder o e-mail já vai direto pro usuário, sem copiar
-      // contato manualmente.
-      replyTo: { name: usuario.nome, address: usuario.email },
-      subject: `[Suporte JuriscalcSP] ${usuario.nome}`,
-      text: `Usuário: ${usuario.nome}\nE-mail: ${usuario.email}\nTelefone: ${usuario.telefone}\n\nMensagem:\n${corpo.data.mensagem}`,
-    });
+    try {
+      await transporte.sendMail({
+        from: `JuriscalcSP <${process.env.SMTP_USER}>`,
+        to: destino,
+        // Objeto {name, address}, não string interpolada: o nome do usuário é
+        // dado dele (sem restrição de caractere no cadastro) -- um nome com
+        // "<" ou "," dentro quebraria o parsing de "Nome <email>" como texto
+        // solto. O nodemailer monta e escapa o cabeçalho certo a partir do
+        // objeto. Responder o e-mail já vai direto pro usuário, sem copiar
+        // contato manualmente.
+        replyTo: { name: usuario.nome, address: usuario.email },
+        subject: `[Suporte JuriscalcSP] ${usuario.nome}`,
+        text: `Usuário: ${usuario.nome}\nE-mail: ${usuario.email}\nTelefone: ${usuario.telefone}\n\nMensagem:\n${corpo.data.mensagem}`,
+      });
+    } catch (erro) {
+      // Falha de rede/SMTP (porta bloqueada, host fora do ar, timeout) não é
+      // "erro interno" -- é a mesma indisponibilidade de "sem SMTP
+      // configurado", só que descoberta na hora de mandar em vez de antes.
+      // Não expõe detalhe da falha (pode vazar host/config); fica só no log
+      // do servidor.
+      console.error('Falha ao enviar e-mail de suporte:', erro instanceof Error ? erro.message : erro);
+      res.status(503).json({ erro: 'Não foi possível enviar sua mensagem agora. Tente novamente mais tarde.' });
+      return;
+    }
 
     res.status(200).json({ ok: true });
   }),
