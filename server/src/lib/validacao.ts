@@ -36,3 +36,14 @@ export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email('Email inválido.'),
   senha: z.string().min(1, 'Informe a senha.'),
 });
+
+export const recuperarSenhaSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Email inválido.'),
+});
+
+// Mesmo limite de senha do cadastro -- redefinir não pode ser porta de entrada
+// para uma senha que o cadastro recusaria.
+export const redefinirSenhaSchema = z.object({
+  token: z.string().trim().min(1, 'Link inválido.').max(200),
+  senha: z.string().min(8, 'A senha precisa ter pelo menos 8 caracteres.').max(72),
+});

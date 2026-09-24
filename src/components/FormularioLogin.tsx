@@ -4,6 +4,7 @@
  */
 
 import { useState, type FormEvent, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 /**
@@ -59,7 +60,15 @@ export default function FormularioLogin({
       </label>
 
       <label className="block text-sm">
-        <span className="text-slate-600 font-semibold">Senha</span>
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-slate-600 font-semibold">Senha</span>
+          <Link
+            to="/recuperar-senha"
+            className="text-[11px] text-cyan-700 font-semibold hover:underline shrink-0"
+          >
+            Esqueci minha senha
+          </Link>
+        </div>
         <input
           type="password"
           required

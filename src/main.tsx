@@ -4,6 +4,8 @@ import {BrowserRouter, Routes, Route, Navigate} from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import CadastroPage from './pages/CadastroPage';
+import RecuperarSenhaPage from './pages/RecuperarSenhaPage';
+import RedefinirSenhaPage from './pages/RedefinirSenhaPage';
 import {AuthProvider} from './contexts/AuthContext';
 import {inicializarIndices} from './data/indicesRemotos';
 import './index.css';
@@ -41,6 +43,9 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/cadastro" element={<CadastroPage />} />
+          <Route path="/recuperar-senha" element={<RecuperarSenhaPage />} />
+          {/* O token vem na query string do link enviado por e-mail. */}
+          <Route path="/redefinir-senha" element={<RedefinirSenhaPage />} />
           {/* Sem porteiro: a plataforma abre para quem ainda não tem conta.
               O login é pedido de dentro, quando as visitas livres acabam
               (App.tsx + lib/acessoLivre.ts), e pelo servidor no que é pago. */}
