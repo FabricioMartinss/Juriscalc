@@ -12,6 +12,7 @@ import {
 } from '../lib/validacao.js';
 import { asyncRota } from '../lib/asyncRota.js';
 import { enviarEmail } from '../lib/email.js';
+import { LEITURAS_IA_GRATUITAS } from '../lib/limites.js';
 
 export const authRouter = Router();
 
@@ -62,7 +63,11 @@ interface LinhaUsuario {
   telefone: string;
   oab_numero: string | null;
   oab_uf: string | null;
+  leituras_ia_usadas: number;
 }
+
+/** Colunas que `paraUsuarioPublico` espera — uma lista só, para os SELECTs não divergirem. */
+const COLUNAS_USUARIO = 'id, nome, email, telefone, oab_numero, oab_uf, leituras_ia_usadas';
 
 function paraUsuarioPublico(linha: LinhaUsuario) {
   return {
@@ -72,6 +77,10 @@ function paraUsuarioPublico(linha: LinhaUsuario) {
     telefone: linha.telefone,
     oabNumero: linha.oab_numero,
     oabUf: linha.oab_uf,
+    // O front mostra quantas leituras de IA ainda cabem antes de ser preciso
+    // pagar; o número de verdade é cobrado no servidor (routes/documentos.ts).
+    leiturasIaUsadas: linha.leituras_ia_usadas,
+    leiturasIaGratuitas: LEITURAS_IA_GRATUITAS,
   };
 }
 
@@ -102,7 +111,7 @@ authRouter.post(
     const resultado = await pool.query<LinhaUsuario>(
       `INSERT INTO usuarios (nome, email, telefone, oab_numero, oab_uf, senha_hash)
        VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, nome, email, telefone, oab_numero, oab_uf`,
+       RETURNING ${COLUNAS_USUARIO}`,
       [nome, email, telefone, oabNumeroValor, oabUfValor, senhaHash],
     );
     const usuario = resultado.rows[0];
@@ -123,7 +132,7 @@ authRouter.post(
     const { email, senha } = corpo.data;
 
     const resultado = await pool.query<LinhaUsuario & { senha_hash: string }>(
-      'SELECT id, nome, email, telefone, oab_numero, oab_uf, senha_hash FROM usuarios WHERE email = $1',
+      `SELECT ${COLUNAS_USUARIO}, senha_hash FROM usuarios WHERE email = $1`,
       [email],
     );
     const linha = resultado.rows[0];
@@ -155,7 +164,7 @@ authRouter.get(
     }
 
     const resultado = await pool.query<LinhaUsuario>(
-      'SELECT id, nome, email, telefone, oab_numero, oab_uf FROM usuarios WHERE id = $1',
+      `SELECT ${COLUNAS_USUARIO} FROM usuarios WHERE id = $1`,
       [usuarioId],
     );
     const linha = resultado.rows[0];

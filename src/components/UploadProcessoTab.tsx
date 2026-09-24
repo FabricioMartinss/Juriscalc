@@ -4,7 +4,7 @@
  */
 
 import { useRef, useState, type ChangeEvent } from 'react';
-import { UploadCloud, FileText, ShieldCheck, Loader2, Send, RotateCcw, AlertTriangle, CheckCircle2, Lock, LogIn } from 'lucide-react';
+import { UploadCloud, FileText, ShieldCheck, Loader2, Send, RotateCcw, AlertTriangle, CheckCircle2, Lock, LogIn, Sparkles } from 'lucide-react';
 import { API_URL, useAuth } from '../contexts/AuthContext';
 import {
   CAMPOS_EMISSAO,
@@ -63,7 +63,7 @@ function forosDaComarca(comarcaTexto: string): string[] {
 export default function UploadProcessoTab({ aoPedirLogin }: { aoPedirLogin?: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const extensaoPresente = useExtensaoPresente();
-  const { usuario } = useAuth();
+  const { usuario, recarregarUsuario } = useAuth();
 
   const [estado, setEstado] = useState<Estado>('ocioso');
   const [erro, setErro] = useState<string | null>(null);
@@ -107,6 +107,13 @@ export default function UploadProcessoTab({ aoPedirLogin }: { aoPedirLogin?: () 
         body: formData,
       });
       const corpo = await resposta.json().catch(() => null);
+
+      // 402: a leitura gratuita acabou. Rebusca a conta para a tela passar a
+      // mostrar o bloco de "acabou" em vez do seletor de arquivo.
+      if (resposta.status === 402) {
+        await recarregarUsuario();
+        throw new Error(corpo?.erro ?? 'Sua leitura gratuita já foi usada.');
+      }
       if (!resposta.ok) {
         throw new Error(corpo?.erro ?? 'Não foi possível extrair os dados do documento.');
       }
@@ -142,6 +149,9 @@ export default function UploadProcessoTab({ aoPedirLogin }: { aoPedirLogin?: () 
       setComarcaOrigem(extraido.comarcaOrigem ?? '');
       setValorCausaDoc(extraido.valorCausa ?? '');
       setEstado('revisando');
+      // A leitura bem-sucedida consumiu a cota; rebusca para o saldo exibido
+      // não ficar desatualizado.
+      void recarregarUsuario();
     } catch (err) {
       setErro(err instanceof Error ? err.message : 'Não foi possível extrair os dados do documento.');
       setEstado('erro');
@@ -202,6 +212,12 @@ export default function UploadProcessoTab({ aoPedirLogin }: { aoPedirLogin?: () 
     c.campo === 'processo' && dados.processo === '' ? true : c.valido(dados[c.campo]),
   );
 
+  // Saldo de leituras de IA. O servidor é quem cobra o limite de verdade
+  // (routes/documentos.ts); isto decide o que a tela mostra.
+  const leiturasRestantes = usuario
+    ? Math.max(0, usuario.leiturasIaGratuitas - usuario.leiturasIaUsadas)
+    : 0;
+
   const cabecalho = (
     <div>
       <h3 className="text-sm font-bold text-slate-900 uppercase tracking-tight flex items-center gap-2">
@@ -255,8 +271,25 @@ export default function UploadProcessoTab({ aoPedirLogin }: { aoPedirLogin?: () 
         </span>
       </div>
 
-      {estado !== 'revisando' && (
+      {estado !== 'revisando' && leiturasRestantes <= 0 && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-center space-y-2">
+          <Sparkles className="w-6 h-6 text-amber-500 mx-auto" />
+          <p className="text-xs font-bold text-amber-900">Sua leitura gratuita já foi usada</p>
+          <p className="text-[11px] text-amber-800 leading-relaxed">
+            Para continuar lendo documentos por IA, escolha um plano. O resto da plataforma segue
+            liberado normalmente.
+          </p>
+        </div>
+      )}
+
+      {estado !== 'revisando' && leiturasRestantes > 0 && (
         <div>
+          <p className="text-[11px] text-slate-500 mb-2 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
+            {leiturasRestantes === 1
+              ? 'Você tem 1 leitura gratuita.'
+              : `Você tem ${leiturasRestantes} leituras gratuitas.`}
+          </p>
           <input
             ref={inputRef}
             type="file"

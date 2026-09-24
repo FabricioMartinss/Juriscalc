@@ -12,6 +12,10 @@ export interface Usuario {
   telefone: string;
   oabNumero: string | null;
   oabUf: string | null;
+  /** Leituras de documento por IA já consumidas pela conta. */
+  leiturasIaUsadas: number;
+  /** Quantas leituras a conta ganha de graça (o servidor é quem cobra o limite). */
+  leiturasIaGratuitas: number;
 }
 
 export interface CadastroInput {
@@ -29,6 +33,8 @@ interface AuthContextValue {
   login: (email: string, senha: string) => Promise<void>;
   cadastrar: (dados: CadastroInput) => Promise<void>;
   sair: () => Promise<void>;
+  /** Rebusca a conta — usado depois de algo que muda o consumo (leitura de IA). */
+  recarregarUsuario: () => Promise<void>;
 }
 
 // Em produção, configurada nas variáveis de ambiente do Cloudflare Pages
@@ -83,8 +89,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUsuario(null);
   }
 
+  async function recarregarUsuario() {
+    try {
+      const corpo = await chamarApi('/api/auth/me');
+      setUsuario(corpo.usuario);
+    } catch {
+      // Sessão caiu no meio: deixa como está em vez de deslogar por um
+      // erro de rede. A próxima ação que exigir conta trata isso.
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ usuario, carregando, login, cadastrar, sair }}>
+    <AuthContext.Provider value={{ usuario, carregando, login, cadastrar, sair, recarregarUsuario }}>
       {children}
     </AuthContext.Provider>
   );
