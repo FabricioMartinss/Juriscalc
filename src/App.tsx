@@ -3,16 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState } from 'react';
-import { Scale, HelpCircle, Chrome, Calculator, BookMarked, RefreshCw, LogOut, UploadCloud, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Scale, HelpCircle, Chrome, Calculator, BookMarked, RefreshCw, LogOut, UploadCloud, User, LogIn } from 'lucide-react';
 import WizardCalculator from './components/WizardCalculator';
 import IndexTableConsultant from './components/IndexTableConsultant';
 import CourtCostsReference from './components/CourtCostsReference';
 import ChromeExtensionTab from './components/ChromeExtensionTab';
 import UploadProcessoTab from './components/UploadProcessoTab';
 import PerfilTab from './components/PerfilTab';
+import ModalLogin from './components/ModalLogin';
 import { UFESP_2026 } from './data/tabelaPratica';
 import { useAuth } from './contexts/AuthContext';
+import { excedeuVisitasLivres, registrarVisita } from './lib/acessoLivre';
 
 type Section = 'calculadora' | 'importar' | 'extensao' | 'referencias' | 'atualizador' | 'perfil';
 
@@ -30,7 +32,22 @@ const NAV_ITEMS: { id: Section; label: string; icon: typeof Calculator; hint: st
 
 export default function App() {
   const [section, setSection] = useState<Section>('calculadora');
-  const { usuario, sair } = useAuth();
+  const { usuario, carregando, sair } = useAuth();
+
+  // Degustação: as duas primeiras visitas são livres, a terceira pede login
+  // (ver lib/acessoLivre.ts). Só conta depois que a sessão foi verificada e
+  // deu "sem conta" -- quem já está logado não entra na contagem.
+  const [visitas, setVisitas] = useState(0);
+  useEffect(() => {
+    if (carregando || usuario) return;
+    setVisitas(registrarVisita());
+  }, [carregando, usuario]);
+
+  // Pedido manual: o botão "Entrar" do cabeçalho abre o mesmo modal, sem
+  // tirar a pessoa da tela em que ela estava.
+  const [loginPedido, setLoginPedido] = useState(false);
+  const mostrarLogin =
+    !carregando && !usuario && (loginPedido || excedeuVisitasLivres(visitas));
 
   return (
     <div
@@ -96,6 +113,17 @@ export default function App() {
                 </button>
               </div>
             )}
+
+            {!carregando && !usuario && (
+              <button
+                type="button"
+                onClick={() => setLoginPedido(true)}
+                className="flex items-center gap-1.5 py-1.5 px-3.5 bg-cyan-400 text-[#0b2545] rounded-2xl text-[11px] font-bold hover:bg-cyan-300 cursor-pointer"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                Entrar
+              </button>
+            )}
           </div>
         </div>
 
@@ -146,7 +174,7 @@ export default function App() {
           {section === 'calculadora' && <WizardCalculator />}
           {section === 'importar' && (
             <div className="max-w-2xl mx-auto">
-              <UploadProcessoTab />
+              <UploadProcessoTab aoPedirLogin={() => setLoginPedido(true)} />
             </div>
           )}
           {section === 'extensao' && (
@@ -205,6 +233,8 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {mostrarLogin && <ModalLogin aoEntrar={() => setLoginPedido(false)} />}
     </div>
   );
 }

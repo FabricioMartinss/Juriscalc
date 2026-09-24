@@ -4,7 +4,6 @@ import {BrowserRouter, Routes, Route, Navigate} from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import CadastroPage from './pages/CadastroPage';
-import RequireAuth from './components/RequireAuth';
 import {AuthProvider} from './contexts/AuthContext';
 import {inicializarIndices} from './data/indicesRemotos';
 import './index.css';
@@ -42,14 +41,15 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/cadastro" element={<CadastroPage />} />
+          {/* Sem porteiro: a plataforma abre para quem ainda não tem conta.
+              O login é pedido de dentro, quando as visitas livres acabam
+              (App.tsx + lib/acessoLivre.ts), e pelo servidor no que é pago. */}
           <Route
             path="/app"
             element={
-              <RequireAuth>
-                <Suspense fallback={<Carregando />}>
-                  <Plataforma />
-                </Suspense>
-              </RequireAuth>
+              <Suspense fallback={<Carregando />}>
+                <Plataforma />
+              </Suspense>
             }
           />
           {/* Qualquer outro caminho volta para a porta de entrada. */}

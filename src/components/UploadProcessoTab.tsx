@@ -4,8 +4,8 @@
  */
 
 import { useRef, useState, type ChangeEvent } from 'react';
-import { UploadCloud, FileText, ShieldCheck, Loader2, Send, RotateCcw, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { API_URL } from '../contexts/AuthContext';
+import { UploadCloud, FileText, ShieldCheck, Loader2, Send, RotateCcw, AlertTriangle, CheckCircle2, Lock, LogIn } from 'lucide-react';
+import { API_URL, useAuth } from '../contexts/AuthContext';
 import {
   CAMPOS_EMISSAO,
   DADOS_EMISSAO_VAZIOS,
@@ -60,9 +60,10 @@ function forosDaComarca(comarcaTexto: string): string[] {
   return ids.map((id) => FORO_ROTULO_POR_VALOR.get(id) ?? '').filter(Boolean);
 }
 
-export default function UploadProcessoTab() {
+export default function UploadProcessoTab({ aoPedirLogin }: { aoPedirLogin?: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const extensaoPresente = useExtensaoPresente();
+  const { usuario } = useAuth();
 
   const [estado, setEstado] = useState<Estado>('ocioso');
   const [erro, setErro] = useState<string | null>(null);
@@ -201,18 +202,50 @@ export default function UploadProcessoTab() {
     c.campo === 'processo' && dados.processo === '' ? true : c.valido(dados[c.campo]),
   );
 
+  const cabecalho = (
+    <div>
+      <h3 className="text-sm font-bold text-slate-900 uppercase tracking-tight flex items-center gap-2">
+        <UploadCloud className="w-4 h-4 text-cyan-600" />
+        Importar Processo
+      </h3>
+      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+        Envie o PDF ou uma foto do processo. O Claude Vision lê o documento e prepara os dados para o
+        painel lateral da extensão preencher sozinho — você confere e emite normalmente.
+      </p>
+    </div>
+  );
+
+  // O leitor de documento fica fora da degustação da calculadora (ver
+  // lib/acessoLivre.ts): cada leitura custa uma chamada paga à Anthropic,
+  // então exige conta desde a primeira vez. O servidor também recusa sem
+  // sessão -- isto aqui é só para não deixar o usuário descobrir no erro.
+  if (!usuario) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4" id="upload-processo-tab-root">
+        {cabecalho}
+        <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center space-y-3">
+          <Lock className="w-6 h-6 text-slate-400 mx-auto" />
+          <p className="text-xs text-slate-600 leading-relaxed">
+            A leitura de documento por IA precisa de conta. Entre para liberar a sua leitura gratuita.
+          </p>
+          {aoPedirLogin && (
+            <button
+              type="button"
+              onClick={aoPedirLogin}
+              className="inline-flex items-center gap-2 py-2 px-4 rounded-lg font-bold text-xs uppercase bg-[#0b2545] text-white hover:bg-[#0d2d54] cursor-pointer"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              Entrar
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-5" id="upload-processo-tab-root">
-      <div>
-        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-tight flex items-center gap-2">
-          <UploadCloud className="w-4 h-4 text-cyan-600" />
-          Importar Processo
-        </h3>
-        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-          Envie o PDF ou uma foto do processo. O Claude Vision lê o documento e prepara os dados para o
-          painel lateral da extensão preencher sozinho — você confere e emite normalmente.
-        </p>
-      </div>
+      {cabecalho}
 
       <div className="p-3 bg-cyan-50/60 border border-cyan-200 rounded-lg text-[11px] text-cyan-900 flex items-start gap-2">
         <ShieldCheck className="w-4 h-4 text-cyan-700 shrink-0 mt-0.5" />
