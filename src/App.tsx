@@ -4,19 +4,24 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Scale, HelpCircle, Chrome, Calculator, BookMarked, RefreshCw, LogOut, UploadCloud, User, LogIn } from 'lucide-react';
+import { Scale, HelpCircle, Chrome, Calculator, BookMarked, RefreshCw, LogOut, User, LogIn } from 'lucide-react';
 import WizardCalculator from './components/WizardCalculator';
 import IndexTableConsultant from './components/IndexTableConsultant';
 import CourtCostsReference from './components/CourtCostsReference';
 import ChromeExtensionTab from './components/ChromeExtensionTab';
-import UploadProcessoTab from './components/UploadProcessoTab';
 import PerfilTab from './components/PerfilTab';
 import ModalLogin from './components/ModalLogin';
 import { UFESP_2026 } from './data/tabelaPratica';
 import { useAuth } from './contexts/AuthContext';
 import { excedeuVisitasLivres, registrarVisita } from './lib/acessoLivre';
 
-type Section = 'calculadora' | 'importar' | 'extensao' | 'referencias' | 'atualizador' | 'perfil';
+// "Importar Processo" (leitura de documento por IA) saiu da navegação por
+// decisão de produto -- não é mais oferecida, mas o código inteiro continua
+// no repositório (components/UploadProcessoTab.tsx, server/src/routes/
+// documentos.ts, a migration da cota de leituras) para o caso de a decisão
+// mudar. Reativar é só devolver o item abaixo à lista e o bloco de render em
+// <main>; nada foi apagado.
+type Section = 'calculadora' | 'extensao' | 'referencias' | 'atualizador' | 'perfil';
 
 // "Perfil" fica fora desta lista de propósito — não é uma seção de trabalho
 // como as outras, é a conta do usuário. Acesso pelo ícone no canto superior
@@ -24,7 +29,6 @@ type Section = 'calculadora' | 'importar' | 'extensao' | 'referencias' | 'atuali
 // sites), não como mais uma aba na navegação principal.
 const NAV_ITEMS: { id: Section; label: string; icon: typeof Calculator; hint: string }[] = [
   { id: 'calculadora', label: 'Calculadora', icon: Calculator, hint: 'Auditoria de custas e preparos' },
-  { id: 'importar', label: 'Importar Processo', icon: UploadCloud, hint: 'Extrai dados de um PDF/imagem' },
   { id: 'extensao', label: 'Extensão', icon: Chrome, hint: 'Extensão para o Chrome' },
   { id: 'referencias', label: 'Tabelas SP', icon: BookMarked, hint: 'Tabelas oficiais do TJSP' },
   { id: 'atualizador', label: 'Atualizador', icon: RefreshCw, hint: 'Correção monetária' },
@@ -172,11 +176,6 @@ export default function App() {
           aria-label={section === 'perfil' ? 'Perfil' : NAV_ITEMS.find((i) => i.id === section)?.label}
         >
           {section === 'calculadora' && <WizardCalculator />}
-          {section === 'importar' && (
-            <div className="max-w-2xl mx-auto">
-              <UploadProcessoTab aoPedirLogin={() => setLoginPedido(true)} />
-            </div>
-          )}
           {section === 'extensao' && (
             <div className="max-w-2xl mx-auto">
               <ChromeExtensionTab />
