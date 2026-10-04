@@ -97,6 +97,10 @@ authRouter.post(
     const oabNumeroValor = oabNumero ?? null;
     const oabUfValor = oabUf ?? null;
 
+    // Cadastro aberto de novo -- a trava por lista de e-mails liberados ficou
+    // em espera (ver migrations/005_lista_permitida.sql e
+    // importarListaPermitida.ts, que continuam intactos). Reativar é só
+    // devolver aqui a checagem contra `emails_permitidos` antes do INSERT.
     const existente = await pool.query(
       'SELECT 1 FROM usuarios WHERE email = $1 OR (oab_numero = $2 AND oab_uf = $3)',
       [email, oabNumeroValor, oabUfValor],
