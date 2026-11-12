@@ -35,7 +35,7 @@ export const SERIE_ANTIGA: SerieIndices = {
   valores: {
     2024: [95.778191, 96.237926, 96.824977, 97.144499], // SET a DEZ
     2025: [97.610792, 97.610792, 99.055431, 99.560613, 100.038503, 100.388637, 100.619530, 100.830831, 100.619086, 101.142305, 101.172647, 101.202998], // JAN a DEZ
-    2026: [101.415524, 101.811044, 102.381185, 103.312853, 104.149687, 104.826659, 104.973416, 104.962918, 104.627036, 105.484977], // JAN a OUT
+    2026: [101.415524, 101.811044, 102.381185, 103.312853, 104.149687, 104.826659, 104.973416, 104.962918, 104.627036, 105.484977, 105.717043], // JAN a NOV
   },
 };
 
@@ -53,11 +53,11 @@ export const SERIE_IPCA_E: SerieIndices = {
 
 /** Procedência dos dados acima. */
 export const INDICES_META = {
-  geradoEm: "2026-11-01",
+  geradoEm: "2026-11-12",
   comunicado: "https://www.tjsp.jus.br/PrimeiraInstancia/CalculosJudiciais/Comunicado?codigoComunicado=2524&pagina=1",
   arquivos: {
-    SERIE_NOVA: "https://api.tjsp.jus.br/Handlers/Handler/FileFetch.ashx?codigo=204679",
-    SERIE_ANTIGA: "https://api.tjsp.jus.br/Handlers/Handler/FileFetch.ashx?codigo=204678",
-    SERIE_IPCA_E: "https://api.tjsp.jus.br/Handlers/Handler/FileFetch.ashx?codigo=204677",
+    SERIE_NOVA: "https://api.tjsp.jus.br/Handlers/Handler/FileFetch.ashx?codigo=205824",
+    SERIE_ANTIGA: "https://api.tjsp.jus.br/Handlers/Handler/FileFetch.ashx?codigo=205823",
+    SERIE_IPCA_E: "https://api.tjsp.jus.br/Handlers/Handler/FileFetch.ashx?codigo=205822",
   },
 } as const;
